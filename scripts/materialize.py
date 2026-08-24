@@ -10,6 +10,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PAYLOAD_DIR = ROOT / ".bootstrap"
+BASE64_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 APP_COMPRESSED_START = 36124
 APP_COMPRESSED_SIZE = 22964
 APP_UNCOMPRESSED_SIZE = 93252
@@ -36,26 +37,51 @@ def _inflate_app(archive: bytes) -> tuple[bool, int, int]:
     return dec.eof, len(data), zlib.crc32(data) & 0xFFFFFFFF
 
 
+def _valid_zip(archive: bytes) -> bool:
+    try:
+        with zipfile.ZipFile(io.BytesIO(archive)) as package:
+            return package.testzip() is None and "index.html" in package.namelist()
+    except (zipfile.BadZipFile, zlib.error, EOFError, RuntimeError, OSError):
+        return False
+
+
 def _read_packaged_archive(chunks: list[Path]) -> bytes:
     encoded = "".join(path.read_text(encoding="utf-8").strip() for path in chunks)
-    hits: list[tuple[int, int]] = []
-    for position in range(48080, 78784):
-        candidate = encoded[:position] + "A" + encoded[position:]
-        try:
-            archive = base64.b64decode(candidate, validate=True)
-        except (ValueError, base64.binascii.Error):
-            continue
-        eof, size, crc = _inflate_app(archive)
-        if eof and size == APP_UNCOMPRESSED_SIZE:
-            hits.append((position, crc))
-    print(f"EXHAUSTIVE_HITS total={len(hits)}")
-    for position, crc in hits:
-        print(f"EXHAUSTIVE_HIT q={position} crc={crc:08x} target={APP_TARGET_CRC:08x}")
-    raise ValueError("diagnóstico exaustivo concluído")
+
+    # The historical bootstrap payload lost one Base64 character inside app.js.
+    # Prior diagnostics reduced the only structurally plausible locations to
+    # three small neighborhoods. Try all 64 legal sextets in those ranges and
+    # accept only the candidate matching the original app.js size and CRC.
+    ranges = (
+        range(60970, 61160),
+        range(72320, 72490),
+        range(73720, 73960),
+    )
+
+    for positions in ranges:
+        for position in positions:
+            for char in BASE64_ALPHABET:
+                candidate = encoded[:position] + char + encoded[position:]
+                try:
+                    archive = base64.b64decode(candidate, validate=True)
+                except (ValueError, base64.binascii.Error):
+                    continue
+
+                eof, size, crc = _inflate_app(archive)
+                if not eof or size != APP_UNCOMPRESSED_SIZE or crc != APP_TARGET_CRC:
+                    continue
+                if not _valid_zip(archive):
+                    continue
+
+                print(f"Bootstrap payload recuperado no offset {position} ({char}).")
+                return archive
+
+    raise ValueError("não foi possível recuperar o payload Base64 do site")
 
 
 def main() -> int:
     chunks = sorted(PAYLOAD_DIR.glob("chunk-*"))
+
     if chunks:
         try:
             archive = _read_packaged_archive(chunks)
@@ -67,8 +93,11 @@ def main() -> int:
 
     if not _apply_valtren_brand():
         return 1
+
     if chunks and PAYLOAD_DIR.exists():
         shutil.rmtree(PAYLOAD_DIR)
+
+    print("Projeto da Valtren Solutions materializado e atualizado com sucesso.")
     return 0
 
 
