@@ -41,3 +41,5 @@ jobs:
           fi
           git commit -m "chore: materialize institutional site on dev"
           git push origin dev
+
+# one-time workflow; remove after successful materialization
