@@ -31,36 +31,42 @@ def _valid_zip(archive: bytes) -> bool:
         return False
 
 
-def _app_crc_valid(archive: bytes) -> bool:
+def _diagnose_raw_app(encoded: str) -> None:
+    # app.js local record starts at ZIP byte 36060 -> Base64 offset 48080.
+    # The observed central-directory boundary is 78783 because one sextet is
+    # missing. Decode the largest aligned prefix before that boundary so bytes
+    # before the actual deletion remain untouched.
+    segment = encoded[48080:78780]
+    raw = base64.b64decode(segment, validate=True)
+    print(f"RAW_APP segment_chars={len(segment)} decoded_bytes={len(raw)} header={raw[:4]!r}")
+    # The local record overhead for app.js is 64 bytes; compressed DEFLATE data
+    # begins immediately after it.
+    compressed = raw[64:]
+    dec = zlib.decompressobj(-15)
+    produced = 0
+    for index, byte in enumerate(compressed):
+        try:
+            out = dec.decompress(bytes([byte]))
+            produced += len(out)
+        except zlib.error as error:
+            absolute_byte = 36124 + index
+            approx_b64 = (absolute_byte * 4) // 3
+            print(
+                f"RAW_APP_ERROR compressed_index={index} absolute_zip_byte={absolute_byte} "
+                f"approx_b64={approx_b64} produced={produced} error={error}"
+            )
+            return
     try:
-        with zipfile.ZipFile(io.BytesIO(archive)) as package:
-            package.read("app.js")
-            return True
-    except (KeyError, zipfile.BadZipFile, zlib.error, EOFError, RuntimeError, OSError):
-        return False
+        produced += len(dec.flush())
+        print(f"RAW_APP_NO_ERROR produced={produced} eof={dec.eof} unused={len(dec.unused_data)}")
+    except zlib.error as error:
+        print(f"RAW_APP_FLUSH_ERROR produced={produced} error={error}")
 
 
 def _read_packaged_archive(chunks: list[Path]) -> bytes:
     encoded = "".join(path.read_text(encoding="utf-8").strip() for path in chunks)
-
-    # The historical payload is missing exactly one Base64 character inside
-    # the compressed app.js stream. Diagnostics localize the missing sextet to
-    # this narrow interval. Try every legal Base64 value at every position,
-    # first validating app.js CRC and then validating the entire ZIP.
-    for position in range(59750, 59951):
-        for char in BASE64_ALPHABET:
-            candidate = encoded[:position] + char + encoded[position:]
-            try:
-                archive = base64.b64decode(candidate, validate=True)
-            except (ValueError, base64.binascii.Error):
-                continue
-            if not _app_crc_valid(archive):
-                continue
-            if _valid_zip(archive):
-                print(f"Bootstrap payload recuperado automaticamente no offset {position} ({char}).")
-                return archive
-
-    raise ValueError("não foi possível recuperar o payload Base64 do site")
+    _diagnose_raw_app(encoded)
+    raise ValueError("diagnóstico do payload concluído")
 
 
 def main() -> int:
