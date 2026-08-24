@@ -41,30 +41,6 @@ def _decode_candidate(encoded: str) -> bytes | None:
     return archive if _valid_zip(archive) else None
 
 
-def _diagnose(encoded: str) -> None:
-    probes = [0, 20000, 40000, 60000, 70000, 76000, 78000, 78783]
-    for q in probes:
-        if q > len(encoded):
-            continue
-        candidate = encoded[:q] + "A" + encoded[q:]
-        if len(candidate) % 4:
-            continue
-        try:
-            archive = base64.b64decode(candidate, validate=True)
-            with zipfile.ZipFile(io.BytesIO(archive)) as package:
-                ok = []
-                failed = []
-                for info in sorted(package.infolist(), key=lambda item: item.header_offset):
-                    try:
-                        package.read(info)
-                        ok.append(info.filename)
-                    except Exception:
-                        failed.append(info.filename)
-                print(f"BOOTSTRAP_PROBE q={q} ok={','.join(ok)} fail={','.join(failed)}")
-        except Exception as error:
-            print(f"BOOTSTRAP_PROBE q={q} OPEN_FAIL {type(error).__name__}:{error}")
-
-
 def _read_packaged_archive(chunks: list[Path]) -> bytes:
     parts = [path.read_text(encoding="utf-8").strip() for path in chunks]
     encoded = "".join(parts)
@@ -72,6 +48,20 @@ def _read_packaged_archive(chunks: list[Path]) -> bytes:
     archive = _decode_candidate(encoded)
     if archive is not None:
         return archive
+
+    # The package is exactly one Base64 character short before the ZIP central
+    # directory. In the correct archive the central directory starts at byte
+    # 59088, which maps to Base64 character 78784. Since one character is
+    # missing, its observed boundary is around 78783. Try that narrow region
+    # first, then fall back to the chunk boundaries.
+    likely_positions = list(range(78770, min(len(encoded), 78790) + 1))
+    for position in likely_positions:
+        for char in BASE64_ALPHABET:
+            candidate = encoded[:position] + char + encoded[position:]
+            archive = _decode_candidate(candidate)
+            if archive is not None:
+                print(f"Bootstrap payload recuperado automaticamente no offset {position} ({char}).")
+                return archive
 
     boundaries = [0]
     running = 0
@@ -87,8 +77,7 @@ def _read_packaged_archive(chunks: list[Path]) -> bytes:
                 print(f"Bootstrap payload recuperado automaticamente no offset {boundary} ({char}).")
                 return archive
 
-    _diagnose(encoded)
-    raise ValueError("não foi possível recuperar o payload Base64 do site nas fronteiras dos chunks")
+    raise ValueError("não foi possível recuperar o payload Base64 do site")
 
 
 def main() -> int:
