@@ -42,12 +42,8 @@ def _decode_candidate(encoded: str) -> bytes | None:
 
 
 def _probe_app(encoded: str) -> None:
-    for position in [48080, 50000, 52000, 54000, 56000, 58000, 60000, 62000, 64000, 66000, 68000, 70000, 72000, 74000, 76000, 78000, 78783]:
-        if position > len(encoded):
-            continue
+    for position in range(58000, 60001, 100):
         candidate = encoded[:position] + "A" + encoded[position:]
-        if len(candidate) % 4:
-            continue
         try:
             archive = base64.b64decode(candidate, validate=True)
             with zipfile.ZipFile(io.BytesIO(archive)) as package:
@@ -55,34 +51,24 @@ def _probe_app(encoded: str) -> None:
                 try:
                     with package.open("app.js") as src:
                         while True:
-                            block = src.read(1024)
+                            block = src.read(512)
                             if not block:
                                 break
                             total += len(block)
                     status = "OK"
                 except Exception as error:
-                    status = f"FAIL:{type(error).__name__}:{str(error)[:80]}"
+                    status = f"FAIL:{type(error).__name__}:{str(error)[:60]}"
                 print(f"APP_PROBE q={position} bytes={total} status={status}")
         except Exception as error:
-            print(f"APP_PROBE q={position} bytes=0 status=OPEN_FAIL:{type(error).__name__}:{str(error)[:80]}")
+            print(f"APP_PROBE q={position} bytes=0 status=OPEN_FAIL:{type(error).__name__}:{str(error)[:60]}")
 
 
 def _read_packaged_archive(chunks: list[Path]) -> bytes:
-    parts = [path.read_text(encoding="utf-8").strip() for path in chunks]
-    encoded = "".join(parts)
+    encoded = "".join(path.read_text(encoding="utf-8").strip() for path in chunks)
 
     archive = _decode_candidate(encoded)
     if archive is not None:
         return archive
-
-    likely_positions = list(range(78770, min(len(encoded), 78790) + 1))
-    for position in likely_positions:
-        for char in BASE64_ALPHABET:
-            candidate = encoded[:position] + char + encoded[position:]
-            archive = _decode_candidate(candidate)
-            if archive is not None:
-                print(f"Bootstrap payload recuperado automaticamente no offset {position} ({char}).")
-                return archive
 
     _probe_app(encoded)
     raise ValueError("não foi possível recuperar o payload Base64 do site")
