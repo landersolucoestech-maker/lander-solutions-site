@@ -16,7 +16,6 @@ BASE64_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz012345678
 def _apply_valtren_brand() -> bool:
     try:
         from apply_valtren_brand import apply_branding
-
         apply_branding()
         return True
     except Exception as error:
@@ -28,7 +27,7 @@ def _valid_zip(archive: bytes) -> bool:
     try:
         with zipfile.ZipFile(io.BytesIO(archive)) as package:
             return package.testzip() is None and "index.html" in package.namelist()
-    except (zipfile.BadZipFile, zlib.error, EOFError, RuntimeError):
+    except (zipfile.BadZipFile, zlib.error, EOFError, RuntimeError, OSError):
         return False
 
 
@@ -40,6 +39,29 @@ def _decode_candidate(encoded: str) -> bytes | None:
     except (ValueError, base64.binascii.Error):
         return None
     return archive if _valid_zip(archive) else None
+
+
+def _diagnose(encoded: str) -> None:
+    candidate = "A" + encoded
+    if len(candidate) % 4:
+        return
+    try:
+        archive = base64.b64decode(candidate, validate=True)
+        with zipfile.ZipFile(io.BytesIO(archive)) as package:
+            print("BOOTSTRAP_DIAG_BEGIN")
+            for info in sorted(package.infolist(), key=lambda item: item.header_offset):
+                try:
+                    package.read(info)
+                    status = "OK"
+                except Exception as error:
+                    status = f"FAIL:{type(error).__name__}"
+                print(
+                    f"BOOTSTRAP_DIAG {status} offset={info.header_offset} "
+                    f"compressed={info.compress_size} size={info.file_size} name={info.filename}"
+                )
+            print("BOOTSTRAP_DIAG_END")
+    except Exception as error:
+        print(f"BOOTSTRAP_DIAG_OPEN_FAIL {type(error).__name__}: {error}")
 
 
 def _read_packaged_archive(chunks: list[Path]) -> bytes:
@@ -64,12 +86,12 @@ def _read_packaged_archive(chunks: list[Path]) -> bytes:
                 print(f"Bootstrap payload recuperado automaticamente no offset {boundary} ({char}).")
                 return archive
 
+    _diagnose(encoded)
     raise ValueError("não foi possível recuperar o payload Base64 do site nas fronteiras dos chunks")
 
 
 def main() -> int:
     chunks = sorted(PAYLOAD_DIR.glob("chunk-*"))
-
     if chunks:
         try:
             archive = _read_packaged_archive(chunks)
