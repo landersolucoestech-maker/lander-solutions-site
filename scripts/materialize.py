@@ -20,7 +20,10 @@ APP_TARGET_CRC = 0xC2991650
 def _apply_valtren_brand() -> bool:
     try:
         from apply_valtren_brand import apply_branding
+        from finalize_valtren_brand import finalize_branding
+
         apply_branding()
+        finalize_branding()
         return True
     except Exception as error:
         print(f"Falha ao aplicar a identidade visual da Valtren: {error}", file=sys.stderr)
@@ -87,7 +90,7 @@ def main() -> int:
             archive = _read_packaged_archive(chunks)
             with zipfile.ZipFile(io.BytesIO(archive)) as package:
                 package.extractall(ROOT)
-        except (ValueError, zipfile.BadZipFile, base64.binascii.Error, zlib.error) as error:
+        except (ValueError, zipfile.BadZip64.binascii.Error, zlib.error) as error:
             print(f"Falha ao reconstruir o projeto: {error}", file=sys.stderr)
             return 1
 
