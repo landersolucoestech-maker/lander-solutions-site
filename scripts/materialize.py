@@ -5,6 +5,7 @@ import io
 import shutil
 import sys
 import zipfile
+import zlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,7 +28,7 @@ def _valid_zip(archive: bytes) -> bool:
     try:
         with zipfile.ZipFile(io.BytesIO(archive)) as package:
             return package.testzip() is None and "index.html" in package.namelist()
-    except zipfile.BadZipFile:
+    except (zipfile.BadZipFile, zlib.error, EOFError, RuntimeError):
         return False
 
 
@@ -49,10 +50,6 @@ def _read_packaged_archive(chunks: list[Path]) -> bytes:
     if archive is not None:
         return archive
 
-    # The historical bootstrap payload is one Base64 character short. Try the
-    # only plausible corruption points first: the boundaries where the payload
-    # was split into chunk-* files. This is only a few hundred candidates and
-    # validates the full ZIP structure/CRC before accepting a repair.
     boundaries = [0]
     running = 0
     for part in parts:
@@ -78,7 +75,7 @@ def main() -> int:
             archive = _read_packaged_archive(chunks)
             with zipfile.ZipFile(io.BytesIO(archive)) as package:
                 package.extractall(ROOT)
-        except (ValueError, zipfile.BadZipFile, base64.binascii.Error) as error:
+        except (ValueError, zipfile.BadZipFile, base64.binascii.Error, zlib.error) as error:
             print(f"Falha ao reconstruir o projeto: {error}", file=sys.stderr)
             return 1
 
