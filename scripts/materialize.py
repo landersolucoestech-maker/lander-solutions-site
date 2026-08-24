@@ -22,10 +22,12 @@ def _apply_valtren_brand() -> bool:
         from apply_valtren_brand import apply_branding
         from finalize_valtren_brand import finalize_branding
         from identity_lock import lock_identity
+        from identity_sweep import sweep_identity
 
         apply_branding()
         finalize_branding()
         lock_identity()
+        sweep_identity()
         return True
     except Exception as error:
         print(f"Falha ao aplicar a identidade visual da Valtren: {error}", file=sys.stderr)
