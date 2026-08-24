@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 128" role="img" aria-label="Valtren Solutions">
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#F0D477"/><stop offset=".48" stop-color="#D4AF37"/><stop offset="1" stop-color="#B8891F"/></linearGradient></defs>
+<g transform="translate(8 8) scale(.98)"><path d="M128 47 L122 47 L113 51 L112 61 L108 66 L109 68 L107 70 L107 75 L81 101 L94 101 L116 80 L123 65 L122 63 L129 50 Z M31 47 L30 52 L32 53 L35 65 L40 72 L43 82 L64 101 L76 101 L52 77 L49 65 L47 64 L46 56 L44 54 L44 49 Z M110 44 L138 44 L147 32 L119 31 Z M11 32 L11 34 L13 34 L21 44 L47 44 L43 35 L38 31 Z M120 28 L151 28 L158 21 L159 16 L126 16 Z M0 16 L0 20 L6 28 L35 30 L38 28 L33 17 L31 16 Z M129 0 L110 0 L107 3 L102 15 L99 17 L91 35 L86 41 L83 50 L79 55 L71 43 L70 38 L66 33 L67 32 L58 19 L57 14 L54 12 L49 0 L30 0 L30 4 L35 10 L36 15 L38 16 L46 33 L53 42 L52 43 L56 48 L57 53 L62 59 L78 90 L81 88 L84 80 L94 66 L100 51 L118 23 L119 18 L121 17 Z" fill="url(#g)" fill-rule="evenodd"/></g>
+<text x="185" y="70" fill="#0B1D3A" font-family="Raleway,Arial,sans-serif" font-size="53" font-weight="600" letter-spacing="8">VALTREN</text>
+<line x1="185" y1="96" x2="230" y2="96" stroke="#D4AF37" stroke-width="2"/>
+<text x="250" y="103" fill="#D4AF37" font-family="Montserrat,Arial,sans-serif" font-size="21" font-weight="500" letter-spacing="7">SOLUTIONS</text>
+<line x1="545" y1="96" x2="615" y2="96" stroke="#D4AF37" stroke-width="2"/>
+</svg>
