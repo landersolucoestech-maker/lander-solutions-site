@@ -14,6 +14,7 @@ BASE64_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz012345678
 APP_COMPRESSED_START = 36124
 APP_COMPRESSED_SIZE = 22964
 APP_UNCOMPRESSED_SIZE = 93252
+APP_TARGET_CRC = 0xC2991650
 
 
 def _apply_valtren_brand() -> bool:
@@ -36,29 +37,36 @@ def _inflate_app(archive: bytes) -> tuple[bool, int, int]:
     return dec.eof, len(data), zlib.crc32(data) & 0xFFFFFFFF
 
 
+def _valid_zip(archive: bytes) -> bool:
+    try:
+        with zipfile.ZipFile(io.BytesIO(archive)) as package:
+            return package.testzip() is None and "index.html" in package.namelist()
+    except (zipfile.BadZipFile, zlib.error, EOFError, RuntimeError, OSError):
+        return False
+
+
 def _read_packaged_archive(chunks: list[Path]) -> bytes:
     encoded = "".join(path.read_text(encoding="utf-8").strip() for path in chunks)
 
-    # Obtain the authoritative app.js CRC from the intact central directory.
-    probe = encoded[:78783] + "A" + encoded[78783:]
-    probe_archive = base64.b64decode(probe, validate=True)
-    with zipfile.ZipFile(io.BytesIO(probe_archive)) as package:
-        target_crc = package.getinfo("app.js").CRC
-    print(f"APP_TARGET crc={target_crc:08x} size={APP_UNCOMPRESSED_SIZE}")
+    # The original bootstrap payload lost exactly one Base64 sextet inside
+    # app.js. Diagnostics narrowed the missing character to the neighborhood
+    # of offset 72405. Recover it deterministically using the original app.js
+    # uncompressed size and CRC stored in the ZIP central directory.
+    for position in range(72350, 72461):
+        for char in BASE64_ALPHABET:
+            candidate = encoded[:position] + char + encoded[position:]
+            try:
+                archive = base64.b64decode(candidate, validate=True)
+            except (ValueError, base64.binascii.Error):
+                continue
+            eof, size, crc = _inflate_app(archive)
+            if not eof or size != APP_UNCOMPRESSED_SIZE or crc != APP_TARGET_CRC:
+                continue
+            if _valid_zip(archive):
+                print(f"Bootstrap payload recuperado no offset {position} ({char}).")
+                return archive
 
-    hits = 0
-    for position in range(48080, 78784, 25):
-        candidate = encoded[:position] + "A" + encoded[position:]
-        try:
-            archive = base64.b64decode(candidate, validate=True)
-        except (ValueError, base64.binascii.Error):
-            continue
-        eof, size, crc = _inflate_app(archive)
-        if eof and size == APP_UNCOMPRESSED_SIZE:
-            hits += 1
-            print(f"STRUCTURAL_HIT q={position} crc={crc:08x} target={target_crc:08x}")
-    print(f"STRUCTURAL_HITS total={hits}")
-    raise ValueError("diagnóstico estrutural concluído")
+    raise ValueError("não foi possível recuperar o payload Base64 do site")
 
 
 def main() -> int:
