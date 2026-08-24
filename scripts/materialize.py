@@ -25,6 +25,7 @@ def _apply_valtren_brand() -> bool:
         from identity_sweep import sweep_identity
         from logo_site_fix import apply_logo_site_fix
         from site_architecture_refactor import refactor_site_architecture
+        from header_menu_center_fix import center_header_menu
 
         apply_branding()
         finalize_branding()
@@ -32,6 +33,7 @@ def _apply_valtren_brand() -> bool:
         sweep_identity()
         apply_logo_site_fix()
         refactor_site_architecture()
+        center_header_menu()
         return True
     except Exception as error:
         print(f"Falha ao aplicar a identidade visual da Valtren: {error}", file=sys.stderr)
