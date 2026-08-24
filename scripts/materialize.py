@@ -31,38 +31,43 @@ def _valid_zip(archive: bytes) -> bool:
         return False
 
 
+def _decode_candidate(encoded: str) -> bytes | None:
+    if len(encoded) % 4:
+        return None
+    try:
+        archive = base64.b64decode(encoded, validate=True)
+    except (ValueError, base64.binascii.Error):
+        return None
+    return archive if _valid_zip(archive) else None
+
+
 def _read_packaged_archive(chunks: list[Path]) -> bytes:
     parts = [path.read_text(encoding="utf-8").strip() for path in chunks]
     encoded = "".join(parts)
 
-    try:
-        archive = base64.b64decode(encoded, validate=True)
-        if _valid_zip(archive):
-            return archive
-    except (ValueError, base64.binascii.Error):
-        pass
+    archive = _decode_candidate(encoded)
+    if archive is not None:
+        return archive
 
-    # Historical bootstrap payload: one Base64 character was truncated at the
-    # boundary immediately before the final chunk. The last chunk is intact and
-    # contains the ZIP central directory tail. Recover the missing character by
-    # trying the 64 legal Base64 symbols and accepting the candidate whose ZIP
-    # CRC/structure validates completely.
-    if len(parts) >= 2:
-        prefix = "".join(parts[:-1])
-        suffix = parts[-1]
+    # The historical bootstrap payload is one Base64 character short. Try the
+    # only plausible corruption points first: the boundaries where the payload
+    # was split into chunk-* files. This is only a few hundred candidates and
+    # validates the full ZIP structure/CRC before accepting a repair.
+    boundaries = [0]
+    running = 0
+    for part in parts:
+        running += len(part)
+        boundaries.append(running)
+
+    for boundary in boundaries:
         for char in BASE64_ALPHABET:
-            candidate = prefix + char + suffix
-            if len(candidate) % 4:
-                continue
-            try:
-                archive = base64.b64decode(candidate, validate=True)
-            except (ValueError, base64.binascii.Error):
-                continue
-            if _valid_zip(archive):
-                print(f"Bootstrap payload recuperado automaticamente na fronteira final ({char}).")
+            candidate = encoded[:boundary] + char + encoded[boundary:]
+            archive = _decode_candidate(candidate)
+            if archive is not None:
+                print(f"Bootstrap payload recuperado automaticamente no offset {boundary} ({char}).")
                 return archive
 
-    raise ValueError("não foi possível recuperar o payload Base64 do site")
+    raise ValueError("não foi possível recuperar o payload Base64 do site nas fronteiras dos chunks")
 
 
 def main() -> int:
