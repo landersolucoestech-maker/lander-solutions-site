@@ -41,6 +41,32 @@ def _decode_candidate(encoded: str) -> bytes | None:
     return archive if _valid_zip(archive) else None
 
 
+def _probe_app(encoded: str) -> None:
+    for position in [48080, 50000, 52000, 54000, 56000, 58000, 60000, 62000, 64000, 66000, 68000, 70000, 72000, 74000, 76000, 78000, 78783]:
+        if position > len(encoded):
+            continue
+        candidate = encoded[:position] + "A" + encoded[position:]
+        if len(candidate) % 4:
+            continue
+        try:
+            archive = base64.b64decode(candidate, validate=True)
+            with zipfile.ZipFile(io.BytesIO(archive)) as package:
+                total = 0
+                try:
+                    with package.open("app.js") as src:
+                        while True:
+                            block = src.read(1024)
+                            if not block:
+                                break
+                            total += len(block)
+                    status = "OK"
+                except Exception as error:
+                    status = f"FAIL:{type(error).__name__}:{str(error)[:80]}"
+                print(f"APP_PROBE q={position} bytes={total} status={status}")
+        except Exception as error:
+            print(f"APP_PROBE q={position} bytes=0 status=OPEN_FAIL:{type(error).__name__}:{str(error)[:80]}")
+
+
 def _read_packaged_archive(chunks: list[Path]) -> bytes:
     parts = [path.read_text(encoding="utf-8").strip() for path in chunks]
     encoded = "".join(parts)
@@ -49,11 +75,6 @@ def _read_packaged_archive(chunks: list[Path]) -> bytes:
     if archive is not None:
         return archive
 
-    # The package is exactly one Base64 character short before the ZIP central
-    # directory. In the correct archive the central directory starts at byte
-    # 59088, which maps to Base64 character 78784. Since one character is
-    # missing, its observed boundary is around 78783. Try that narrow region
-    # first, then fall back to the chunk boundaries.
     likely_positions = list(range(78770, min(len(encoded), 78790) + 1))
     for position in likely_positions:
         for char in BASE64_ALPHABET:
@@ -63,20 +84,7 @@ def _read_packaged_archive(chunks: list[Path]) -> bytes:
                 print(f"Bootstrap payload recuperado automaticamente no offset {position} ({char}).")
                 return archive
 
-    boundaries = [0]
-    running = 0
-    for part in parts:
-        running += len(part)
-        boundaries.append(running)
-
-    for boundary in boundaries:
-        for char in BASE64_ALPHABET:
-            candidate = encoded[:boundary] + char + encoded[boundary:]
-            archive = _decode_candidate(candidate)
-            if archive is not None:
-                print(f"Bootstrap payload recuperado automaticamente no offset {boundary} ({char}).")
-                return archive
-
+    _probe_app(encoded)
     raise ValueError("não foi possível recuperar o payload Base64 do site")
 
 
