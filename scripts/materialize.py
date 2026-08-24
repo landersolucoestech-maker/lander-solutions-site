@@ -31,46 +31,35 @@ def _valid_zip(archive: bytes) -> bool:
         return False
 
 
-def _decode_candidate(encoded: str) -> bytes | None:
-    if len(encoded) % 4:
-        return None
+def _app_crc_valid(archive: bytes) -> bool:
     try:
-        archive = base64.b64decode(encoded, validate=True)
-    except (ValueError, base64.binascii.Error):
-        return None
-    return archive if _valid_zip(archive) else None
-
-
-def _probe_app(encoded: str) -> None:
-    for position in range(58000, 60001, 100):
-        candidate = encoded[:position] + "A" + encoded[position:]
-        try:
-            archive = base64.b64decode(candidate, validate=True)
-            with zipfile.ZipFile(io.BytesIO(archive)) as package:
-                total = 0
-                try:
-                    with package.open("app.js") as src:
-                        while True:
-                            block = src.read(512)
-                            if not block:
-                                break
-                            total += len(block)
-                    status = "OK"
-                except Exception as error:
-                    status = f"FAIL:{type(error).__name__}:{str(error)[:60]}"
-                print(f"APP_PROBE q={position} bytes={total} status={status}")
-        except Exception as error:
-            print(f"APP_PROBE q={position} bytes=0 status=OPEN_FAIL:{type(error).__name__}:{str(error)[:60]}")
+        with zipfile.ZipFile(io.BytesIO(archive)) as package:
+            package.read("app.js")
+            return True
+    except (KeyError, zipfile.BadZipFile, zlib.error, EOFError, RuntimeError, OSError):
+        return False
 
 
 def _read_packaged_archive(chunks: list[Path]) -> bytes:
     encoded = "".join(path.read_text(encoding="utf-8").strip() for path in chunks)
 
-    archive = _decode_candidate(encoded)
-    if archive is not None:
-        return archive
+    # The historical payload is missing exactly one Base64 character inside
+    # the compressed app.js stream. Diagnostics localize the missing sextet to
+    # this narrow interval. Try every legal Base64 value at every position,
+    # first validating app.js CRC and then validating the entire ZIP.
+    for position in range(59750, 59951):
+        for char in BASE64_ALPHABET:
+            candidate = encoded[:position] + char + encoded[position:]
+            try:
+                archive = base64.b64decode(candidate, validate=True)
+            except (ValueError, base64.binascii.Error):
+                continue
+            if not _app_crc_valid(archive):
+                continue
+            if _valid_zip(archive):
+                print(f"Bootstrap payload recuperado automaticamente no offset {position} ({char}).")
+                return archive
 
-    _probe_app(encoded)
     raise ValueError("não foi possível recuperar o payload Base64 do site")
 
 
