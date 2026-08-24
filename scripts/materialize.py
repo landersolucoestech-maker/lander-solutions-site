@@ -26,6 +26,7 @@ def _apply_valtren_brand() -> bool:
         from logo_site_fix import apply_logo_site_fix
         from site_architecture_refactor import refactor_site_architecture
         from header_menu_center_fix import center_header_menu
+        from services_logo_refactor import main as apply_services_and_logo_refactor
 
         apply_branding()
         finalize_branding()
@@ -34,6 +35,7 @@ def _apply_valtren_brand() -> bool:
         apply_logo_site_fix()
         refactor_site_architecture()
         center_header_menu()
+        apply_services_and_logo_refactor()
         return True
     except Exception as error:
         print(f"Falha ao aplicar a identidade visual da Valtren: {error}", file=sys.stderr)
