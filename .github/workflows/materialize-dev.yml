@@ -1,0 +1,43 @@
+name: Materialize dev site
+
+on:
+  push:
+    branches:
+      - dev
+    paths:
+      - .github/workflows/materialize-dev.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout dev
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+
+      - name: Materialize packaged site
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/materialize.py
+          rm -f .github/workflows/materialize-dev.yml
+
+      - name: Commit materialized project to dev
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "chore: materialize institutional site on dev"
+          git push origin dev
