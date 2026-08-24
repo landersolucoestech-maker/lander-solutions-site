@@ -51,10 +51,6 @@ def _valid_zip(archive: bytes) -> bool:
 def _read_packaged_archive(chunks: list[Path]) -> bytes:
     encoded = "".join(path.read_text(encoding="utf-8").strip() for path in chunks)
 
-    # The historical bootstrap payload lost one Base64 character inside app.js.
-    # Prior diagnostics reduced the only structurally plausible locations to
-    # three small neighborhoods. Try all 64 legal sextets in those ranges and
-    # accept only the candidate matching the original app.js size and CRC.
     ranges = (
         range(60970, 61160),
         range(72320, 72490),
@@ -90,7 +86,7 @@ def main() -> int:
             archive = _read_packaged_archive(chunks)
             with zipfile.ZipFile(io.BytesIO(archive)) as package:
                 package.extractall(ROOT)
-        except (ValueError, zipfile.BadZip64.binascii.Error, zlib.error) as error:
+        except (ValueError, zipfile.BadZipFile, base64.binascii.Error, zlib.error) as error:
             print(f"Falha ao reconstruir o projeto: {error}", file=sys.stderr)
             return 1
 
