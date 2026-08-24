@@ -42,26 +42,27 @@ def _decode_candidate(encoded: str) -> bytes | None:
 
 
 def _diagnose(encoded: str) -> None:
-    candidate = "A" + encoded
-    if len(candidate) % 4:
-        return
-    try:
-        archive = base64.b64decode(candidate, validate=True)
-        with zipfile.ZipFile(io.BytesIO(archive)) as package:
-            print("BOOTSTRAP_DIAG_BEGIN")
-            for info in sorted(package.infolist(), key=lambda item: item.header_offset):
-                try:
-                    package.read(info)
-                    status = "OK"
-                except Exception as error:
-                    status = f"FAIL:{type(error).__name__}"
-                print(
-                    f"BOOTSTRAP_DIAG {status} offset={info.header_offset} "
-                    f"compressed={info.compress_size} size={info.file_size} name={info.filename}"
-                )
-            print("BOOTSTRAP_DIAG_END")
-    except Exception as error:
-        print(f"BOOTSTRAP_DIAG_OPEN_FAIL {type(error).__name__}: {error}")
+    probes = [0, 20000, 40000, 60000, 70000, 76000, 78000, 78783]
+    for q in probes:
+        if q > len(encoded):
+            continue
+        candidate = encoded[:q] + "A" + encoded[q:]
+        if len(candidate) % 4:
+            continue
+        try:
+            archive = base64.b64decode(candidate, validate=True)
+            with zipfile.ZipFile(io.BytesIO(archive)) as package:
+                ok = []
+                failed = []
+                for info in sorted(package.infolist(), key=lambda item: item.header_offset):
+                    try:
+                        package.read(info)
+                        ok.append(info.filename)
+                    except Exception:
+                        failed.append(info.filename)
+                print(f"BOOTSTRAP_PROBE q={q} ok={','.join(ok)} fail={','.join(failed)}")
+        except Exception as error:
+            print(f"BOOTSTRAP_PROBE q={q} OPEN_FAIL {type(error).__name__}:{error}")
 
 
 def _read_packaged_archive(chunks: list[Path]) -> bytes:
