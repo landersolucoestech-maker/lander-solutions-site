@@ -1,0 +1,88 @@
+    if (state.crmAgendaViewMode==='mes') return monthYear.format(d);
+    if (state.crmAgendaViewMode==='ano') return String(d.getFullYear());
+    const start=crmAgendaStartOfWeek(d), end=crmAgendaEndOfWeek(d);
+    const fmt=new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'short'});
+    return `${fmt.format(start)} – ${fmt.format(end)} ${end.getFullYear()}`;
+  }
+
+  function crmAgendaVisibleEvents(){
+    crmAgendaEnsureState();
+    const [start,end]=crmAgendaPeriodBounds();
+    const term=state.crmAgendaSearch.trim().toLowerCase();
+    return state.crmAgendaEvents.filter((item)=>{
+      if (!crmAgendaDateInRange(item.startDate,start,end)) return false;
+      if (state.crmAgendaTypeFilter!=='all-type' && item.type!==state.crmAgendaTypeFilter) return false;
+      if (state.crmAgendaStatusFilter!=='all-status' && item.status!==state.crmAgendaStatusFilter) return false;
+      if (term && ![item.title,item.venue,item.participants].join(' ').toLowerCase().includes(term)) return false;
+      return true;
+    }).sort((a,b)=>`${a.startDate} ${a.startTime||''}`.localeCompare(`${b.startDate} ${b.startTime||''}`));
+  }
+
+  function crmAgendaKPIs(){
+    crmAgendaEnsureState();
+    const now=new Date(); now.setHours(0,0,0,0);
+    const next7=crmAgendaAddDays(now,7); next7.setHours(23,59,59,999);
+    return {
+      total: state.crmAgendaEvents.length,
+      confirmed: state.crmAgendaEvents.filter((item)=>item.status==='confirmado').length,
+      pending: state.crmAgendaEvents.filter((item)=>['pendente','agendado','negociacao'].includes(item.status)).length,
+      next7: state.crmAgendaEvents.filter((item)=>crmAgendaDateInRange(item.startDate,now,next7)).length,
+    };
+  }
+
+  function crmAgendaKpiCard(label,value,note,kind='primary'){
+    return `<article class="crm-agenda-kpi ${kind}"><div class="crm-agenda-kpi-icon">${icon(kind==='success'?'check':kind==='warning'?'clock':'calendar',18)}</div><div><span>${label}</span><strong>${value}</strong><small>${note}</small></div></article>`;
+  }
+
+  function crmAgendaEventChip(item,compact=false){
+    return `<button type="button" class="crm-agenda-event-chip ${crmAgendaStatusClass(item.status)} ${compact?'compact':''}" data-action="crm-agenda-view" data-id="${esc(item.id)}" title="${esc(item.title)}"><span>${item.startTime ? esc(item.startTime) : 'Dia inteiro'}</span><strong>${esc(item.title)}</strong>${!compact && item.venue ? `<small>${esc(item.venue)}</small>`:''}</button>`;
+  }
+
+  function crmAgendaMonthCalendar(events){
+    const date=state.crmAgendaCurrentDate;
+    const monthStart=crmAgendaStartOfMonth(date);
+    const gridStart=crmAgendaStartOfWeek(monthStart);
+    const monthEnd=crmAgendaEndOfMonth(date);
+    const gridEnd=crmAgendaEndOfWeek(monthEnd);
+    const cells=[];
+    for(let d=new Date(gridStart);d<=gridEnd;d=crmAgendaAddDays(d,1)){
+      const iso=crmAgendaISO(d);
+      const dayEvents=events.filter((item)=>item.startDate===iso);
+      const muted=d.getMonth()!==date.getMonth();
+      const today=iso===crmAgendaISO(new Date());
+      cells.push(`<div class="crm-agenda-day ${muted?'muted':''} ${today?'today':''}"><header><span>${d.getDate()}</span></header><div>${dayEvents.slice(0,4).map((item)=>crmAgendaEventChip(item,true)).join('')}${dayEvents.length>4?`<small class="crm-agenda-more">+${dayEvents.length-4} evento(s)</small>`:''}</div></div>`);
+    }
+    return `<section class="crm-agenda-calendar crm-agenda-month"><div class="crm-agenda-weekdays">${['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map((d)=>`<span>${d}</span>`).join('')}</div><div class="crm-agenda-month-grid">${cells.join('')}</div></section>`;
+  }
+
+  function crmAgendaWeekCalendar(events){
+    const start=crmAgendaStartOfWeek(state.crmAgendaCurrentDate);
+    const cols=[];
+    for(let i=0;i<7;i++){
+      const d=crmAgendaAddDays(start,i), iso=crmAgendaISO(d);
+      const dayEvents=events.filter((item)=>item.startDate===iso);
+      const today=iso===crmAgendaISO(new Date());
+      cols.push(`<div class="crm-agenda-week-col ${today?'today':''}"><header><span>${new Intl.DateTimeFormat('pt-BR',{weekday:'short'}).format(d)}</span><strong>${d.getDate()}</strong></header><div class="crm-agenda-week-events">${dayEvents.length?dayEvents.map((item)=>crmAgendaEventChip(item)).join(''):`<span class="crm-agenda-day-empty">Sem eventos</span>`}</div></div>`);
+    }
+    return `<section class="crm-agenda-calendar crm-agenda-week">${cols.join('')}</section>`;
+  }
+
+  function crmAgendaDayCalendar(events){
+    const iso=crmAgendaISO(state.crmAgendaCurrentDate);
+    const dayEvents=events.filter((item)=>item.startDate===iso);
+    return `<section class="crm-agenda-calendar crm-agenda-day-view"><header><span>${new Intl.DateTimeFormat('pt-BR',{weekday:'long'}).format(state.crmAgendaCurrentDate)}</span><strong>${new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'long'}).format(state.crmAgendaCurrentDate)}</strong></header><div class="crm-agenda-day-list">${dayEvents.map((item)=>`<article><time>${esc(item.startTime||'Dia inteiro')}</time>${crmAgendaEventChip(item)}</article>`).join('')}</div></section>`;
+  }
+
+  function crmAgendaYearCalendar(events){
+    const year=state.crmAgendaCurrentDate.getFullYear();
+    return `<section class="crm-agenda-year">${Array.from({length:12},(_,month)=>{
+      const start=new Date(year,month,1), end=new Date(year,month+1,0,23,59,59,999);
+      const list=events.filter((item)=>crmAgendaDateInRange(item.startDate,start,end));
+      return `<article class="crm-agenda-year-card"><header><strong>${new Intl.DateTimeFormat('pt-BR',{month:'long'}).format(start)}</strong><span>${list.length} evento(s)</span></header><div>${list.slice(0,4).map((item)=>crmAgendaEventChip(item,true)).join('')}${!list.length?'<small>Nenhum evento</small>':''}</div></article>`;
+    }).join('')}</section>`;
+  }
+
+  function crmAgendaCalendar(events){
+    if (state.crmAgendaViewMode==='dia') return crmAgendaDayCalendar(events);
+    if (state.crmAgendaViewMode==='mes') return crmAgendaMonthCalendar(events);
+    if (state.crmAgendaViewMode==='ano') return crmAgendaYearCalendar(events);
