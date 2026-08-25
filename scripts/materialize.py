@@ -53,6 +53,7 @@ def _apply_valtren_brand() -> bool:
         from crm_complete_module import apply_crm_complete_module
         from crm_definitive_architecture import apply_crm_definitive_architecture
         from crm_financial_transactions import apply_crm_financial_transactions
+        from crm_accounting import apply_crm_accounting
 
         apply_branding()
         finalize_branding()
@@ -88,9 +89,12 @@ def _apply_valtren_brand() -> bool:
         # Resolve the canonical navigation first. CRM remains the canonical relationship layer.
         apply_crm_definitive_architecture()
         apply_crm_complete_module()
-        # Transactions runs last because it only replaces Financeiro → Transações and its CSS,
-        # validates the definitive sidebar, and must not be overwritten by the legacy finance page.
+        # Transactions must be materialized before Accounting because Accounting derives all
+        # financial movements from crmFinanceService/state.crmFinancialTransactions.
         apply_crm_financial_transactions()
+        # Accounting is the final finance layer in this stage: it replaces only /accounting,
+        # removes legacy P&L views, validates the sidebar and leaves Transactions untouched.
+        apply_crm_accounting()
         return True
     except Exception as error:
         print(f"Falha ao aplicar a identidade visual da Valtren: {error}", file=sys.stderr)
