@@ -8,21 +8,29 @@ APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
 DOMAIN_JS = ROOT / "scripts" / "crm_complete_domain.js"
 BROWSER_JS = ROOT / "scripts" / "crm_complete_browser.js"
+HARDENING_JS = ROOT / "scripts" / "crm_complete_hardening.js"
 MODULE_CSS = ROOT / "scripts" / "crm_complete_module.css"
-CACHE_VERSION = "20260825-crm-complete-v1"
+CACHE_VERSION = "20260825-crm-complete-v2"
 JS_START = "  // VALTREN CRM COMPLETE START\n"
 JS_END = "  // VALTREN CRM COMPLETE END\n"
 
 
 def apply_crm_complete_module() -> int:
-    for path in (APP, CSS, DOMAIN_JS, BROWSER_JS, MODULE_CSS):
+    for path in (APP, CSS, DOMAIN_JS, BROWSER_JS, HARDENING_JS, MODULE_CSS):
         if not path.exists():
             raise FileNotFoundError(path)
 
     app = APP.read_text(encoding="utf-8")
     domain = DOMAIN_JS.read_text(encoding="utf-8").strip()
     browser = BROWSER_JS.read_text(encoding="utf-8").strip()
-    block = JS_START + domain + "\n\n" + browser + "\n" + JS_END
+    hardening = HARDENING_JS.read_text(encoding="utf-8").strip()
+
+    # Keep stable internal enums while presenting Portuguese labels in the UI.
+    browser = browser.replace("${esc(context.status||'Ativo')}", "${esc(crmFullStatusLabel(context.status||'active'))}")
+    browser = browser.replace("${esc(lead.priority||'-')}", "${esc(crmFullPriorityLabel(lead.priority))}")
+    browser = browser.replace("${esc(item.status||'pending')}", "${esc(crmFullStatusLabel(item.status||'pending'))}")
+
+    block = JS_START + domain + "\n\n" + browser + "\n\n" + hardening + "\n" + JS_END
 
     app = re.sub(
         r"\n?  // VALTREN CRM COMPLETE START\n.*?  // VALTREN CRM COMPLETE END\n",
@@ -46,12 +54,14 @@ def apply_crm_complete_module() -> int:
         "function crmFullInteractionsView()",
         "function crmFullCompaniesView()",
         "function crmFullCustomersView()",
+        "VALTREN CRM COMPLETE HARDENING",
+        "{legacy:true}",
     ]
     missing = [item for item in required if item not in app]
     if missing:
         raise RuntimeError(f"CRM completo incompleto no bundle: {missing}")
 
-    module_source = domain + "\n" + browser
+    module_source = domain + "\n" + browser + "\n" + hardening
     forbidden_writes = [
         "state.crmRelContacts.push(",
         "state.crmRelContacts.unshift(",
