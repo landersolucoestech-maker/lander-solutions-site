@@ -3,7 +3,7 @@ import re
 
 ROOT = Path(__file__).resolve().parents[1]
 CSS = ROOT / 'assets' / 'valtren-brand.css'
-VERSION = '20260824-crm-field-colors-v2'
+VERSION = '20260824-crm-full-width-v1'
 MARKER = '/* VALTREN CRM FIELD COLOR FIX */'
 
 PATCH = '''
@@ -77,6 +77,28 @@ PATCH = '''
 #crm-rel-modal-root *::-webkit-scrollbar-corner,
 #crm-rel-modal-root *::-webkit-scrollbar-button{
   all:revert!important;
+}
+
+/* CRM relationships uses the full available screen width */
+.crm-main .crm-workspace.crm-rel-workspace{
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+  box-sizing:border-box!important;
+  padding-left:32px!important;
+  padding-right:32px!important;
+}
+@media(max-width:980px){
+  .crm-main .crm-workspace.crm-rel-workspace{
+    padding-left:24px!important;
+    padding-right:24px!important;
+  }
+}
+@media(max-width:760px){
+  .crm-main .crm-workspace.crm-rel-workspace{
+    padding-left:16px!important;
+    padding-right:16px!important;
+  }
 }
 '''
 
