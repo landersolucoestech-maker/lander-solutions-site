@@ -27,6 +27,9 @@ jobs:
       - name: Test canonical parties core
         run: node scripts/test_crm_canonical_parties.js
 
+      - name: Test complete CRM domain
+        run: node scripts/test_crm_complete.js
+
       - name: Materialize site
         run: python scripts/materialize.py
 
@@ -34,6 +37,7 @@ jobs:
         run: |
           node --check app.js
           node scripts/test_crm_canonical_parties.js --materialized
+          node scripts/test_crm_complete.js --materialized
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
