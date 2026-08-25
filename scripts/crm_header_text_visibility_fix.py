@@ -5,7 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CSS = ROOT / "assets" / "valtren-brand.css"
-CACHE_VERSION = "20260825-crm-header-text-visibility-v1"
+CACHE_VERSION = "20260825-crm-header-text-visibility-v2"
 
 CSS_PATCH = r'''
 /* VALTREN CRM HEADER TEXT VISIBILITY FIX */
@@ -28,6 +28,40 @@ CSS_PATCH = r'''
 .crm-app-shell .crm-topbar .crm-header-create-lead span{
   color:#FFFFFF!important;
   -webkit-text-fill-color:#FFFFFF!important;
+}
+
+/* Cabeçalhos dos módulos de referência: botões secundários claros precisam de texto navy. */
+.crm-app-shell .crm-topbar .crm-fidelity-top-actions > a.secondary,
+.crm-app-shell .crm-topbar .crm-fidelity-top-actions > button.secondary{
+  background:#FFFFFF!important;
+  background-color:#FFFFFF!important;
+  color:#0B1D3A!important;
+  -webkit-text-fill-color:#0B1D3A!important;
+  border-color:#D7DFE8!important;
+  opacity:1!important;
+  visibility:visible!important;
+  text-decoration:none!important;
+}
+.crm-app-shell .crm-topbar .crm-fidelity-top-actions > a.secondary *,
+.crm-app-shell .crm-topbar .crm-fidelity-top-actions > button.secondary *{
+  color:#0B1D3A!important;
+  -webkit-text-fill-color:#0B1D3A!important;
+  opacity:1!important;
+  visibility:visible!important;
+}
+.crm-app-shell .crm-topbar .crm-fidelity-top-actions > a.secondary svg,
+.crm-app-shell .crm-topbar .crm-fidelity-top-actions > button.secondary svg{
+  color:#0B1D3A!important;
+  stroke:currentColor!important;
+  opacity:1!important;
+  visibility:visible!important;
+}
+.crm-app-shell .crm-topbar .crm-fidelity-top-actions > a.secondary:hover,
+.crm-app-shell .crm-topbar .crm-fidelity-top-actions > button.secondary:hover{
+  background:#F8FAFC!important;
+  background-color:#F8FAFC!important;
+  color:#0B1D3A!important;
+  -webkit-text-fill-color:#0B1D3A!important;
 }
 
 .crm-app-shell .crm-topbar .crm-header-user-button,
@@ -69,7 +103,7 @@ def apply_crm_header_text_visibility_fix() -> int:
         text = re.sub(r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?", f"valtren-brand.css?v={CACHE_VERSION}", text)
         path.write_text(text, encoding="utf-8")
 
-    print("Contraste dos textos dos botões do cabeçalho do CRM corrigido.")
+    print("Contraste dos textos dos botões do cabeçalho do CRM corrigido, incluindo ações secundárias do Financeiro.")
     return 1
 
 
