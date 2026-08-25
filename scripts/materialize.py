@@ -31,6 +31,7 @@ def _apply_valtren_brand() -> bool:
         from crm_dashboard_visual_fix import apply_crm_dashboard_visual_fix
         from crm_dashboard_kpi_fix import apply_crm_dashboard_kpi_fix
         from crm_relationships_module import apply_crm_relationships
+        from crm_header_modal_fix import apply_crm_header_modal_fix
 
         apply_branding()
         finalize_branding()
@@ -44,6 +45,7 @@ def _apply_valtren_brand() -> bool:
         apply_crm_dashboard_visual_fix()
         apply_crm_dashboard_kpi_fix()
         apply_crm_relationships()
+        apply_crm_header_modal_fix()
         return True
     except Exception as error:
         print(f"Falha ao aplicar a identidade visual da Valtren: {error}", file=sys.stderr)
