@@ -24,8 +24,16 @@ jobs:
         with:
           ref: dev
 
+      - name: Test canonical parties core
+        run: node scripts/test_crm_canonical_parties.js
+
       - name: Materialize site
         run: python scripts/materialize.py
+
+      - name: Validate materialized app
+        run: |
+          node --check app.js
+          node scripts/test_crm_canonical_parties.js --materialized
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
