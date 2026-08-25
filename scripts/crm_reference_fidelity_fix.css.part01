@@ -1,0 +1,33 @@
+/* VALTREN CRM REFERENCE FIDELITY FIX */
+.crm-fidelity-shell .crm-main{min-width:0}
+.crm-fidelity-topbar{gap:20px}
+.crm-fidelity-top-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.crm-fidelity-top-actions>.primary,.crm-fidelity-top-actions>.secondary,.crm-fidelity-top-actions>a{height:32px;padding:0 12px;border-radius:6px;border:1px solid #d9dee8;background:#fff;color:#1f2937;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+.crm-fidelity-top-actions>.primary{background:#0b1d3a;color:#fff;border-color:#0b1d3a}
+.crm-fidelity-workspace{display:flex;flex-direction:column;gap:24px}
+.crm-fidelity-workspace .crm-ref-subtabs{margin:0}
+.crm-fidelity-workspace .crm-ref-kpis{margin:0}
+.crm-fidelity-workspace .crm-ref-toolbar{margin:0;background:#f7f8fa;border:0;padding:12px;border-radius:8px}
+.crm-fidelity-workspace input,.crm-fidelity-workspace select,.crm-fidelity-workspace textarea,.crm-ref-modal input,.crm-ref-modal select,.crm-ref-modal textarea{background:#fff!important;color:#111827!important;border-color:#d9dee8!important;color-scheme:light!important}
+.crm-fidelity-workspace input::placeholder,.crm-ref-modal input::placeholder,.crm-ref-modal textarea::placeholder{color:#8a94a6!important}
+.crm-fidelity-panel{margin:0}
+.crm-fidelity-panel>header{padding-bottom:14px}
+.crm-fidelity-table{margin:0}
+.crm-fidelity-table th,.crm-fidelity-table td{text-align:left;vertical-align:middle}
+.crm-fidelity-table th.right,.crm-fidelity-table td.right{text-align:right}
+.crm-fidelity-local-tabs,.crm-fidelity-metric-tabs{margin:0;display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid #e5e7eb;padding-bottom:0}
+.crm-fidelity-local-tabs button,.crm-fidelity-metric-tabs button{border:0;border-bottom:2px solid transparent;background:transparent;border-radius:0;padding:8px 12px;color:#667085}
+.crm-fidelity-local-tabs button.active,.crm-fidelity-metric-tabs button.active{color:#0b1d3a;border-bottom-color:#d4af37;background:transparent}
+.crm-fidelity-calendar{margin:0}
+.settings-company-grid{grid-template-columns:minmax(260px,.8fr) minmax(0,2fr)}
+.crm-fidelity-field-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}.crm-fidelity-field-list>div{display:flex;gap:8px}.crm-fidelity-field-list input{flex:1}.crm-fidelity-field-list button{width:34px}
+.crm-fidelity-add-row{display:flex;gap:8px;margin-top:10px}.crm-fidelity-add-row input{flex:1}
+.crm-fidelity-entity-list article{background:#fff}
+.crm-fidelity-import-modal .crm-ref-dropzone strong{display:block}.crm-fidelity-import-modal .crm-ref-dropzone span{display:block;margin-top:5px}
+@media(max-width:900px){.crm-fidelity-topbar{align-items:flex-start}.crm-fidelity-top-actions{justify-content:flex-start}.settings-company-grid{grid-template-columns:1fr}.crm-fidelity-workspace{gap:18px}}
+
+.crm-fidelity-action-menu{position:relative;margin:0}.crm-fidelity-action-menu summary{list-style:none;cursor:pointer}.crm-fidelity-action-menu summary::-webkit-details-marker{display:none}.crm-fidelity-action-menu>div{position:absolute;right:0;top:calc(100% + 6px);z-index:20;min-width:170px;padding:6px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 12px 30px rgba(15,23,42,.12)}.crm-fidelity-action-menu>div button{display:flex;width:100%;justify-content:flex-start;background:#fff;color:#0f172a;border:0;padding:8px 10px;border-radius:6px}.crm-fidelity-action-menu>div button:hover{background:#f8fafc}
+.crm-fidelity-badges{display:flex;flex-wrap:wrap;gap:8px}.crm-fidelity-badges span{display:inline-flex;align-items:center;min-height:28px;padding:4px 10px;border:1px solid #e2e8f0;border-radius:999px;background:#fff;color:#475569;font-size:12px;font-weight:600}
+.crm-fidelity-content-modal{width:min(760px,calc(100vw - 32px));max-width:760px;padding:0;overflow:hidden}.crm-fidelity-content-modal form{display:flex;max-height:90vh;flex-direction:column}.crm-fidelity-content-layout{display:grid;grid-template-columns:300px minmax(0,1fr);min-height:0;overflow:auto}.crm-fidelity-content-preview{padding:16px;background:#f8fafc;border-right:1px solid #e2e8f0}.crm-fidelity-content-preview h3{margin:0 0 14px;color:#0f172a;font-size:14px}.crm-fidelity-media-drop{min-height:360px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border:1px dashed #cbd5e1;border-radius:10px;background:#fff;color:#64748b;text-align:center;padding:20px}.crm-fidelity-media-drop strong{color:#0f172a}.crm-fidelity-content-form{min-width:0}.crm-fidelity-content-form>header{position:sticky;top:0;background:#fff;z-index:2}.crm-fidelity-content-modal>form>footer{display:flex;justify-content:flex-end;gap:8px;padding:12px;border-top:1px solid #e2e8f0;background:#fff}.crm-ref-chip-select{display:flex;flex-wrap:wrap;gap:6px}.crm-ref-chip-select button{border:1px solid #cbd5e1;border-radius:999px;background:#fff;color:#475569;padding:5px 10px;font-size:12px}.crm-ref-advanced{border:1px solid #e2e8f0;border-radius:8px;background:#fff}.crm-ref-advanced summary{cursor:pointer;padding:10px 12px;color:#0f172a;font-size:12px;font-weight:700}.crm-ref-advanced>div{border-top:1px solid #e2e8f0;padding:12px}
+.crm-fidelity-invite-row{display:grid;grid-template-columns:minmax(240px,1fr) 180px auto;gap:12px;align-items:center;margin-bottom:16px}.crm-fidelity-plans>h2{margin:0 0 14px;color:#64748b;font-size:13px;font-weight:600;letter-spacing:.04em}.crm-ref-plan-grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}.crm-ref-plan-grid article.featured{border-color:#d4af37;box-shadow:0 0 0 1px rgba(212,175,55,.15)}.crm-ref-plan-grid article>strong{display:block;margin-top:12px;font-size:24px;color:#0f172a}.crm-ref-plan-grid article>small{color:#64748b}.crm-ref-plan-grid article ul{list-style:none;margin:14px 0;padding:0;display:grid;gap:6px;color:#475569;font-size:12px}.crm-ref-plan-grid article button{margin-top:auto}
+@media(max-width:800px){.crm-fidelity-content-layout{grid-template-columns:1fr}.crm-fidelity-content-preview{border-right:0;border-bottom:1px solid #e2e8f0}.crm-fidelity-media-drop{min-height:180px}.crm-fidelity-invite-row{grid-template-columns:1fr}.crm-ref-plan-grid.three{grid-template-columns:1fr}}
