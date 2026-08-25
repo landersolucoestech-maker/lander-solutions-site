@@ -55,6 +55,7 @@ def _apply_valtren_brand() -> bool:
         from crm_financial_transactions import apply_crm_financial_transactions
         from crm_accounting import apply_crm_accounting
         from crm_fiscal_documents import apply_crm_fiscal_documents
+        from crm_cost_allocations import apply_crm_cost_allocations
 
         apply_branding()
         finalize_branding()
@@ -95,10 +96,13 @@ def _apply_valtren_brand() -> bool:
         apply_crm_financial_transactions()
         # Accounting consumes Transactions and remains independent from fiscal competence.
         apply_crm_accounting()
-        # Notas Fiscais is the final finance layer in this stage: it replaces only the
-        # fiscal page/route, consumes canonical parties/Transactions and exposes a read-only
-        # adapter for Accounting without changing the sidebar or other module ownership.
+        # Notas Fiscais consumes canonical parties and Transactions, but remains independent
+        # from Accounting recognition rules and from bank movement ownership.
         apply_crm_fiscal_documents()
+        # Rateios is the final finance layer in this stage. It formalizes allocations of
+        # existing expenses only, keeping transaction.allocations as a posted projection and
+        # adding the minimum Accounting adapter required for dimensional consumption.
+        apply_crm_cost_allocations()
         return True
     except Exception as error:
         print(f"Falha ao aplicar a identidade visual da Valtren: {error}", file=sys.stderr)
