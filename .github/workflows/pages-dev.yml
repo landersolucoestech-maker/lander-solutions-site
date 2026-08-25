@@ -70,6 +70,13 @@ jobs:
       - name: Materialize site
         run: python scripts/materialize.py
 
+      - name: Verify canonical Legal routes
+        run: |
+          grep -n "juridico/contratos" app.js | tail -n 20
+          grep -Fq "if(path==='/crm/juridico/contratos')return crmLegalContractsPage();" app.js
+          grep -Fq "if(path==='/crm/juridico/contratos/templates')return crmLegalTemplatesPage();" app.js
+          grep -Fq "if(path==='/crm/juridico/contratos/variaveis')return crmLegalVariablesPage();" app.js
+
       - name: Validate materialized app
         run: |
           node --check app.js
