@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CACHE_VERSION = "20260825-crm-definitive-architecture-v4"
+CACHE_VERSION = "20260825-crm-definitive-architecture-v5"
 
 JS_BLOCK = r'''  // VALTREN CRM DEFINITIVE ARCHITECTURE START
   function crmArchitecturePlaceholderPage(active,sub,title,description='Estrutura do módulo preparada para a próxima etapa de implementação.'){
@@ -340,18 +340,18 @@ def apply_crm_definitive_architecture() -> int:
     if "['general','Geral']" in settings_source or "Preferências do Sistema" in settings_source:
         raise RuntimeError("Abas legadas Geral/Preferências do Sistema ainda presentes")
 
-    required_routes = [
+    required_alias_targets = [
         "#/crm/meu-perfil",
-        "#/crm/configuracoes?tab=empresa",
-        "#/crm/configuracoes?tab=notificacoes",
-        "#/crm/configuracoes?tab=seguranca",
-        "#/crm/configuracoes?tab=integracoes",
-        "#/crm/configuracoes?tab=auditoria",
         "#/crm/configuracoes?tab=usuarios",
+        "#/crm/configuracoes?tab=auditoria",
+        "#/crm/configuracoes?tab=integracoes",
+        "#/crm/configuracoes?tab=empresa",
     ]
-    missing_routes = [route for route in required_routes if route not in JS_BLOCK and route not in new_settings_handler]
-    if missing_routes:
-        raise RuntimeError(f"Deep links canônicos ausentes: {missing_routes}")
+    missing_alias_targets = [route for route in required_alias_targets if route not in JS_BLOCK]
+    if missing_alias_targets:
+        raise RuntimeError(f"Destinos canônicos de compatibilidade ausentes: {missing_alias_targets}")
+    if "#/crm/configuracoes?tab=${encodeURIComponent(next)}" not in new_settings_handler:
+        raise RuntimeError("Handler de deep link das abas de Configurações ausente")
 
     APP.write_text(app, encoding="utf-8")
 
