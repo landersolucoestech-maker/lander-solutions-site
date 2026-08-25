@@ -39,6 +39,13 @@ jobs:
           node scripts/test_crm_financial_transactions.js
           node scripts/test_crm_financial_transactions_ui.js
 
+      - name: Test Accounting domain
+        run: |
+          node --check scripts/crm_accounting_core.js
+          node --check scripts/crm_accounting_browser.js
+          node scripts/test_crm_accounting.js
+          node scripts/test_crm_accounting_ui.js
+
       - name: Materialize site
         run: python scripts/materialize.py
 
@@ -50,6 +57,8 @@ jobs:
           node scripts/test_crm_complete_hardening.js --materialized
           node scripts/test_crm_financial_transactions.js --materialized
           node scripts/test_crm_financial_transactions_ui.js --materialized
+          node scripts/test_crm_accounting.js --materialized
+          node scripts/test_crm_accounting_ui.js --materialized
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
