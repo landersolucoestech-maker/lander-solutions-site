@@ -6,10 +6,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-DOMAIN = ROOT / "scripts" / "crm_financial_transactions_domain.js"
+DOMAIN = ROOT / "scripts" / "crm_financial_transactions_core.js"
 BROWSER = ROOT / "scripts" / "crm_financial_transactions_browser.js"
 MODULE_CSS = ROOT / "scripts" / "crm_financial_transactions.css"
-CACHE_VERSION = "20260825-financial-transactions-v1"
+CACHE_VERSION = "20260825-financial-transactions-v2"
 JS_START = "  // VALTREN FINANCIAL TRANSACTIONS START\n"
 JS_END = "  // VALTREN FINANCIAL TRANSACTIONS END\n"
 
@@ -37,8 +37,7 @@ def apply_crm_financial_transactions() -> int:
     app = app.replace(anchor, block + "\n" + anchor, 1)
 
     route_pattern = "if(path==='/crm/financeiro')return crmRefFinancePage();"
-    route_count = app.count(route_pattern)
-    if route_count < 1:
+    if app.count(route_pattern) < 1:
         raise RuntimeError("Rota canônica de Financeiro não encontrada")
     app = app.replace(route_pattern, "if(path==='/crm/financeiro')return crmTransactionsPage();")
 
@@ -63,7 +62,6 @@ def apply_crm_financial_transactions() -> int:
     if "if(path==='/crm/financeiro')return crmTransactionsPage();" not in app:
         raise RuntimeError("Rota Financeiro não aponta para Transações canônicas")
 
-    # A implementação desta etapa não pode tocar na navegação estrutural.
     sidebar_start = app.rfind("function crmRelSidebar")
     sidebar_end = app.find("function crmReferenceRoute", sidebar_start)
     sidebar = app[sidebar_start:sidebar_end]
@@ -80,8 +78,7 @@ def apply_crm_financial_transactions() -> int:
 
     css = CSS.read_text(encoding="utf-8")
     css = re.sub(r"\n?/\* VALTREN FINANCIAL TRANSACTIONS \*/.*?(?=\n/\*|\Z)", "", css, flags=re.S)
-    module_css = MODULE_CSS.read_text(encoding="utf-8").strip()
-    CSS.write_text(css.rstrip() + "\n\n" + module_css + "\n", encoding="utf-8")
+    CSS.write_text(css.rstrip() + "\n\n" + MODULE_CSS.read_text(encoding="utf-8").strip() + "\n", encoding="utf-8")
 
     for path in ROOT.rglob("*.html"):
         rel = path.relative_to(ROOT)
