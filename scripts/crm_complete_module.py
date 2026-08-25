@@ -1,0 +1,88 @@
+from __future__ import annotations
+
+import re
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+APP = ROOT / "app.js"
+CSS = ROOT / "assets" / "valtren-brand.css"
+DOMAIN_JS = ROOT / "scripts" / "crm_complete_domain.js"
+BROWSER_JS = ROOT / "scripts" / "crm_complete_browser.js"
+MODULE_CSS = ROOT / "scripts" / "crm_complete_module.css"
+CACHE_VERSION = "20260825-crm-complete-v1"
+JS_START = "  // VALTREN CRM COMPLETE START\n"
+JS_END = "  // VALTREN CRM COMPLETE END\n"
+
+
+def apply_crm_complete_module() -> int:
+    for path in (APP, CSS, DOMAIN_JS, BROWSER_JS, MODULE_CSS):
+        if not path.exists():
+            raise FileNotFoundError(path)
+
+    app = APP.read_text(encoding="utf-8")
+    domain = DOMAIN_JS.read_text(encoding="utf-8").strip()
+    browser = BROWSER_JS.read_text(encoding="utf-8").strip()
+    block = JS_START + domain + "\n\n" + browser + "\n" + JS_END
+
+    app = re.sub(
+        r"\n?  // VALTREN CRM COMPLETE START\n.*?  // VALTREN CRM COMPLETE END\n",
+        "\n",
+        app,
+        flags=re.S,
+    )
+
+    anchor = "  function contactPage(query)"
+    if app.count(anchor) != 1:
+        raise RuntimeError(f"Âncora contactPage inválida para CRM completo: {app.count(anchor)} ocorrência(s)")
+    app = app.replace(anchor, block + "\n" + anchor, 1)
+
+    required = [
+        "const CRM_FULL_TABS=[['contacts','Contatos'],['companies','Empresas'],['customers','Clientes'],['leads','Leads'],['interactions','Interações']]",
+        "function crmRelationshipsPage(query)",
+        "state.crmDomain=ValtrenCrmCore.ensureState(state.crmDomain)",
+        "crmCanonicalUpsertLegacyRecord('contacts'",
+        "crmCanonicalUpsertLegacyRecord('leads'",
+        "function crmFullConvertLead(id)",
+        "function crmFullInteractionsView()",
+        "function crmFullCompaniesView()",
+        "function crmFullCustomersView()",
+    ]
+    missing = [item for item in required if item not in app]
+    if missing:
+        raise RuntimeError(f"CRM completo incompleto no bundle: {missing}")
+
+    module_source = domain + "\n" + browser
+    forbidden_writes = [
+        "state.crmRelContacts.push(",
+        "state.crmRelContacts.unshift(",
+        "state.crmRelContacts =",
+        "state.crmRelLeads.push(",
+        "state.crmRelLeads.unshift(",
+        "state.crmRelLeads =",
+    ]
+    leaked = [item for item in forbidden_writes if item in module_source]
+    if leaked:
+        raise RuntimeError(f"CRM completo introduziu write direto em projeção legada: {leaked}")
+
+    APP.write_text(app, encoding="utf-8")
+
+    css = CSS.read_text(encoding="utf-8")
+    css = re.sub(r"\n?/\* VALTREN CRM COMPLETE \*/.*?(?=\n/\*|\Z)", "", css, flags=re.S)
+    module_css = MODULE_CSS.read_text(encoding="utf-8").strip()
+    CSS.write_text(css.rstrip() + "\n\n" + module_css + "\n", encoding="utf-8")
+
+    for path in ROOT.rglob("*.html"):
+        rel = path.relative_to(ROOT)
+        if any(part in {".git", ".bootstrap", "node_modules", "scripts"} for part in rel.parts):
+            continue
+        text = path.read_text(encoding="utf-8")
+        text = re.sub(r"app\.js(?:\?v=[A-Za-z0-9._-]+)?", f"app.js?v={CACHE_VERSION}", text)
+        text = re.sub(r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?", f"valtren-brand.css?v={CACHE_VERSION}", text)
+        path.write_text(text, encoding="utf-8")
+
+    print("CRM completo aplicado sobre Pessoas/Organizações canônicas sem alterar sidebar ou outros módulos.")
+    return 1
+
+
+if __name__ == "__main__":
+    apply_crm_complete_module()
