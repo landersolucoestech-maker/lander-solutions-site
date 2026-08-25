@@ -1,0 +1,49 @@
+ert(browser.includes('<h3>Workflow</h3>'));});
+test('detalhe possui Histórico',()=>{assert(browser.includes('<h3>Histórico</h3>'));});
+test('memória mostra Base Distribuível e Participação',()=>{hasAll(browser,['Base Distribuível','Participação</span>']);});
+test('detalhe expõe sourceSnapshotHash',()=>{assert(browser.includes('row.sourceSnapshotHash'));});
+test('detalhe expõe ruleSnapshotHash',()=>{assert(browser.includes('row.ruleSnapshotHash'));});
+test('segmentos mostram versão regra base deduções e resultado',()=>{const start=browser.indexOf('function crmParticipationSegmentCards'),end=browser.indexOf('function crmParticipationOpenDetail',start),block=browser.slice(start,end);hasAll(block,['contractVersionNumber','economicRuleId','Base calculada','Deduções','Base distribuível','Participação']);});
+test('componentes mostram origem descrição período valor rastreio',()=>{hasAll(browser,['Origem</th>','Descrição</th>','Período</th>','Valor</th>','Rastreio</th>']);});
+test('Ver Transação navega sem recriar editor',()=>{hasAll(browser,['Ver Transação',"source==='transaction'","#/crm/financeiro?q="]);});
+test('Ver Nota Fiscal navega sem recriar editor',()=>{hasAll(browser,['Ver Nota Fiscal',"source==='fiscal'","#/crm/financeiro/notas-fiscais?q="]);});
+test('Ver Rateio navega sem recriar editor',()=>{hasAll(browser,['Ver Rateio',"source==='allocation'","#/crm/financeiro/rateios?q="]);});
+test('Ver Contrato existe',()=>{assert(browser.includes('Ver Contrato'));assert(browser.includes('crm-part-view-contract'));});
+test('workflow UI envia para revisão',()=>{assert(browser.includes('crm-part-review'));assert(browser.includes('.submitToReview('));});
+test('workflow UI aprova',()=>{assert(browser.includes('crm-part-approve'));assert(browser.includes('.approve('));});
+test('workflow UI rejeita com motivo',()=>{assert(browser.includes('crm-part-reject'));assert(browser.includes("window.prompt('Motivo da rejeição/devolução:"));});
+test('workflow UI cria nova revisão',()=>{assert(browser.includes('crm-part-revision'));assert(browser.includes('.createNewRevision('));});
+test('UI não possui status Pago',()=>{for(const value of ['Parcialmente pago','Em pagamento','Pago</'])assert(!browser.includes(value));});
+test('feed futuro de Repasses é somente wrapper de leitura',()=>{assert(browser.includes('function crmParticipationObligationsFeed(filters={}){return crmParticipationService().obligationsFeed(filters);}'));});
+test('UI não cria Repasse',()=>{assert(!browser.includes('createPayout('));assert(!browser.includes('Novo Repasse'));});
+test('UI não cria Transação automaticamente',()=>{assert(!browser.includes('createTransaction('));});
+test('UI não coleta dados bancários do participante',()=>{const lower=browser.toLowerCase();assert(!lower.includes('chave pix'));assert(!lower.includes('dados bancários'));});
+test('legado é apenas enviado ao migrador conservador',()=>{hasAll(browser,['state.crmParticipations','state.participations','state.revenueShares','service.migrateLegacy(legacy)']);});
+test('Societário não aparece como fonte automática na UI',()=>{const lower=browser.toLowerCase();for(const token of ['shareholder','partnerownership','equitypercentage','sharepercentage'])assert(!lower.includes(token));});
+test('CSS possui breakpoint 1380',()=>{assert(css.includes('@media (max-width:1380px)'));});
+test('CSS possui breakpoint 1050',()=>{assert(css.includes('@media (max-width:1050px)'));});
+test('CSS possui breakpoint 760',()=>{assert(css.includes('@media (max-width:760px)'));});
+test('CSS possui breakpoint 520',()=>{assert(css.includes('@media (max-width:520px)'));});
+test('drawer respeita viewport',()=>{assert(css.includes('height:100vh'));assert(css.includes('width:min(980px,100%)'));});
+test('modal respeita viewport',()=>{assert(css.includes('max-height:calc(100vh - 32px)'));});
+test('TableView possui overflow',()=>{assert(css.includes('.crm-part-table-wrap{overflow:auto}'));});
+test('mobile remove colunas secundárias antes de essenciais',()=>{hasAll(css,['nth-child(4)','nth-child(6)','nth-child(9)']);});
+test('materializador substitui somente placeholder de Participações',()=>{assert(materializer.includes("route_old = \"if(path==='/crm/financeiro/participacoes')return crmArchitecturePlaceholderPage('accounting','participacoes','Participações');\""));assert(materializer.includes("route_new = \"if(path==='/crm/financeiro/participacoes')return crmEconomicParticipationsPage();\""));});
+test('materializador exige Repasses placeholder',()=>{assert(materializer.includes("payout_placeholder = \"if(path==='/crm/financeiro/repasses')return crmArchitecturePlaceholderPage('accounting','repasses','Repasses');\""));});
+test('materializador preserva owners anteriores',()=>{hasAll(materializer,['crmTransactionsPage();','crmAccountingPage();','crmFiscalDocumentsPage();','crmCostAllocationsPage();','crmLegalContractsPage();','crmLegalTemplatesPage();','crmLegalVariablesPage();']);});
+test('materializador proíbe segunda regra econômica no Financeiro',()=>{hasAll(materializer,['participationRules','partnerPercentages','revenueShareRules','productPartnerRules']);});
+test('materializador proíbe criação de pagamento/transação',()=>{hasAll(materializer,['createTransaction(','createPayout(','paidAmount']);});
+test('materializador proíbe fontes societárias automáticas',()=>{hasAll(materializer,['shareholder','partnerOwnership','equityPercentage','sharePercentage']);});
+test('materializador valida sidebar sem reescrever',()=>{assert(materializer.includes('sidebar = app[sidebar_start:sidebar_end]'));assert(!materializer.includes('app = app.replace(sidebar'));});
+if(materialize){test('ordem coloca Participações depois de Contratos',()=>{const legal=materialize.indexOf('apply_crm_legal_contracts()'),part=materialize.indexOf('apply_crm_economic_participations()');assert(legal>=0&&part>legal);});}
+
+if(process.argv.includes('--materialized')){
+  const app=fs.readFileSync(path.resolve(__dirname,'..','app.js'),'utf8'),brand=fs.readFileSync(path.resolve(__dirname,'..','assets','valtren-brand.css'),'utf8');
+  test('UI final de Participações está no bundle',()=>{hasAll(app,['function crmEconomicParticipationsPage()','function crmParticipationOpenCalculator','function crmParticipationOpenDetail']);});
+  test('bloco materializado de Participações é único',()=>{assert.equal((app.match(/VALTREN ECONOMIC PARTICIPATIONS START/g)||[]).length,1);assert.equal((app.match(/if\(path==='\/crm\/financeiro\/participacoes'\)return crmEconomicParticipationsPage\(\);/g)||[]).length,1);});
+  test('resumo publicado usa todos os cálculos e não mistura moedas',()=>{const start=app.indexOf('function crmParticipationSummary()'),end=app.indexOf('function crmEconomicParticipationsPage',start),block=app.slice(start,end);assert(block.includes('service.data.calculations'));assert(block.includes("currencies.length>1?'Múltiplas moedas'"));assert(!block.includes('query({limit:50}'));});
+  test('rota publicada de Participações não é placeholder',()=>{assert(app.includes("if(path==='/crm/financeiro/participacoes')return crmEconomicParticipationsPage();"));assert(!app.includes("if(path==='/crm/financeiro/participacoes')return crmArchitecturePlaceholderPage"));});
+  test('breadcrumb publicado usa Financeiro Participações',()=>{hasAll(app,["label:'Financeiro',href:'#/crm/financeiro'","label:'Participações',href:'#/crm/financeiro/participacoes'"]);});
+  test('bundle contém cálculo em lote e individual',()=>{hasAll(app,['previewEligible','createBatch','createCalculation']);});
+  test('bundle contém segmentação de vigência',()=>{hasAll(app,['function resolveSegments','Conflito contratual de vigência.','calculationSegments']);});
+  test('bundle contém bases canônicas',()=>{hasAll(app,['gross_revenue','net_revenue','distributable_base','produc

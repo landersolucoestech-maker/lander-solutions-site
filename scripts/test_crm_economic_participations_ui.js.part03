@@ -1,0 +1,20 @@
+t_result','service_result','custom_reference']);});
+  test('bundle contém prevenção de double counting',()=>{hasAll(app,['alreadyIncludedInBase','economicKey','linkedAccountingTransaction']);});
+  test('bundle contém workflow e consistência separados',()=>{hasAll(app,['workflowStatus','calculationStatus','consistencyStatus','source_changed','rule_changed','needs_review']);});
+  test('bundle contém snapshots e hashes',()=>{hasAll(app,['sourceSnapshotHash','ruleSnapshotHash','sourceSnapshots','ruleSnapshot']);});
+  test('bundle contém feed de obrigações futuro',()=>{assert(app.includes('function crmParticipationObligationsFeed(filters={})'));});
+  test('Repasses publicado continua placeholder',()=>{assert(app.includes("if(path==='/crm/financeiro/repasses')return crmArchitecturePlaceholderPage('accounting','repasses','Repasses');"));});
+  test('sidebar Financeiro continua com seis itens oficiais',()=>{const start=app.lastIndexOf('function crmRelSidebar'),end=app.indexOf('function crmReferenceRoute',start),sidebar=app.slice(start,end);hasAll(sidebar,['Transações','Contabilidade','Notas Fiscais','Rateios','Participações','Repasses']);});
+  test('nenhum submódulo de Participações vazou para sidebar',()=>{const start=app.lastIndexOf('function crmRelSidebar'),end=app.indexOf('function crmReferenceRoute',start),sidebar=app.slice(start,end);for(const label of ['Cálculos','Obrigações','Memória de Participações','Beneficiários'])assert(!sidebar.includes(label));});
+  test('Contratos permanece owner de regra no bundle',()=>{hasAll(app,['function crmContractEconomicRulesFeed','function crmContractResolveEconomicRuleForPeriod','function crmParticipationContractRulesFeed']);});
+  test('nota publicada de Contratos reconhece Participações sem transferir ownership',()=>{assert(app.includes('Financeiro → Participações consome estas regras sem alterar o Contrato.'));assert(!app.includes('Financeiro → Participações (não implementado nesta etapa).'));});
+  test('CSS de Participações foi materializado',()=>{assert(brand.includes('/* VALTREN ECONOMIC PARTICIPATIONS */'));assert(brand.includes('@media (max-width:520px)'));});
+  test('Transações permanece canônica',()=>{assert(app.includes("if(path==='/crm/financeiro')return crmTransactionsPage();"));});
+  test('Contabilidade permanece canônica',()=>{assert(app.includes("if(path==='/crm/financeiro/accounting')return crmAccountingPage();"));});
+  test('Notas Fiscais permanece canônica',()=>{assert(app.includes("if(path==='/crm/financeiro/notas-fiscais')return crmFiscalDocumentsPage();"));});
+  test('Rateios permanece canônico',()=>{assert(app.includes("if(path==='/crm/financeiro/rateios'){const page=crmCostAllocationsPage();"));});
+  test('Contratos permanece canônico',()=>{assert(app.includes("if(path==='/crm/juridico/contratos')return crmLegalContractsPage();"));});
+  test('Configurações preserva seis abas atuais',()=>{const start=app.indexOf('function crmCanonicalSettingsPage()'),end=app.indexOf('function crmCanonicalProfilePage()',start),settings=app.slice(start,end);for(const item of ["['empresa','Empresa']","['notificacoes','Notificações']","['seguranca','Segurança']","['integracoes','Integrações']","['auditoria','Auditoria']","['usuarios','Usuários']"])assert(settings.includes(item));assert(!settings.includes("['billing','Billing']"));});
+  test('Administração preserva dois itens atuais',()=>{const start=app.lastIndexOf('const administration=['),end=app.indexOf('];',start),admin=app.slice(start,end);hasAll(admin,["['structure','Estrutura Organizacional','#/crm/administracao']","['assets','Patrimônio e Licenças','#/crm/administracao/patrimonio-licencas']"]);});
+}
+console.log(`Economic Participations UI tests: ${passed} passed`);
