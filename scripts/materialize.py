@@ -49,6 +49,7 @@ def _apply_valtren_brand() -> bool:
         from crm_finance_transactions_label_fix import apply_crm_finance_transactions_label_fix
         from crm_tableview_header_light_fix import apply_crm_tableview_header_light_fix
         from crm_invoice_modal_refactor import apply_crm_invoice_modal_refactor
+        from crm_definitive_architecture import apply_crm_definitive_architecture
 
         apply_branding()
         finalize_branding()
@@ -80,6 +81,7 @@ def _apply_valtren_brand() -> bool:
         apply_crm_finance_transactions_label_fix()
         apply_crm_tableview_header_light_fix()
         apply_crm_invoice_modal_refactor()
+        apply_crm_definitive_architecture()
         return True
     except Exception as error:
         print(f"Falha ao aplicar a identidade visual da Valtren: {error}", file=sys.stderr)
@@ -142,7 +144,7 @@ def main() -> int:
             archive = _read_packaged_archive(chunks)
             with zipfile.ZipFile(io.BytesIO(archive)) as package:
                 package.extractall(ROOT)
-        except (ValueError, zipfile.BadZipFile, base64.binascii.Error, zlib.error) as error:
+        except (ValueError, zipfile.BadZip64.binascii.Error, zlib.error) as error:
             print(f"Falha ao reconstruir o projeto: {error}", file=sys.stderr)
             return 1
 
