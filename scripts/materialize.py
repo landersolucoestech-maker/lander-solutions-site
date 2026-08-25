@@ -57,6 +57,7 @@ def _apply_valtren_brand() -> bool:
         from crm_fiscal_documents import apply_crm_fiscal_documents
         from crm_cost_allocations import apply_crm_cost_allocations
         from crm_legal_contracts import apply_crm_legal_contracts
+        from crm_economic_participations import apply_crm_economic_participations
 
         apply_branding()
         finalize_branding()
@@ -107,6 +108,10 @@ def _apply_valtren_brand() -> bool:
         # Contratos/Templates/Variáveis and exposes a read-only economic-rule feed for a
         # future Participações module; it must not create financial movements.
         apply_crm_legal_contracts()
+        # Participações is materialized after Contracts because it consumes only the
+        # read-only economic-rule interfaces plus canonical Accounting/Fiscal/Rateio sources.
+        # It calculates/approves rights and deliberately stops before Repasses.
+        apply_crm_economic_participations()
         return True
     except Exception as error:
         print(f"Falha ao aplicar a identidade visual da Valtren: {error}", file=sys.stderr)
