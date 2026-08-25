@@ -84,8 +84,11 @@ def _apply_valtren_brand() -> bool:
         apply_crm_finance_transactions_label_fix()
         apply_crm_tableview_header_light_fix()
         apply_crm_invoice_modal_refactor()
-        apply_crm_complete_module()
+        # Canonical system navigation is resolved first; the CRM patch runs last,
+        # touches only CRM functions/CSS, validates that it does not create sidebar items,
+        # and leaves its cache version as the final published asset version.
         apply_crm_definitive_architecture()
+        apply_crm_complete_module()
         return True
     except Exception as error:
         print(f"Falha ao aplicar a identidade visual da Valtren: {error}", file=sys.stderr)
