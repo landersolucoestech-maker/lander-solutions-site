@@ -39,6 +39,7 @@ def _apply_valtren_brand() -> bool:
         from crm_relationships_field_color_fix import apply_crm_relationships_field_color_fix
         from crm_relationships_intro_remove import apply_crm_relationships_intro_remove
         from crm_relationships_kpi_tableview_fix import apply_crm_relationships_kpi_tableview_fix
+        from crm_canonical_parties import apply_crm_canonical_parties
         from crm_agenda_module import apply_crm_agenda_module
         from crm_reference_modules import apply_crm_reference_modules
         from crm_reference_fidelity_fix import apply_crm_reference_fidelity_fix
@@ -71,6 +72,7 @@ def _apply_valtren_brand() -> bool:
         apply_crm_relationships_field_color_fix()
         apply_crm_relationships_intro_remove()
         apply_crm_relationships_kpi_tableview_fix()
+        apply_crm_canonical_parties()
         apply_crm_agenda_module()
         apply_crm_reference_modules()
         apply_crm_reference_fidelity_fix()
