@@ -6,10 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CACHE_VERSION = "20260825-crm-definitive-architecture-v1"
-JS_START = "  // VALTREN CRM DEFINITIVE ARCHITECTURE START\n"
-JS_END = "  // VALTREN CRM DEFINITIVE ARCHITECTURE END\n"
-CSS_MARKER = "/* VALTREN CRM DEFINITIVE ARCHITECTURE */"
+CACHE_VERSION = "20260825-crm-definitive-architecture-v2"
 
 JS_BLOCK = r'''  // VALTREN CRM DEFINITIVE ARCHITECTURE START
   function crmArchitecturePlaceholderPage(active,sub,title,description='Estrutura do módulo preparada para a próxima etapa de implementação.'){
@@ -17,9 +14,60 @@ JS_BLOCK = r'''  // VALTREN CRM DEFINITIVE ARCHITECTURE START
     return crmFidelityPage(active,sub,title,description,'',body);
   }
 
-  function crmArchitectureIntegrationsPage(){
+  function crmArchitectureBreadcrumb(items){
+    return `<nav class="crm-architecture-breadcrumb" aria-label="Breadcrumb">${items.map((item,index)=>{
+      const last=index===items.length-1;
+      return `${index?'<span>/</span>':''}${last?`<strong>${esc(item.label)}</strong>`:`<a href="${item.href}">${esc(item.label)}</a>`}`;
+    }).join('')}</nav>`;
+  }
+
+  function crmCanonicalSettingsPage(){
+    const allowed=['general','company','notifications','preferences'];
+    const tab=allowed.includes(state.crmRefSettingsTab)?state.crmRefSettingsTab:'general';
+    let body='';
+    if(tab==='general')body=crmFidelityPanel('Geral','Parâmetros gerais do Sistema Interno',`<div class="crm-ref-form-grid">${crmRefSelect('Idioma','language',[['pt-BR','Português (Brasil)']])}${crmRefSelect('Fuso horário','timezone',[['America/Sao_Paulo','America/Sao_Paulo']])}${crmRefSelect('Moeda','currency',[['BRL','Real brasileiro (BRL)']])}${crmRefSelect('Formato de data','dateFormat',[['dd/mm/yyyy','DD/MM/AAAA']])}</div>`);
+    if(tab==='company')body=`<div class="crm-ref-grid settings-company-grid">${crmFidelityPanel('Identidade Visual','Identidade institucional utilizada nas áreas internas',`<div class="crm-ref-logo-upload"><img src="assets/valtren-logo.svg" alt="Valtren"><h2>VALTREN SOLUTIONS</h2><button>Alterar logo</button></div>`)}${crmFidelityPanel('Empresa','Dados institucionais e cadastrais',`<div class="crm-ref-form-grid">${crmRefField('Razão Social','legalName')}${crmRefField('Nome Fantasia','tradeName','text','VALTREN SOLUTIONS')}${crmRefField('CNPJ','cnpj')}${crmRefField('Endereço Completo','address')}${crmRefField('Telefone','phone')}${crmRefField('E-mail','companyEmail','email')}${crmRefField('Responsável','responsible')}</div>`)}</div>`;
+    if(tab==='notifications')body=crmFidelityPanel('Notificações','Canais, frequência, tipos, horários e eventos do sistema',`<div class="crm-ref-settings-blocks"><article><h4>Canais</h4><label><input type="checkbox" checked> Notificações no sistema</label><label><input type="checkbox"> E-mail</label></article><article><h4>Frequência</h4><label>Frequência de envio<select><option>Imediato</option><option>Diário</option><option>Semanal</option></select></label><label>Horário preferido<input type="time"></label></article><article><h4>Eventos</h4><label><input type="checkbox" checked> Eventos operacionais</label><label><input type="checkbox" checked> Eventos financeiros</label><label><input type="checkbox" checked> Alertas do sistema</label></article></div>`);
+    if(tab==='preferences')body=crmFidelityPanel('Preferências do Sistema','Comportamentos, padrões e parâmetros globais',`<div class="crm-ref-form-grid">${crmRefSelect('Página inicial','homeModule',[['dashboard','Dashboard']])}${crmRefSelect('Paginação padrão','pageSize',[['10','10 itens'],['25','25 itens'],['50','50 itens']])}${crmRefSelect('Confirmação para exclusões','deleteConfirm',[['enabled','Obrigatória']])}</div>`);
+    const tabs=`<nav class="crm-ref-ai-tabs crm-fidelity-local-tabs">${[['general','Geral'],['company','Empresa'],['notifications','Notificações'],['preferences','Preferências do Sistema']].map(([id,label])=>`<button class="${tab===id?'active':''}" data-action="crm-ref-settings-tab" data-tab="${id}">${label}</button>`).join('')}</nav>`;
+    const breadcrumb=crmArchitectureBreadcrumb([{label:'Configurações',href:'#/crm/configuracoes'}]);
+    return crmFidelityPage('settings','settings','Configurações','Parâmetros globais do Sistema Interno','',`${breadcrumb}${tabs}${body}`);
+  }
+
+  function crmCanonicalProfilePage(){
+    const breadcrumb=crmArchitectureBreadcrumb([{label:'Meu Perfil',href:'#/crm/meu-perfil'}]);
+    const body=`${crmFidelityPanel('Informações Pessoais','Seus dados e preferências pessoais',`<div class="crm-ref-profile-head"><div>AD</div><div><h2>${esc(state.crmUserName||'Administrador')}</h2><p>Usuário</p></div><button>Alterar foto</button><button>Remover</button></div><div class="crm-ref-form-grid">${crmRefField('Nome Completo','name','text','',state.crmUserName||'Administrador')}${crmRefField('E-mail','email','email')}${crmRefField('Telefone','phone')}${crmRefField('Departamento','department','text','Selecione o departamento')}${crmRefField('Cargo','role','text','Selecione o cargo')}</div>`)}${crmFidelityPanel('Segurança da Minha Conta','Senha, MFA e sessões próprias',`<div class="crm-ref-form-grid">${crmRefField('Senha Atual','currentPassword','password')}${crmRefField('Nova Senha','newPassword','password')}${crmRefField('Confirmar Nova Senha','confirmPassword','password')}</div><div class="crm-ref-settings-blocks"><article><h4>MFA</h4><p>Gerencie a autenticação multifator da sua conta.</p></article><article><h4>Sessões</h4><button>Encerrar outras sessões</button></article></div>`)}`;
+    return crmFidelityPage('','profile','Meu Perfil','Gerencie seus dados e segurança pessoal','',`${breadcrumb}${body}`);
+  }
+
+  function crmAdminAccessPage(){
+    crmRefEnsureState();
+    const rows=state.crmRefUsers||[];
+    const breadcrumb=crmArchitectureBreadcrumb([{label:'Administração',href:'#/crm/administracao'},{label:'Acessos e Permissões',href:'#/crm/administracao/acessos-permissoes'}]);
+    const actions=`<button class="primary" data-action="crm-ref-open" data-kind="user">${crmRefIcon('plus')} Convidar usuário</button>`;
+    const filters=crmRefToolbar(`<label class="crm-ref-search">${icon('search',14)}<input placeholder="Buscar por nome ou e-mail…"></label><select><option>Todos os papéis</option></select><select><option>Todos os status</option><option>Ativo</option><option>Inativo</option><option>Suspenso</option></select>`);
+    const k=`<div class="crm-ref-kpis four">${crmRefKpi('Usuários Ativos',rows.length)}${crmRefKpi('Convites Pendentes',0)}${crmRefKpi('Papéis',0)}${crmRefKpi('Permissões',0)}</div>`;
+    const table=crmFidelityTable('Usuários e Acessos','Usuários, papéis, status e controle de acesso',['Nome','Papel','Telefone','Criado em','Status','Ações'],'Nenhum usuário encontrado');
+    const roles=crmFidelityPanel('Papéis e Permissões','Defina papéis, permissões, escopos, restrições e unidades autorizadas',crmRefEmpty('Nenhum papel disponível','Os papéis e permissões serão sincronizados com a camada de autorização do sistema.'),'<button>Criar Papel</button>');
+    return crmFidelityPage('admin','access','Acessos e Permissões','Gerencie usuários, convites, papéis, permissões, MFA, sessões e status de acesso',actions,`${breadcrumb}${k}${filters}${table}${roles}`);
+  }
+
+  function crmAdminAuditPage(){
+    const breadcrumb=crmArchitectureBreadcrumb([{label:'Administração',href:'#/crm/administracao'},{label:'Auditoria',href:'#/crm/administracao/auditoria'}]);
+    const filters=crmFidelityPanel('Filtros','',`${crmRefToolbar(`<input type="date" placeholder="Data início"><input type="date" placeholder="Data fim"><label class="crm-ref-search">${icon('search',14)}<input placeholder="Pesquisar por ação, ator, ID ou correlação…"></label><select><option>Entidade</option></select><select><option>Tipo de ação</option></select><button>Limpar filtros</button>`)}`,'<button>Atualizar</button>');
+    const table=crmFidelityTable('Eventos de Auditoria','Registro somente leitura das alterações e ações do sistema',['','Timestamp','Ator','Papel','Ação','Entidade','ID','Método'],'Nenhum evento encontrado');
+    return crmFidelityPage('admin','audit','Auditoria','Histórico somente leitura das alterações e ações do sistema','',`${breadcrumb}${filters}${table}`);
+  }
+
+  function crmAdminIntegrationsPage(){
+    const breadcrumb=crmArchitectureBreadcrumb([{label:'Administração',href:'#/crm/administracao'},{label:'Integrações',href:'#/crm/administracao/integracoes'}]);
     const body=`${crmFidelityPanel('Integrações','Conecte e configure as integrações do Sistema Interno.',`<div class="crm-ref-integration-grid">${['Soundcharts','Meta','Google Ads','TikTok Ads','YouTube Ads','Spotify Ads'].map(x=>`<article><strong>${x}</strong><span class="crm-ref-badge">Não conectado</span><button>Configurar</button></article>`).join('')}</div>`)}${crmFidelityPanel('Distribuidoras','Conecte contas de distribuidoras quando aplicável.',crmRefEmpty('Nenhuma distribuidora conectada'))}`;
-    return crmFidelityPage('settings','integrations','Integrações','Gerencie as integrações do sistema','',body);
+    return crmFidelityPage('admin','integrations','Integrações','Gerencie as integrações administrativas do Sistema Interno','',`${breadcrumb}${body}`);
+  }
+
+  function crmLegacyRoute(canonicalHash,render){
+    if(window.location.hash!==canonicalHash)history.replaceState(null,'',canonicalHash);
+    return render();
   }
 
   function crmRelSidebar(active='relationships',sub=''){
@@ -45,17 +93,12 @@ JS_BLOCK = r'''  // VALTREN CRM DEFINITIVE ARCHITECTURE START
       ['services','Serviços','#/crm/negocios/servicos'],
       ['units','Unidades de Negócio','#/crm/negocios/unidades']
     ];
-    const settings=[
-      ['settings','Configurações','#/crm/configuracoes'],
-      ['profile','Meu Perfil','#/crm/configuracoes/profile'],
-      ['integrations','Integrações','#/crm/configuracoes/integracoes'],
-      ['audit','Audit Trail','#/crm/configuracoes/audit'],
-      ['users','Usuários','#/crm/configuracoes/users'],
-      ['billing','Billing','#/crm/configuracoes/billing']
-    ];
     const administration=[
       ['structure','Estrutura Organizacional','#/crm/administracao'],
-      ['assets','Patrimônio e Licenças','#/crm/administracao/patrimonio-licencas']
+      ['assets','Patrimônio e Licenças','#/crm/administracao/patrimonio-licencas'],
+      ['access','Acessos e Permissões','#/crm/administracao/acessos-permissoes'],
+      ['audit','Auditoria','#/crm/administracao/auditoria'],
+      ['integrations','Integrações','#/crm/administracao/integracoes']
     ];
     const legal=`<details class="crm-nav-group crm-nav-legal" ${active==='legal'?'open':''}><summary>${icon('file',18)}<span>Jurídico</span><b>⌄</b></summary><div>
       <a class="${active==='legal'&&sub==='matters'?'active':''}" href="#/crm/juridico">Assuntos Jurídicos</a>
@@ -79,7 +122,7 @@ JS_BLOCK = r'''  // VALTREN CRM DEFINITIVE ARCHITECTURE START
       ${subgroup('marketing','Marketing','globe',marketing)}
       ${subgroup('business','Negócios','layers',business)}
       ${nav('#/crm/relatorios','Relatórios','file','reports')}
-      ${subgroup('settings','Configurações','settings',settings)}
+      ${nav('#/crm/configuracoes','Configurações','settings','settings')}
       ${subgroup('admin','Administração','settings',administration)}
     </nav></aside>`;
   }
@@ -119,16 +162,37 @@ JS_BLOCK = r'''  // VALTREN CRM DEFINITIVE ARCHITECTURE START
     if(path==='/crm/valtrenchat'||path==='/crm/musicchat')return crmRefValtrenChatPage();
     if(path==='/crm/relatorios')return crmRefReportsPage();
 
-    if(path==='/crm/configuracoes')return crmRefSettingsPage();
-    if(path==='/crm/configuracoes/profile')return crmRefProfilePage();
-    if(path==='/crm/configuracoes/integracoes')return crmArchitectureIntegrationsPage();
-    if(path==='/crm/configuracoes/audit')return crmRefAuditPage();
-    if(path==='/crm/configuracoes/users')return crmRefUsersPage();
-    if(path==='/crm/configuracoes/billing')return crmRefBillingPage();
+    if(path==='/crm/configuracoes')return crmCanonicalSettingsPage();
+    if(path==='/crm/meu-perfil')return crmCanonicalProfilePage();
 
     if(path==='/crm/administracao')return crmArchitecturePlaceholderPage('admin','structure','Estrutura Organizacional');
     if(path==='/crm/administracao/patrimonio-licencas')return crmArchitecturePlaceholderPage('admin','assets','Patrimônio e Licenças');
+    if(path==='/crm/administracao/acessos-permissoes')return crmAdminAccessPage();
+    if(path==='/crm/administracao/auditoria')return crmAdminAuditPage();
+    if(path==='/crm/administracao/integracoes')return crmAdminIntegrationsPage();
+
+    if(path==='/crm/configuracoes/profile')return crmLegacyRoute('#/crm/meu-perfil',crmCanonicalProfilePage);
+    if(path==='/crm/configuracoes/users')return crmLegacyRoute('#/crm/administracao/acessos-permissoes',crmAdminAccessPage);
+    if(path==='/crm/configuracoes/audit')return crmLegacyRoute('#/crm/administracao/auditoria',crmAdminAuditPage);
+    if(path==='/crm/configuracoes/integracoes')return crmLegacyRoute('#/crm/administracao/integracoes',crmAdminIntegrationsPage);
+    if(path==='/crm/configuracoes/billing')return crmLegacyRoute('#/crm/configuracoes',crmCanonicalSettingsPage);
     return null;
+  }
+
+  if(!window.__valtrenCanonicalAccountMenuBound){
+    window.__valtrenCanonicalAccountMenuBound=true;
+    document.addEventListener('click',(event)=>{
+      const target=event.target.closest('[data-action="crm-header-account-item"]');
+      if(!target)return;
+      if(target.dataset.accountItem==='profile'){
+        event.preventDefault();
+        location.hash='#/crm/meu-perfil';
+      }
+      if(target.dataset.accountItem==='settings'){
+        event.preventDefault();
+        location.hash='#/crm/configuracoes';
+      }
+    });
   }
   // VALTREN CRM DEFINITIVE ARCHITECTURE END
 '''
@@ -155,6 +219,17 @@ CSS_PATCH = r'''
 .crm-sidebar .crm-nav-subgroup>summary>b{margin-left:auto;font-size:10px;}
 .crm-sidebar .crm-nav-subgroup>div{display:grid;}
 .crm-sidebar .crm-nav-subgroup>div>a{padding-left:48px!important;}
+.crm-architecture-breadcrumb{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  margin:0 0 14px;
+  color:#64748B;
+  font-size:10px;
+  font-weight:700;
+}
+.crm-architecture-breadcrumb a{color:#64748B;text-decoration:none;}
+.crm-architecture-breadcrumb strong{color:#0B1D3A;}
 '''
 
 
@@ -174,15 +249,29 @@ def apply_crm_definitive_architecture() -> int:
         flags=re.S,
     )
 
-    # The sidebar owns these destinations; avoid duplicate tabs inside Configurações.
+    # Neutralize legacy Configurações navigation definitions before the canonical layer is injected.
+    app = app.replace(
+        "const CRM_REF_SETTINGS_SUB=[['settings','Configurações'],['users','Usuários'],['profile','Meu Perfil'],['audit','Audit Trail'],['billing','Billing']];",
+        "const CRM_REF_SETTINGS_SUB=[['settings','Configurações']];",
+    )
+    app = app.replace(
+        "function crmFidelitySettingsSub(){return [['settings','Configurações'],['users','Usuários'],['profile','Meu Perfil'],['audit','Audit Trail'],['billing','Billing']];}",
+        "function crmFidelitySettingsSub(){return [['settings','Configurações']];}",
+    )
     app = app.replace(
         "const tabs=[['company','Empresa'],['automations','Automações'],['security','Segurança'],['integrations','Integrações'],['public','Cadastro Público'],['billing','Billing'],['users','Usuários']];",
-        "const tabs=[['company','Empresa'],['automations','Automações'],['security','Segurança'],['public','Cadastro Público']];",
+        "const tabs=[['company','Empresa']];",
     )
 
-    # Route all definitive modules through the reference router in every render path.
+    # Meu Perfil belongs exclusively to the user/avatar menu.
+    app = app.replace(
+        '<button type="button" data-action="crm-header-account-item" data-account-item="profile">Perfil</button>',
+        '<button type="button" data-action="crm-header-account-item" data-account-item="profile">Meu Perfil</button>',
+    )
+
+    # Route the corrected structural domains through the final router in every render path.
     old_route_tail = "path.startsWith('/crm/configuracoes')"
-    new_route_tail = "(path.startsWith('/crm/configuracoes') || path.startsWith('/crm/juridico') || path === '/crm/rh' || path.startsWith('/crm/negocios') || path.startsWith('/crm/administracao'))"
+    new_route_tail = "(path.startsWith('/crm/configuracoes') || path === '/crm/meu-perfil' || path.startsWith('/crm/juridico') || path === '/crm/rh' || path.startsWith('/crm/negocios') || path.startsWith('/crm/administracao'))"
     if old_route_tail not in app:
         raise RuntimeError("Âncora de roteamento de Configurações não encontrada")
     app = app.replace(old_route_tail, new_route_tail)
@@ -191,6 +280,33 @@ def apply_crm_definitive_architecture() -> int:
     if anchor not in app:
         raise RuntimeError("Âncora contactPage ausente para arquitetura definitiva")
     app = app.replace(anchor, JS_BLOCK.rstrip() + "\n\n" + anchor, 1)
+
+    # Guardrails: validate the definitive sidebar before writing the generated application.
+    sidebar_source = JS_BLOCK.split("  function crmRelSidebar", 1)[1].split("  function crmReferenceRoute", 1)[0]
+    forbidden_sidebar = ["Meu Perfil", "Audit Trail", "Usuários", "Billing"]
+    leaked = [label for label in forbidden_sidebar if label in sidebar_source]
+    if leaked:
+        raise RuntimeError(f"Itens proibidos ainda presentes no sidebar definitivo: {leaked}")
+
+    required_admin = ["Estrutura Organizacional", "Patrimônio e Licenças", "Acessos e Permissões", "Auditoria", "Integrações"]
+    missing_admin = [label for label in required_admin if label not in sidebar_source]
+    if missing_admin:
+        raise RuntimeError(f"Administração incompleta: {missing_admin}")
+    if "subgroup('settings','Configurações'" in sidebar_source:
+        raise RuntimeError("Configurações ainda está sendo materializado como grupo")
+    if "nav('#/crm/configuracoes','Configurações'" not in sidebar_source:
+        raise RuntimeError("Configurações não está materializado como módulo único")
+
+    # Verify canonical routes and technical-only legacy redirects.
+    required_routes = [
+        "#/crm/meu-perfil",
+        "/crm/administracao/acessos-permissoes",
+        "/crm/administracao/auditoria",
+        "/crm/administracao/integracoes",
+    ]
+    missing_routes = [route for route in required_routes if route not in JS_BLOCK]
+    if missing_routes:
+        raise RuntimeError(f"Rotas canônicas ausentes: {missing_routes}")
 
     APP.write_text(app, encoding="utf-8")
 
@@ -207,18 +323,7 @@ def apply_crm_definitive_architecture() -> int:
         text = re.sub(r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?", f"valtren-brand.css?v={CACHE_VERSION}", text)
         path.write_text(text, encoding="utf-8")
 
-    # Structural guardrails: fail the build instead of silently publishing an incomplete sidebar.
-    required = [
-        "Rateios", "Participações", "Repasses", "Assuntos Jurídicos", "Compliance e Políticas",
-        "Propriedade Intelectual", "Societário", "ValtrenChat", "RH", "Unidades de Negócio",
-        "Meu Perfil", "Integrações", "Audit Trail", "Usuários", "Billing",
-        "Estrutura Organizacional", "Patrimônio e Licenças",
-    ]
-    missing = [label for label in required if label not in JS_BLOCK]
-    if missing:
-        raise RuntimeError(f"Arquitetura definitiva incompleta: {missing}")
-
-    print("Arquitetura definitiva do Sistema Interno aplicada ao sidebar e às rotas.")
+    print("Configurações, Meu Perfil e Administração corrigidos conforme a arquitetura oficial.")
     return 1
 
 
