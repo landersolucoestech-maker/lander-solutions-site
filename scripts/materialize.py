@@ -50,6 +50,7 @@ def _apply_valtren_brand() -> bool:
         from crm_finance_transactions_label_fix import apply_crm_finance_transactions_label_fix
         from crm_tableview_header_light_fix import apply_crm_tableview_header_light_fix
         from crm_invoice_modal_refactor import apply_crm_invoice_modal_refactor
+        from crm_complete_module import apply_crm_complete_module
         from crm_definitive_architecture import apply_crm_definitive_architecture
 
         apply_branding()
@@ -83,6 +84,7 @@ def _apply_valtren_brand() -> bool:
         apply_crm_finance_transactions_label_fix()
         apply_crm_tableview_header_light_fix()
         apply_crm_invoice_modal_refactor()
+        apply_crm_complete_module()
         apply_crm_definitive_architecture()
         return True
     except Exception as error:
