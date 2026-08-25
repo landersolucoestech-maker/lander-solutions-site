@@ -53,6 +53,13 @@ jobs:
           node scripts/test_crm_fiscal_documents.js
           node scripts/test_crm_fiscal_documents_ui.js
 
+      - name: Test Cost Allocations domain
+        run: |
+          node --check scripts/crm_cost_allocations_core.js
+          node --check scripts/crm_cost_allocations_browser.js
+          node scripts/test_crm_cost_allocations.js
+          node scripts/test_crm_cost_allocations_ui.js
+
       - name: Materialize site
         run: python scripts/materialize.py
 
@@ -68,6 +75,8 @@ jobs:
           node scripts/test_crm_accounting_ui.js --materialized
           node scripts/test_crm_fiscal_documents.js --materialized
           node scripts/test_crm_fiscal_documents_ui.js --materialized
+          node scripts/test_crm_cost_allocations.js --materialized
+          node scripts/test_crm_cost_allocations_ui.js --materialized
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
