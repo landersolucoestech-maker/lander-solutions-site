@@ -84,23 +84,35 @@ jobs:
         run: |
           node --check app.js
           APP_SHA="$(sha256sum app.js | awk '{print $1}')"
-          node scripts/test_crm_canonical_parties.js --materialized
-          node scripts/test_crm_complete.js --materialized
-          node scripts/test_crm_complete_hardening.js --materialized
-          node scripts/test_crm_financial_transactions.js --materialized
-          node scripts/test_crm_financial_transactions_ui.js --materialized
-          node scripts/test_crm_accounting.js --materialized
-          node scripts/test_crm_accounting_ui.js --materialized
-          node scripts/test_crm_fiscal_documents.js --materialized
-          node scripts/test_crm_fiscal_documents_ui.js --materialized
-          node scripts/test_crm_cost_allocations.js --materialized
-          node scripts/test_crm_cost_allocations_ui.js --materialized
-          TESTED_SHA="$(sha256sum app.js | awk '{print $1}')"
-          test "$APP_SHA" = "$TESTED_SHA"
-          node scripts/test_crm_legal_contracts.js --materialized
-          node scripts/test_crm_legal_contracts_ui.js --materialized
+          echo "Materialized app.js SHA-256: $APP_SHA"
+          readonly_suite() {
+            local script="$1"
+            shift
+            local before after
+            before="$(sha256sum app.js | awk '{print $1}')"
+            echo "app.js SHA-256 before $script: $before"
+            test "$before" = "$APP_SHA"
+            node "$script" "$@"
+            after="$(sha256sum app.js | awk '{print $1}')"
+            echo "app.js SHA-256 after  $script: $after"
+            test "$after" = "$APP_SHA"
+          }
+          readonly_suite scripts/test_crm_canonical_parties.js --materialized
+          readonly_suite scripts/test_crm_complete.js --materialized
+          readonly_suite scripts/test_crm_complete_hardening.js --materialized
+          readonly_suite scripts/test_crm_financial_transactions.js --materialized
+          readonly_suite scripts/test_crm_financial_transactions_ui.js --materialized
+          readonly_suite scripts/test_crm_accounting.js --materialized
+          readonly_suite scripts/test_crm_accounting_ui.js --materialized
+          readonly_suite scripts/test_crm_fiscal_documents.js --materialized
+          readonly_suite scripts/test_crm_fiscal_documents_ui.js --materialized
+          readonly_suite scripts/test_crm_cost_allocations.js --materialized
+          readonly_suite scripts/test_crm_cost_allocations_ui.js --materialized
+          readonly_suite scripts/test_crm_legal_contracts.js --materialized
+          readonly_suite scripts/test_crm_legal_contracts_ui.js --materialized
           FINAL_SHA="$(sha256sum app.js | awk '{print $1}')"
           test "$APP_SHA" = "$FINAL_SHA"
+          echo "MATERIALIZED_APP_SHA=$APP_SHA" >> "$GITHUB_ENV"
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
@@ -114,6 +126,10 @@ jobs:
             --exclude='.bootstrap' \
             --exclude='_site' \
             --exclude='scripts'
+          PUBLISH_APP_SHA="$(sha256sum _site/app.js | awk '{print $1}')"
+          test "$MATERIALIZED_APP_SHA" = "$PUBLISH_APP_SHA"
+          echo "Publish app.js SHA-256: $PUBLISH_APP_SHA"
+          echo "Publish directory size: $(du -sb _site | awk '{print $1}') bytes"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
