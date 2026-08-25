@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CACHE_VERSION = "20260824-crm-kpi-tableview-v1"
+CACHE_VERSION = "20260824-crm-kpi-tableview-v2"
 MARKER = "/* VALTREN CRM KPI TABLEVIEW */"
 
 CSS_PATCH = r'''
@@ -53,30 +53,15 @@ CSS_PATCH = r'''
   text-align:left!important;
   vertical-align:middle!important;
 }
-.crm-rel-table th{
-  line-height:1.25!important;
-}
-.crm-rel-table td{
-  line-height:1.45!important;
-}
+.crm-rel-table th{line-height:1.25!important;}
+.crm-rel-table td{line-height:1.45!important;}
 .crm-rel-table td>strong,
 .crm-rel-table td>span,
-.crm-rel-table td>small{
-  text-align:left!important;
-}
-.crm-rel-actions-cell{
-  text-align:left!important;
-}
-.crm-rel-actions{
-  vertical-align:middle!important;
-}
-.crm-rel-check{
-  width:44px!important;
-  text-align:left!important;
-}
-.crm-rel-table tbody tr{
-  min-height:48px;
-}
+.crm-rel-table td>small{text-align:left!important;}
+.crm-rel-actions-cell{text-align:left!important;}
+.crm-rel-actions{vertical-align:middle!important;}
+.crm-rel-check{width:44px!important;text-align:left!important;}
+.crm-rel-table tbody tr{min-height:48px;}
 
 @media(max-width:980px){
   .crm-rel-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
@@ -97,23 +82,14 @@ def apply_crm_relationships_kpi_tableview_fix() -> int:
         raise RuntimeError("Definição de count do CRM não encontrada")
     app = app.replace(old_count, new_count, 1)
 
-    anchor = '''          <nav class="crm-rel-tabs" aria-label="Abas do CRM">
-            <a class="${isContacts ? 'active' : ''}" href="#/crm/relationships?tab=contacts">Contatos</a>
-            <a class="${!isContacts ? 'active' : ''}" href="#/crm/relationships?tab=leads">Leads</a>
-          </nav>
+    tabs_pattern = re.compile(
+        r'(<nav class="crm-rel-tabs" aria-label="Abas do CRM">.*?</nav>)\s*(<div class="crm-rel-toolbar">)',
+        re.S,
+    )
+    app, count = tabs_pattern.subn(r'\1\n\n          ${kpiMarkup}\n\n          \2', app, count=1)
+    if count != 1:
+        raise RuntimeError(f"Âncora estrutural das abas do CRM não encontrada: {count}")
 
-          <div class="crm-rel-toolbar">'''
-    replacement = '''          <nav class="crm-rel-tabs" aria-label="Abas do CRM">
-            <a class="${isContacts ? 'active' : ''}" href="#/crm/relationships?tab=contacts">Contatos</a>
-            <a class="${!isContacts ? 'active' : ''}" href="#/crm/relationships?tab=leads">Leads</a>
-          </nav>
-
-          ${kpiMarkup}
-
-          <div class="crm-rel-toolbar">'''
-    if anchor not in app:
-        raise RuntimeError("Âncora das abas do CRM não encontrada")
-    app = app.replace(anchor, replacement, 1)
     APP.write_text(app, encoding="utf-8")
 
     css = CSS.read_text(encoding="utf-8")
