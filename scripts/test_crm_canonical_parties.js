@@ -7,107 +7,41 @@ const core=require('./crm_canonical_parties_core.js');
 let seq=0;
 const store=core.createState();
 const service=core.createService(store,{idFactory:(prefix)=>`${prefix}_${++seq}`,now:(()=>{let n=0;return()=>`2026-08-25T12:00:${String(n++).padStart(2,'0')}.000Z`;})()});
-
 function test(name,fn){try{fn();console.log(`PASS ${name}`);}catch(error){console.error(`FAIL ${name}`);throw error;}}
 
-test('1 criação de Pessoa',()=>{
-  const person=service.createPerson({fullName:'João da Silva',cpf:'529.982.247-25',email:'joao@example.com',phone:'(11) 99999-1111'});
-  assert.equal(store.people.length,1);assert.equal(person.fullName,'João da Silva');assert.equal(service.documentFor('person',person.id,'cpf').normalizedValue,'52998224725');
-});
+test('1 criação de Pessoa',()=>{const person=service.createPerson({fullName:'João da Silva',cpf:'529.982.247-25',email:'joao@example.com',phone:'(11) 99999-1111'});assert.equal(store.people.length,1);assert.equal(person.fullName,'João da Silva');assert.equal(service.documentFor('person',person.id,'cpf').normalizedValue,'52998224725');});
 const joao=store.people[0];
-
-test('2 criação de Organização',()=>{
-  const org=service.createOrganization({legalName:'Empresa ABC Ltda',tradeName:'Empresa ABC',cnpj:'04.252.011/0001-10',site:'https://empresaabc.example'});
-  assert.equal(store.organizations.length,1);assert.equal(org.legalName,'Empresa ABC Ltda');assert.equal(service.documentFor('organization',org.id,'cnpj').normalizedValue,'04252011000110');
-});
+test('2 criação de Organização',()=>{const org=service.createOrganization({legalName:'Empresa ABC Ltda',tradeName:'Empresa ABC',cnpj:'04.252.011/0001-10',site:'https://empresaabc.example'});assert.equal(store.organizations.length,1);assert.equal(org.legalName,'Empresa ABC Ltda');assert.equal(service.documentFor('organization',org.id,'cnpj').normalizedValue,'04252011000110');});
 const abc=store.organizations[0];
-
-test('3 vínculo Pessoa ↔ Organização',()=>{
-  const rel=service.linkPersonOrganization(joao.id,abc.id,{relationshipType:'organization_contact',positionTitle:'Diretor',primary:true});
-  assert.equal(rel.personId,joao.id);assert.equal(rel.organizationId,abc.id);assert.equal(service.getOrganizationContacts(abc.id).length,1);
-});
-
-test('4 múltiplos contatos em uma Organização',()=>{
-  const maria=service.createPerson({fullName:'Maria Souza',email:'maria@example.com'});
-  const carlos=service.createPerson({fullName:'Carlos Lima',email:'carlos@example.com'});
-  service.linkPersonOrganization(maria.id,abc.id,{relationshipType:'organization_contact',department:'Financeiro',financialContact:true});
-  service.linkPersonOrganization(carlos.id,abc.id,{relationshipType:'organization_contact',department:'Jurídico',legalContact:true});
-  assert.equal(service.getOrganizationContacts(abc.id).length,3);
-});
-
-test('5 Organização com múltiplos papéis',()=>{
-  service.assignRole('organization',abc.id,'Cliente');service.assignRole('organization',abc.id,'Fornecedor');
-  assert.deepEqual(new Set(service.getRoles('organization',abc.id).map((r)=>r.role)),new Set(['customer','supplier']));
-});
-
-test('6 Pessoa com múltiplos papéis',()=>{
-  service.assignRole('person',joao.id,'Lead');service.assignRole('person',joao.id,'Parceiro');
-  assert.deepEqual(new Set(service.getRoles('person',joao.id).map((r)=>r.role)),new Set(['lead','partner']));
-});
-
-test('7 novo papel não duplica entidade nem papel',()=>{
-  const beforePeople=store.people.length,beforeRoles=store.roles.length;
-  const same=service.createPerson({fullName:'João da Silva',cpf:'52998224725',email:'joao@example.com'});
-  service.assignRole('person',same.id,'Parceiro');
-  assert.equal(same.id,joao.id);assert.equal(store.people.length,beforePeople);assert.equal(store.roles.length,beforeRoles);
-});
-
+test('3 vínculo Pessoa ↔ Organização',()=>{const rel=service.linkPersonOrganization(joao.id,abc.id,{relationshipType:'organization_contact',positionTitle:'Diretor',primary:true});assert.equal(rel.personId,joao.id);assert.equal(rel.organizationId,abc.id);assert.equal(service.getOrganizationContacts(abc.id).length,1);});
+test('4 múltiplos contatos em uma Organização',()=>{const maria=service.createPerson({fullName:'Maria Souza',email:'maria@example.com'}),carlos=service.createPerson({fullName:'Carlos Lima',email:'carlos@example.com'});service.linkPersonOrganization(maria.id,abc.id,{relationshipType:'organization_contact',department:'Financeiro',financialContact:true});service.linkPersonOrganization(carlos.id,abc.id,{relationshipType:'organization_contact',department:'Jurídico',legalContact:true});assert.equal(service.getOrganizationContacts(abc.id).length,3);});
+test('5 Organização com múltiplos papéis',()=>{service.assignRole('organization',abc.id,'Cliente');service.assignRole('organization',abc.id,'Fornecedor');assert.deepEqual(new Set(service.getRoles('organization',abc.id).map((r)=>r.role)),new Set(['customer','supplier']));});
+test('6 Pessoa com múltiplos papéis',()=>{service.assignRole('person',joao.id,'Lead');service.assignRole('person',joao.id,'Parceiro');assert.deepEqual(new Set(service.getRoles('person',joao.id).map((r)=>r.role)),new Set(['lead','partner']));});
+test('7 novo papel não duplica entidade nem papel',()=>{const beforePeople=store.people.length,beforeRoles=store.roles.length,same=service.createPerson({fullName:'João da Silva',cpf:'52998224725',email:'joao@example.com'});service.assignRole('person',same.id,'Parceiro');assert.equal(same.id,joao.id);assert.equal(store.people.length,beforePeople);assert.equal(store.roles.length,beforeRoles);});
 test('8 Pessoa pode existir sem Usuário',()=>{assert.equal(store.userLinks.filter((x)=>x.personId===joao.id).length,0);});
-
-test('9 Pessoa fornece ID estável para futuro vínculo de Colaborador',()=>{
-  const futureEmploymentReference={personId:joao.id};
-  assert.equal(service.getEntity('person',futureEmploymentReference.personId),joao);assert.equal(store.people.filter((p)=>p.id===joao.id).length,1);
-});
-
-test('10 Organização simultaneamente Cliente e Fornecedor',()=>{
-  const roles=service.getRoles('organization',abc.id).map((r)=>r.role);assert(roles.includes('customer')&&roles.includes('supplier'));assert.equal(store.organizations.filter((o)=>o.id===abc.id).length,1);
-});
-
-test('11 referências estáveis sobrevivem a atualização',()=>{
-  const personId=joao.id,orgId=abc.id,relId=service.getOrganizationContacts(abc.id)[0].relationship.id;
-  service.updatePerson(personId,{phone:'(11) 98888-7777'});service.updateOrganization(orgId,{tradeName:'ABC Tecnologia'});
-  assert.equal(service.getEntity('person',personId).id,personId);assert.equal(service.getEntity('organization',orgId).id,orgId);assert.equal(service.getOrganizationContacts(orgId)[0].relationship.id,relId);
-});
-
-test('12 validação de CPF/CNPJ e normalização',()=>{
-  assert(core.validateCPF('529.982.247-25'));assert(core.validateCNPJ('04.252.011/0001-10'));assert.equal(core.normalizeDocument('04.252.011/0001-10'),'04252011000110');
-  assert.throws(()=>service.createPerson({fullName:'CPF Inválido',cpf:'111.111.111-11'}),(e)=>e.code==='INVALID_DOCUMENT');
-  assert.throws(()=>service.createOrganization({legalName:'CNPJ Inválido Ltda',cnpj:'11.111.111/1111-11'}),(e)=>e.code==='INVALID_DOCUMENT');
-});
-
+test('9 Pessoa fornece ID estável para futuro vínculo de Colaborador',()=>{const futureEmploymentReference={personId:joao.id};assert.equal(service.getEntity('person',futureEmploymentReference.personId),joao);assert.equal(store.people.filter((p)=>p.id===joao.id).length,1);});
+test('10 Organização simultaneamente Cliente e Fornecedor',()=>{const roles=service.getRoles('organization',abc.id).map((r)=>r.role);assert(roles.includes('customer')&&roles.includes('supplier'));assert.equal(store.organizations.filter((o)=>o.id===abc.id).length,1);});
+test('11 referências estáveis sobrevivem a atualização',()=>{const personId=joao.id,orgId=abc.id,relId=service.getOrganizationContacts(abc.id)[0].relationship.id;service.updatePerson(personId,{phone:'(11) 98888-7777'});service.updateOrganization(orgId,{tradeName:'ABC Tecnologia'});assert.equal(service.getEntity('person',personId).id,personId);assert.equal(service.getEntity('organization',orgId).id,orgId);assert.equal(service.getOrganizationContacts(orgId)[0].relationship.id,relId);});
+test('12 validação de CPF/CNPJ é transacional',()=>{assert(core.validateCPF('529.982.247-25'));assert(core.validateCNPJ('04.252.011/0001-10'));assert.equal(core.normalizeDocument('04.252.011/0001-10'),'04252011000110');const pb=store.people.length,ob=store.organizations.length;assert.throws(()=>service.createPerson({fullName:'CPF Inválido',cpf:'111.111.111-11'}),(e)=>e.code==='INVALID_DOCUMENT');assert.throws(()=>service.createOrganization({legalName:'CNPJ Inválido Ltda',cnpj:'11.111.111/1111-11'}),(e)=>e.code==='INVALID_DOCUMENT');assert.equal(store.people.length,pb);assert.equal(store.organizations.length,ob);});
 test('13 Pessoa sem CPF é válida',()=>{const p=service.createPerson({fullName:'Pessoa Sem CPF',email:'semcpf@example.com'});assert(p.id);assert.equal(service.documentFor('person',p.id,'cpf'),undefined);});
+test('14 Organização sem CNPJ é válida',()=>{const a=service.createOrganization({legalName:'Acme Brasil',site:'acme-a.example'}),b=service.createOrganization({legalName:'Acme Brasil Serviços',site:'acme-b.example'});assert.notEqual(a.id,b.id);});
+test('15 documento legado inválido é preservado',()=>{const legacy=service.createPerson({fullName:'Registro Legado',cpf:'123.456.789-00'},{allowInvalidLegacy:true}),doc=service.documentFor('person',legacy.id,'cpf');assert.equal(doc.normalizedValue,'12345678900');assert.equal(doc.validationStatus,'legacy-unverified');});
+test('16 mesmo nome isolado não provoca merge perigoso',()=>{const p1=service.createPerson({fullName:'Ana Pereira',email:'ana.um@example.com'}),p2=service.createPerson({fullName:'Ana Pereira',email:'ana.dois@example.com'});assert.notEqual(p1.id,p2.id);const possible=service.detectPotentialDuplicates('person',{fullName:'Ana Pereira'});assert(possible.length>=2);assert(possible.every((x)=>x.confidence==='possible'));});
+test('17 Pessoa ↔ Usuário é vínculo explícito',()=>{const before=store.userLinks.length,link=service.linkUser(joao.id,'user-001',{source:'settings'});assert.equal(store.userLinks.length,before+1);assert.equal(link.personId,joao.id);assert.equal(link.userId,'user-001');});
+test('18 organização de mesmo nome sem identificador forte permanece separada',()=>{const isolated=core.createState(),svc=core.createService(isolated,{idFactory:(prefix)=>`${prefix}_${Math.random().toString(36).slice(2)}`});const a=svc.createOrganization({legalName:'Empresa Mesmo Nome',email:'um@empresa-a.example'}),b=svc.createOrganization({legalName:'Empresa Mesmo Nome',email:'dois@empresa-b.example'});assert.notEqual(a.id,b.id);assert.equal(isolated.organizations.length,2);});
 
-test('14 Organização sem CNPJ é válida e não é fundida por nome parecido',()=>{
-  const a=service.createOrganization({legalName:'Acme Brasil',site:'acme-a.example'});
-  const b=service.createOrganization({legalName:'Acme Brasil Serviços',site:'acme-b.example'});
-  assert.notEqual(a.id,b.id);
-});
-
-test('15 compatibilidade com documento legado inválido sem perder dado',()=>{
-  const legacy=service.createPerson({fullName:'Registro Legado',cpf:'123.456.789-00'},{allowInvalidLegacy:true});
-  const doc=service.documentFor('person',legacy.id,'cpf');assert.equal(doc.normalizedValue,'12345678900');assert.equal(doc.validationStatus,'legacy-unverified');
-});
-
-test('16 detecção de possível duplicidade não faz merge perigoso por nome',()=>{
-  const p1=service.createPerson({fullName:'Ana Pereira',email:'ana.um@example.com'});
-  const p2=service.createPerson({fullName:'Ana Pereira',email:'ana.dois@example.com'});
-  assert.notEqual(p1.id,p2.id);const possible=service.detectPotentialDuplicates('person',{fullName:'Ana Pereira'});assert(possible.length>=2);assert(possible.every((x)=>x.confidence==='possible'));
-});
-
-test('17 vínculo explícito Pessoa ↔ Usuário não é automático',()=>{
-  const before=store.userLinks.length;const link=service.linkUser(joao.id,'user-001',{source:'settings'});assert.equal(store.userLinks.length,before+1);assert.equal(link.personId,joao.id);assert.equal(link.userId,'user-001');
-});
+global.ValtrenPartyCore=core;
+global.state={crmUserName:'Tester',crmRelContacts:[{id:'legacy-p1',tipo_pessoa:'pessoa_fisica',name:'Contato Legado',segment:'Cliente',phone:'(11) 95555-1111',email:'legado@example.com',cpf:'123.456.789-00',status:'Ativo',interactions:[]},{id:'legacy-o1',tipo_pessoa:'pessoa_juridica',name:'Empresa Legada Ltda.',company:'Empresa Legada',segment:'Fornecedor',phone:'(11) 94444-2222',email:'contato@legada.example',cnpj:'12.345.678/0001-90',responsible:'Responsável Jurídico',responsibleRole:'Jurídico',status:'Ativo',interactions:[]}],crmRelLeads:[{id:'legacy-l1',name:'Lead Legado',company:'Empresa Prospect Ltda.',email:'lead@prospect.example',phone:'(11) 93333-3333',source:'Site',stage:'Novo',status:'Aberto',priority:'Alta',notes:''}]};
+const adapter=require('./crm_canonical_parties_adapter.js').legacyAdapter;
+test('19 migration legada preserva IDs e cria identidade canônica',()=>{adapter.crmCanonicalEnsureFromLegacy();const contact=state.crmRelContacts.find((x)=>x.id==='legacy-p1'),orgContact=state.crmRelContacts.find((x)=>x.id==='legacy-o1'),lead=state.crmRelLeads.find((x)=>x.id==='legacy-l1');assert(contact?.canonicalEntityId);assert(orgContact?.canonicalEntityId);assert(lead?.canonicalEntityId);assert.equal(state.crmCanonicalParties.legacyBindings.length,3);const legacyCpf=state.crmCanonicalParties.documents.find((d)=>d.entityId===contact.canonicalEntityId&&d.type==='cpf');assert.equal(legacyCpf.validationStatus,'legacy-unverified');const responsibleRel=state.crmCanonicalParties.personOrganizationRelationships.find((r)=>r.organizationId===orgContact.canonicalEntityId&&r.legalContact);assert(responsibleRel);const leadOrgRel=state.crmCanonicalParties.personOrganizationRelationships.find((r)=>r.personId===lead.canonicalEntityId);assert(leadOrgRel);});
+test('20 exclusão legada remove binding e preserva entidade canônica',()=>{const row=state.crmRelContacts.find((x)=>x.id==='legacy-p1'),canonicalId=row.canonicalEntityId;assert(adapter.crmCanonicalRemoveLegacyRecord('contacts','legacy-p1'));assert(!state.crmRelContacts.some((x)=>x.id==='legacy-p1'));assert(state.crmCanonicalParties.people.some((p)=>p.id===canonicalId));});
+test('21 cadastro CRM novo de organizações homônimas sem ID forte não é fundido',()=>{state.crmCanonicalParties=core.createState();delete state.__crmCanonicalPartyService;state.crmRelContacts=[];state.crmRelLeads=[];state.crmCanonicalParties.metadata.crmLegacyMigrated=true;assert(adapter.crmCanonicalUpsertLegacyRecord('contacts',{id:'n1',tipo_pessoa:'pessoa_juridica',name:'Homônima Ltda',company:'Homônima',segment:'Cliente',email:'a@homonima-a.example',interactions:[]},'create'));assert(adapter.crmCanonicalUpsertLegacyRecord('contacts',{id:'n2',tipo_pessoa:'pessoa_juridica',name:'Homônima Ltda',company:'Homônima',segment:'Fornecedor',email:'b@homonima-b.example',interactions:[]},'create'));assert.equal(state.crmCanonicalParties.organizations.length,2);});
 
 if(process.argv.includes('--materialized')){
-  const appPath=path.resolve(__dirname,'..','app.js');
-  const app=fs.readFileSync(appPath,'utf8');
-  test('18 infraestrutura canônica foi materializada',()=>{assert(app.includes('VALTREN CANONICAL PARTIES BROWSER/LEGACY ADAPTER'));assert(app.includes('function crmCanonicalPartyService()'));});
-  test('19 CRM legado usa adapter canônico sem redesign',()=>{assert(app.includes('crmCanonicalEnsureFromLegacy();'));assert(app.includes("crmCanonicalUpsertLegacyRecord('contacts',item,mode)"));assert(app.includes("crmCanonicalUpsertLegacyRecord('leads',item,mode)"));});
-  test('20 exclusões do CRM removem binding e preservam entidade canônica',()=>{assert(app.includes('crmCanonicalRemoveLegacyRecord(kind,id)'));assert(app.includes('crmCanonicalRemoveLegacyRecords(kind,ids)'));});
-  test('21 nenhuma navegação de Pessoas/Organizações foi criada',()=>{
-    const start=app.lastIndexOf('function crmRelSidebar');const end=app.indexOf('function crmReferenceRoute',start);const sidebar=app.slice(start,end);
-    assert(!sidebar.includes("'Pessoas'"));assert(!sidebar.includes("'Organizações'"));assert(!sidebar.includes("'Empresas'"));assert(!sidebar.includes("'Master Data'"));
-  });
+  const appPath=path.resolve(__dirname,'..','app.js'),app=fs.readFileSync(appPath,'utf8');
+  test('22 infraestrutura canônica foi materializada',()=>{assert(app.includes('VALTREN CANONICAL PARTIES BROWSER/LEGACY ADAPTER'));assert(app.includes('function crmCanonicalPartyService()'));});
+  test('23 CRM legado usa adapter canônico sem redesign',()=>{assert(app.includes('crmCanonicalEnsureFromLegacy();'));assert(app.includes("crmCanonicalUpsertLegacyRecord('contacts',item,mode)"));assert(app.includes("crmCanonicalUpsertLegacyRecord('leads',item,mode)"));});
+  test('24 exclusões CRM preservam base canônica',()=>{assert(app.includes('crmCanonicalRemoveLegacyRecord(kind,id)'));assert(app.includes('crmCanonicalRemoveLegacyRecords(kind,ids)'));});
+  test('25 nenhuma navegação de Pessoas/Organizações foi criada',()=>{const start=app.lastIndexOf('function crmRelSidebar'),end=app.indexOf('function crmReferenceRoute',start),sidebar=app.slice(start,end);assert(!sidebar.includes("'Pessoas'"));assert(!sidebar.includes("'Organizações'"));assert(!sidebar.includes("'Empresas'"));assert(!sidebar.includes("'Master Data'"));});
 }
-
 console.log(`Canonical parties tests completed: people=${store.people.length}, organizations=${store.organizations.length}, roles=${store.roles.length}`);
