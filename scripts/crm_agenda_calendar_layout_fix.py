@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CACHE_VERSION = "20260825-crm-agenda-calendar-layout-v1"
+CACHE_VERSION = "20260825-crm-agenda-calendar-layout-v2"
 
 WEEK_FUNCTION = r'''  function crmAgendaWeekCalendar(events){
     const start=crmAgendaStartOfWeek(state.crmAgendaCurrentDate);
@@ -101,11 +101,9 @@ CSS_PATCH = r'''
 .crm-agenda-week{display:grid!important;grid-template-columns:54px repeat(7,minmax(0,1fr))!important;grid-template-rows:36px repeat(11,50px)!important;min-height:586px!important;height:auto!important;}
 .crm-agenda-week-corner{background:#fff;border-right:1px solid #e5ebf2;border-bottom:1px solid #e5ebf2;}
 .crm-agenda-week-head{display:flex;align-items:center;justify-content:center;background:#fff;border-right:1px solid #e5ebf2;border-bottom:1px solid #e5ebf2;color:#5f6d7c;font-size:8px;font-weight:800;}
-.crm-agenda-week-head:last-of-type{border-right:0;}
 .crm-agenda-week-head.today span{color:#0B1D3A;font-weight:900;}
 .crm-agenda-time-label{display:flex;align-items:flex-start;justify-content:flex-start;padding:7px 0 0 8px;border-right:1px solid #e5ebf2;border-bottom:1px solid #e5ebf2;color:#6f7e8e;background:#fff;font:8px/1 Montserrat,Arial,sans-serif;box-sizing:border-box;}
 .crm-agenda-time-cell{position:relative;min-width:0;border-right:1px solid #e5ebf2;border-bottom:1px solid #e5ebf2;background:#fff;padding:3px;box-sizing:border-box;overflow:visible;}
-.crm-agenda-time-cell:nth-child(8n){border-right:0;}
 .crm-agenda-time-cell.today{background:#fcfdff;}
 .crm-agenda-week-event{width:100%;min-height:30px;border:1px solid #c9d9ef;border-radius:6px;background:#edf4fd;color:#17335a;text-align:left;padding:4px 6px;display:grid;gap:1px;cursor:pointer;overflow:hidden;box-sizing:border-box;}
 .crm-agenda-week-event strong{font:700 8px/1.2 Raleway,Arial,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -124,16 +122,21 @@ CSS_PATCH = r'''
 def apply_crm_agenda_calendar_layout_fix() -> int:
     app = APP.read_text(encoding="utf-8")
 
-    week_pattern = r"  function crmAgendaWeekCalendar\(events\)\{.*?\n  function crmAgendaDayCalendar\(events\)\{"
-    if not re.search(week_pattern, app, flags=re.S):
-        raise RuntimeError("crmAgendaWeekCalendar não encontrado")
-    app = re.sub(week_pattern, WEEK_FUNCTION + "\n" + DAY_FUNCTION.rstrip() + "\n\n  function __crmAgendaYearAnchor__(){", app, count=1, flags=re.S)
-    app = app.replace("\n\n  function __crmAgendaYearAnchor__(){\n    const year=state.crmAgendaCurrentDate.getFullYear();", "\n\n  function crmAgendaYearCalendar(events){\n    const year=state.crmAgendaCurrentDate.getFullYear();", 1)
+    week_day_pattern = r"  function crmAgendaWeekCalendar\(events\)\{.*?\n  function crmAgendaYearCalendar\(events\)\{"
+    if not re.search(week_day_pattern, app, flags=re.S):
+        raise RuntimeError("calendários Semana/Dia da Agenda não encontrados")
+    app = re.sub(
+        week_day_pattern,
+        WEEK_FUNCTION.rstrip() + "\n\n" + DAY_FUNCTION.rstrip() + "\n\n  function crmAgendaYearCalendar(events){",
+        app,
+        count=1,
+        flags=re.S,
+    )
 
     page_pattern = r"  function crmAgendaPage\(\)\{.*?\n  function crmAgendaPJContacts\(\)\{"
     if not re.search(page_pattern, app, flags=re.S):
         raise RuntimeError("crmAgendaPage não encontrado")
-    app = re.sub(page_pattern, PAGE_FUNCTION + "\n\n  function crmAgendaPJContacts(){", app, count=1, flags=re.S)
+    app = re.sub(page_pattern, PAGE_FUNCTION.rstrip() + "\n\n  function crmAgendaPJContacts(){", app, count=1, flags=re.S)
 
     click_anchor = "      if(action==='crm-agenda-next'){ crmAgendaShift(1); return; }"
     view_line = "      if(action==='crm-agenda-view-mode'){ state.crmAgendaViewMode=target.dataset.view||'semana'; crmAgendaRerender(); return; }"
