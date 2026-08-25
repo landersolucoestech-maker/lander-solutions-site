@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 HERE = Path(__file__).resolve().parent
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CACHE_VERSION = "20260825-crm-agenda-events-v1"
+CACHE_VERSION = "20260825-crm-agenda-events-v2"
 
 
 def _parts(prefix: str) -> str:
@@ -36,6 +36,12 @@ def apply_crm_agenda_module() -> int:
     app = re.sub(
         r"  // VALTREN CRM AGENDA EVENTS START\n.*?  // VALTREN CRM AGENDA EVENTS END\n",
         "",
+        app,
+        flags=re.S,
+    )
+    app = re.sub(
+        r"\n?  // VALTREN CRM AGENDA FIDELITY START\n.*?  // VALTREN CRM AGENDA FIDELITY END\n",
+        "\n",
         app,
         flags=re.S,
     )
@@ -81,7 +87,7 @@ def apply_crm_agenda_module() -> int:
     css = re.sub(r"\n?/\* VALTREN CRM AGENDA EVENTS \*/.*\Z", "", css, flags=re.S)
     CSS.write_text(css.rstrip() + "\n\n" + css_patch.strip() + "\n", encoding="utf-8")
     _write_cache_version()
-    print("Módulo Agenda & Eventos aplicado fielmente à referência anexada.")
+    print("Módulo Agenda & Eventos alinhado fielmente à referência anexada.")
     return 1
 
 
