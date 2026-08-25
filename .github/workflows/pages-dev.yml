@@ -70,16 +70,20 @@ jobs:
       - name: Materialize site
         run: python scripts/materialize.py
 
-      - name: Verify canonical Legal routes
+      - name: Verify canonical Legal and Finance routes
         run: |
           grep -n "juridico/contratos" app.js | tail -n 20
+          grep -n "financeiro/participacoes\|financeiro/repasses" app.js | tail -n 20
           grep -Fq "if(path==='/crm/juridico/contratos')return crmLegalContractsPage();" app.js
           grep -Fq "if(path==='/crm/juridico/contratos/templates')return crmLegalTemplatesPage();" app.js
           grep -Fq "if(path==='/crm/juridico/contratos/variaveis')return crmLegalVariablesPage();" app.js
+          grep -Fq "if(path==='/crm/financeiro/participacoes')return crmArchitecturePlaceholderPage('accounting','participacoes','Participações');" app.js
+          grep -Fq "if(path==='/crm/financeiro/repasses')return crmArchitecturePlaceholderPage('accounting','repasses','Repasses');" app.js
 
       - name: Validate materialized app
         run: |
           node --check app.js
+          APP_SHA="$(sha256sum app.js | awk '{print $1}')"
           node scripts/test_crm_canonical_parties.js --materialized
           node scripts/test_crm_complete.js --materialized
           node scripts/test_crm_complete_hardening.js --materialized
@@ -91,8 +95,12 @@ jobs:
           node scripts/test_crm_fiscal_documents_ui.js --materialized
           node scripts/test_crm_cost_allocations.js --materialized
           node scripts/test_crm_cost_allocations_ui.js --materialized
+          TESTED_SHA="$(sha256sum app.js | awk '{print $1}')"
+          test "$APP_SHA" = "$TESTED_SHA"
           node scripts/test_crm_legal_contracts.js --materialized
           node scripts/test_crm_legal_contracts_ui.js --materialized
+          FINAL_SHA="$(sha256sum app.js | awk '{print $1}')"
+          test "$APP_SHA" = "$FINAL_SHA"
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
