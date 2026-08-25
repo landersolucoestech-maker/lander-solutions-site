@@ -49,34 +49,109 @@ CONFIGURAÇÕES
 
 ADMINISTRAÇÃO
 ├── Estrutura Organizacional
-├── Patrimônio e Licenças
-├── Acessos e Permissões
-├── Auditoria
-└── Integrações
+└── Patrimônio e Licenças
 ```
 
-## Regras estruturais obrigatórias
+## Configurações
 
-- A ordem acima é a ordem oficial do sidebar.
-- `Configurações` é um único módulo principal e não possui submódulos no sidebar.
-- A organização interna de `Configurações` pode conter apenas seções de parâmetros globais, como `Geral`, `Empresa`, `Notificações` e `Preferências do Sistema`; essas divisões não são módulos do sidebar.
-- `Meu Perfil` não é módulo do sidebar. Ele pertence exclusivamente ao menu do usuário/avatar e possui rota própria.
-- `Usuários` não é módulo principal nem submódulo de Configurações. Usuários, convites, papéis, permissões, escopos, restrições, MFA, sessões e status de acesso pertencem a `Administração > Acessos e Permissões`.
-- `Audit Trail` é nomenclatura legada. O nome oficial e visível é `Administração > Auditoria`.
-- `Integrações` pertence exclusivamente a `Administração > Integrações`. Não deve existir implementação concorrente em Configurações.
-- `Billing` não faz parte da arquitetura oficial do Sistema Interno. A implementação histórica de Billing representa cobrança/planos da própria aplicação e permanece, quando necessário, apenas como legado técnico sem exposição na navegação.
-- `Briefings` não é submódulo do Marketing.
-- `Regras de Categorização` e `Categorias Financeiras` não são itens do sidebar financeiro; permanecem apenas como recursos auxiliares quando necessários.
-- `Automações Financeiras` não faz parte da arquitetura.
-- `IA Criativa` não é módulo independente.
-- `P&L Artistas` e `P&L Projetos` não fazem parte da Contabilidade.
-- O nome visível é `ValtrenChat`; `MusicChat` permanece somente como compatibilidade legada até sua remoção segura.
+`Configurações` é um único módulo principal no sidebar e não possui submenu na navegação lateral.
+
+Ao acessar `#/crm/configuracoes`, a página contém exatamente seis abas internas, nesta ordem:
+
+```text
+Empresa
+Notificações
+Segurança
+Integrações
+Auditoria
+Usuários
+```
+
+As abas `Geral` e `Preferências do Sistema` não fazem parte da arquitetura atual.
+
+### Empresa
+
+Concentra dados institucionais e parâmetros globais da Valtren, incluindo razão social, nome fantasia, CNPJ, inscrições aplicáveis, endereço, telefone, e-mail, site, identidade visual, logo, moeda, idioma, fuso horário e formatos institucionais.
+
+### Notificações
+
+Concentra canais, tipos, frequência, horários, eventos, alertas, notificações internas e notificações por e-mail em nível global.
+
+### Segurança
+
+Concentra políticas e parâmetros globais de segurança, como políticas de senha, MFA, duração/expiração de sessão, tentativas de acesso, bloqueios e proteção de autenticação. Configurações pessoais de senha, MFA e sessões do usuário atual continuam em `Meu Perfil`.
+
+### Integrações
+
+`Integrações` pertence a `Configurações` como aba interna. Não é submódulo de Administração e não existe como item independente no sidebar. Uma integração somente pode ser apresentada como conectada quando a conexão tiver sido efetivamente validada.
+
+### Auditoria
+
+`Auditoria` pertence a `Configurações` como aba interna e é somente leitura. `Audit Trail` permanece apenas como nomenclatura legada de código quando tecnicamente necessário e nunca como nome visível oficial.
+
+### Usuários
+
+`Usuários` pertence a `Configurações` como aba interna. A gestão inclui usuários, convites, papéis do sistema, permissões, escopos, restrições, unidades autorizadas, status, MFA por usuário, sessões, ativação, suspensão e revogação.
+
+`Cargo` e `Papel do sistema` são conceitos distintos. Cargo pertence à estrutura organizacional/RH; papel define autorização dentro do sistema.
+
+## Meu Perfil
+
+`Meu Perfil` não aparece no sidebar. Ele permanece exclusivamente no menu do usuário/avatar e possui página própria em:
+
+```text
+#/crm/meu-perfil
+```
+
+Meu Perfil administra apenas os dados e a segurança do usuário atual, incluindo informações pessoais, senha, MFA e sessões próprias.
+
+## Administração
+
+`Administração` possui exatamente dois submódulos no sidebar:
+
+```text
+Administração
+├── Estrutura Organizacional
+└── Patrimônio e Licenças
+```
+
+`Acessos e Permissões`, `Auditoria` e `Integrações` não pertencem mais a Administração.
+
+### Estrutura Organizacional
+
+Abrange entidades jurídicas, departamentos, áreas, equipes, cargos, hierarquia, gestores e relações de reporte.
+
+### Patrimônio e Licenças
+
+Abrange computadores, notebooks, celulares, equipamentos, veículos, mobiliário, dispositivos, licenças administrativas, certificados, patrimônio, custódia, movimentações, garantias, validade e baixa.
+
+## Billing
+
+`Billing` não faz parte da arquitetura oficial do Sistema Interno. Não pode aparecer como módulo, submenu, aba, card de navegação ou seção de Configurações. A implementação histórica pode permanecer apenas como legado técnico quando ainda houver dependência interna.
 
 ## Rotas canônicas deste eixo
 
 ```text
 Configurações
 #/crm/configuracoes
+
+Configurações / Empresa
+#/crm/configuracoes?tab=empresa
+
+Configurações / Notificações
+#/crm/configuracoes?tab=notificacoes
+
+Configurações / Segurança
+#/crm/configuracoes?tab=seguranca
+
+Configurações / Integrações
+#/crm/configuracoes?tab=integracoes
+
+Configurações / Auditoria
+#/crm/configuracoes?tab=auditoria
+
+Configurações / Usuários
+#/crm/configuracoes?tab=usuarios
 
 Meu Perfil
 #/crm/meu-perfil
@@ -86,25 +161,28 @@ Administração / Estrutura Organizacional
 
 Administração / Patrimônio e Licenças
 #/crm/administracao/patrimonio-licencas
-
-Administração / Acessos e Permissões
-#/crm/administracao/acessos-permissoes
-
-Administração / Auditoria
-#/crm/administracao/auditoria
-
-Administração / Integrações
-#/crm/administracao/integracoes
 ```
 
 ## Compatibilidade legada temporária
 
-As rotas antigas abaixo podem existir apenas como aliases/redirects técnicos para impedir quebra de links antigos. Elas não são canônicas e não podem aparecer na navegação:
+As rotas abaixo existem somente como aliases/redirects técnicos para impedir quebra de links antigos. Não são canônicas e não podem aparecer na navegação ou breadcrumbs oficiais:
 
 ```text
-#/crm/configuracoes/profile      → #/crm/meu-perfil
-#/crm/configuracoes/users        → #/crm/administracao/acessos-permissoes
-#/crm/configuracoes/audit        → #/crm/administracao/auditoria
-#/crm/configuracoes/integracoes  → #/crm/administracao/integracoes
-#/crm/configuracoes/billing      → #/crm/configuracoes
+#/crm/configuracoes/profile                → #/crm/meu-perfil
+#/crm/configuracoes/users                  → #/crm/configuracoes?tab=usuarios
+#/crm/administracao/acessos-permissoes    → #/crm/configuracoes?tab=usuarios
+#/crm/configuracoes/audit                  → #/crm/configuracoes?tab=auditoria
+#/crm/administracao/auditoria             → #/crm/configuracoes?tab=auditoria
+#/crm/configuracoes/integracoes            → #/crm/configuracoes?tab=integracoes
+#/crm/administracao/integracoes           → #/crm/configuracoes?tab=integracoes
+#/crm/configuracoes/billing                → #/crm/configuracoes?tab=empresa
 ```
+
+## Regras estruturais adicionais
+
+- `Briefings` não é submódulo do Marketing.
+- `Regras de Categorização` e `Categorias Financeiras` não são itens do sidebar financeiro; permanecem apenas como recursos auxiliares quando necessários.
+- `Automações Financeiras` não faz parte da arquitetura.
+- `IA Criativa` não é módulo independente.
+- `P&L Artistas` e `P&L Projetos` não fazem parte da Contabilidade.
+- O nome visível é `ValtrenChat`; `MusicChat` permanece somente como compatibilidade legada até sua remoção segura.
