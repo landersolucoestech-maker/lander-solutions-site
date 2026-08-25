@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 HERE = Path(__file__).resolve().parent
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CACHE_VERSION = "20260825-crm-reference-fidelity-v1"
+CACHE_VERSION = "20260825-crm-reference-fidelity-v2"
 
 
 def _parts(prefix: str) -> str:
@@ -32,6 +32,21 @@ def apply_crm_reference_fidelity_fix() -> int:
     app = APP.read_text(encoding="utf-8")
     js_block = _parts("crm_reference_fidelity_fix.js.part*")
     css_block = _parts("crm_reference_fidelity_fix.css.part*")
+
+    # Normalize the published fidelity source before it is injected into app.js.
+    # Financeiro remains the parent menu; the first child is named Transações.
+    js_block = js_block.replace("[['finance','Financeiro']", "[['finance','Transações']")
+
+    # Regras de Categorização: Transações must appear immediately to the left of Nova Regra.
+    rules_old = "const actions=`<button class=\"primary\" data-action=\"crm-ref-open\" data-kind=\"categorization-rule\">${crmRefIcon('plus')} Nova Regra</button>`;"
+    rules_new = "const actions=`<a class=\"secondary crm-ref-transactions-button\" href=\"#/crm/financeiro\">${crmRefIcon('database')} Transações</a><button class=\"primary\" data-action=\"crm-ref-open\" data-kind=\"categorization-rule\">${crmRefIcon('plus')} Nova Regra</button>`;"
+    js_block = js_block.replace(rules_old, rules_new)
+
+    # Categorias Financeiras: replace the old back button with a Transactions button,
+    # including a left-side icon so it follows the same visual pattern as Criar.
+    categories_old = '<a class="secondary" href="#/crm/financeiro">← Voltar ao Financeiro</a><button class="primary" data-action="crm-ref-open" data-kind="category">${crmRefIcon(\'plus\')} Criar</button>'
+    categories_new = '<a class="secondary crm-ref-transactions-button" href="#/crm/financeiro">${crmRefIcon(\'database\')} Transações</a><button class="primary" data-action="crm-ref-open" data-kind="category">${crmRefIcon(\'plus\')} Criar</button>'
+    js_block = js_block.replace(categories_old, categories_new)
 
     app = re.sub(
         r"\n?  // VALTREN CRM REFERENCE FIDELITY FIX START\n.*?  // VALTREN CRM REFERENCE FIDELITY FIX END\n",
@@ -72,7 +87,7 @@ def apply_crm_reference_fidelity_fix() -> int:
     css = re.sub(r"\n?/\* VALTREN CRM REFERENCE FIDELITY FIX \*/.*\Z", "", css, flags=re.S)
     CSS.write_text(css.rstrip() + "\n\n" + css_block.strip() + "\n", encoding="utf-8")
     _write_cache_version()
-    print("Fidelidade dos módulos anexados aplicada; IA Criativa removida e ValtrenChat ativado.")
+    print("Fidelidade dos módulos aplicada com botões financeiros normalizados.")
     return 1
 
 
