@@ -1,0 +1,88 @@
+    return crmAgendaWeekCalendar(events);
+  }
+
+  function crmAgendaPage(){
+    crmAgendaEnsureState();
+    const events=crmAgendaVisibleEvents();
+    const k=crmAgendaKPIs();
+    const hasFilters=!!state.crmAgendaSearch || state.crmAgendaTypeFilter!=='all-type' || state.crmAgendaStatusFilter!=='all-status';
+    return `<div class="crm-app-shell">
+      ${crmRelSidebar('agenda')}
+      <main class="crm-main">
+        <header class="crm-topbar">
+          <div><h1>Agenda</h1><p>Gerencie shows, turnês e compromissos com foco operacional</p></div>
+          ${crmHeaderActions('agenda')}
+        </header>
+        <section class="crm-workspace crm-agenda-workspace" aria-label="Agenda e Eventos">
+          <div class="crm-agenda-kpis">
+            ${crmAgendaKpiCard('Eventos',k.total,'no total','primary')}
+            ${crmAgendaKpiCard('Confirmados',k.confirmed,'eventos confirmados','success')}
+            ${crmAgendaKpiCard('Pendentes',k.pending,'aguardando confirmação','warning')}
+            ${crmAgendaKpiCard('Próximos 7 dias',k.next7,'na próxima semana','primary')}
+          </div>
+
+          <div class="crm-agenda-toolbar">
+            <button type="button" data-action="crm-agenda-today">Hoje</button>
+            <button type="button" class="icon-only" data-action="crm-agenda-prev" aria-label="Período anterior">‹</button>
+            <button type="button" class="icon-only" data-action="crm-agenda-next" aria-label="Próximo período">›</button>
+            <span class="crm-agenda-period">${esc(crmAgendaPeriodLabel())}</span>
+            <label class="crm-agenda-search">${icon('search',15)}<input id="crm-agenda-search" value="${esc(state.crmAgendaSearch)}" placeholder="Buscar evento..." autocomplete="off"></label>
+            <select id="crm-agenda-view" aria-label="Visualização">${[['dia','Dia'],['semana','Semana'],['mes','Mês'],['ano','Ano']].map(([v,l])=>`<option value="${v}" ${state.crmAgendaViewMode===v?'selected':''}>${l}</option>`).join('')}</select>
+            <select id="crm-agenda-type" aria-label="Tipo de evento"><option value="all-type">Todos Tipos</option>${CRM_AGENDA_TYPES.map(([v,l])=>`<option value="${v}" ${state.crmAgendaTypeFilter===v?'selected':''}>${l}</option>`).join('')}</select>
+            <select id="crm-agenda-status" aria-label="Status">${CRM_AGENDA_FILTER_STATUSES.map(([v,l])=>`<option value="${v}" ${state.crmAgendaStatusFilter===v?'selected':''}>${l}</option>`).join('')}</select>
+            ${hasFilters?'<button type="button" data-action="crm-agenda-clear">Limpar filtros</button>':''}
+          </div>
+
+          ${events.length ? crmAgendaCalendar(events) : `<section class="crm-agenda-empty"><div>${icon('calendar',42)}</div><p>Nenhum evento encontrado</p><button type="button" data-action="crm-agenda-create">${icon('plus',15)} Criar primeiro evento</button></section>`}
+        </section>
+      </main>
+    </div>`;
+  }
+
+  function crmAgendaPJContacts(){
+    if (typeof crmRelEnsureState==='function') crmRelEnsureState();
+    return Array.isArray(state.crmRelContacts) ? state.crmRelContacts.filter((item)=>item.tipo_pessoa==='pessoa_juridica') : [];
+  }
+
+  function crmAgendaField(label,name,value='',type='text',extra=''){
+    return `<label class="crm-agenda-field"><span>${label}</span><input type="${type}" name="${name}" value="${esc(value ?? '')}" ${extra}></label>`;
+  }
+  function crmAgendaSelect(label,name,value,options,extra=''){
+    return `<label class="crm-agenda-field"><span>${label}</span><select name="${name}" ${extra}>${options.map(([v,l])=>`<option value="${esc(v)}" ${String(value)===String(v)?'selected':''}>${esc(l)}</option>`).join('')}</select></label>`;
+  }
+  function crmAgendaTextarea(label,name,value='',placeholder=''){
+    return `<label class="crm-agenda-field"><span>${label}</span><textarea name="${name}" placeholder="${esc(placeholder)}">${esc(value ?? '')}</textarea></label>`;
+  }
+
+  function crmAgendaOpenForm(mode='create',id=''){
+    crmAgendaEnsureState();
+    const item=state.crmAgendaEvents.find((row)=>row.id===id) || null;
+    document.getElementById('crm-agenda-modal-root')?.remove();
+    const root=document.createElement('div');
+    root.id='crm-agenda-modal-root';
+    root.className='crm-agenda-modal-root';
+    root.innerHTML=crmAgendaFormModal(mode,item);
+    document.body.appendChild(root);
+    document.body.classList.add('crm-rel-modal-open');
+    crmAgendaToggleConditionalFields();
+    setTimeout(()=>root.querySelector('input,select,textarea')?.focus(),0);
+  }
+
+  function crmAgendaOpenView(id){
+    crmAgendaEnsureState();
+    const item=state.crmAgendaEvents.find((row)=>row.id===id);
+    if (!item) return;
+    document.getElementById('crm-agenda-modal-root')?.remove();
+    const root=document.createElement('div');
+    root.id='crm-agenda-modal-root';
+    root.className='crm-agenda-modal-root';
+    root.innerHTML=crmAgendaViewModal(item);
+    document.body.appendChild(root);
+    document.body.classList.add('crm-rel-modal-open');
+  }
+
+  function crmAgendaCloseModal(){
+    document.getElementById('crm-agenda-modal-root')?.remove();
+    document.body.classList.remove('crm-rel-modal-open');
+  }
+
