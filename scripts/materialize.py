@@ -39,6 +39,7 @@ def _apply_valtren_brand() -> bool:
         from crm_relationships_field_color_fix import apply_crm_relationships_field_color_fix
         from crm_relationships_intro_remove import apply_crm_relationships_intro_remove
         from crm_relationships_kpi_tableview_fix import apply_crm_relationships_kpi_tableview_fix
+        from crm_agenda_module import apply_crm_agenda_module
 
         apply_branding()
         finalize_branding()
@@ -60,6 +61,7 @@ def _apply_valtren_brand() -> bool:
         apply_crm_relationships_field_color_fix()
         apply_crm_relationships_intro_remove()
         apply_crm_relationships_kpi_tableview_fix()
+        apply_crm_agenda_module()
         return True
     except Exception as error:
         print(f"Falha ao aplicar a identidade visual da Valtren: {error}", file=sys.stderr)
