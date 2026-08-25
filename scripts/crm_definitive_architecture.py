@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CACHE_VERSION = "20260825-crm-definitive-architecture-v2"
+CACHE_VERSION = "20260825-crm-definitive-architecture-v3"
 
 JS_BLOCK = r'''  // VALTREN CRM DEFINITIVE ARCHITECTURE START
   function crmArchitecturePlaceholderPage(active,sub,title,description='Estrutura do módulo preparada para a próxima etapa de implementação.'){
@@ -19,6 +19,12 @@ JS_BLOCK = r'''  // VALTREN CRM DEFINITIVE ARCHITECTURE START
       const last=index===items.length-1;
       return `${index?'<span>/</span>':''}${last?`<strong>${esc(item.label)}</strong>`:`<a href="${item.href}">${esc(item.label)}</a>`}`;
     }).join('')}</nav>`;
+  }
+
+  function crmAdminPlaceholderPage(sub,title,description='Estrutura administrativa preparada para a próxima etapa de implementação.'){
+    const breadcrumb=crmArchitectureBreadcrumb([{label:'Administração',href:'#/crm/administracao'},{label:title,href:sub==='structure'?'#/crm/administracao':'#/crm/administracao/patrimonio-licencas'}]);
+    const body=crmFidelityPanel(title,'',crmRefEmpty('Módulo preparado para implementação','A estrutura e a rota já fazem parte da arquitetura oficial do Sistema Interno.'));
+    return crmFidelityPage('admin',sub,title,description,'',`${breadcrumb}${body}`);
   }
 
   function crmCanonicalSettingsPage(){
@@ -165,8 +171,8 @@ JS_BLOCK = r'''  // VALTREN CRM DEFINITIVE ARCHITECTURE START
     if(path==='/crm/configuracoes')return crmCanonicalSettingsPage();
     if(path==='/crm/meu-perfil')return crmCanonicalProfilePage();
 
-    if(path==='/crm/administracao')return crmArchitecturePlaceholderPage('admin','structure','Estrutura Organizacional');
-    if(path==='/crm/administracao/patrimonio-licencas')return crmArchitecturePlaceholderPage('admin','assets','Patrimônio e Licenças');
+    if(path==='/crm/administracao')return crmAdminPlaceholderPage('structure','Estrutura Organizacional');
+    if(path==='/crm/administracao/patrimonio-licencas')return crmAdminPlaceholderPage('assets','Patrimônio e Licenças');
     if(path==='/crm/administracao/acessos-permissoes')return crmAdminAccessPage();
     if(path==='/crm/administracao/auditoria')return crmAdminAuditPage();
     if(path==='/crm/administracao/integracoes')return crmAdminIntegrationsPage();
@@ -241,7 +247,6 @@ def apply_crm_definitive_architecture() -> int:
 
     app = APP.read_text(encoding="utf-8")
 
-    # Remove a prior execution of this final architecture patch.
     app = re.sub(
         r"\n?  // VALTREN CRM DEFINITIVE ARCHITECTURE START\n.*?  // VALTREN CRM DEFINITIVE ARCHITECTURE END\n",
         "\n",
@@ -249,7 +254,6 @@ def apply_crm_definitive_architecture() -> int:
         flags=re.S,
     )
 
-    # Neutralize legacy Configurações navigation definitions before the canonical layer is injected.
     app = app.replace(
         "const CRM_REF_SETTINGS_SUB=[['settings','Configurações'],['users','Usuários'],['profile','Meu Perfil'],['audit','Audit Trail'],['billing','Billing']];",
         "const CRM_REF_SETTINGS_SUB=[['settings','Configurações']];",
@@ -263,13 +267,11 @@ def apply_crm_definitive_architecture() -> int:
         "const tabs=[['company','Empresa']];",
     )
 
-    # Meu Perfil belongs exclusively to the user/avatar menu.
     app = app.replace(
         '<button type="button" data-action="crm-header-account-item" data-account-item="profile">Perfil</button>',
         '<button type="button" data-action="crm-header-account-item" data-account-item="profile">Meu Perfil</button>',
     )
 
-    # Route the corrected structural domains through the final router in every render path.
     old_route_tail = "path.startsWith('/crm/configuracoes')"
     new_route_tail = "(path.startsWith('/crm/configuracoes') || path === '/crm/meu-perfil' || path.startsWith('/crm/juridico') || path === '/crm/rh' || path.startsWith('/crm/negocios') || path.startsWith('/crm/administracao'))"
     if old_route_tail not in app:
@@ -281,7 +283,6 @@ def apply_crm_definitive_architecture() -> int:
         raise RuntimeError("Âncora contactPage ausente para arquitetura definitiva")
     app = app.replace(anchor, JS_BLOCK.rstrip() + "\n\n" + anchor, 1)
 
-    # Guardrails: validate the definitive sidebar before writing the generated application.
     sidebar_source = JS_BLOCK.split("  function crmRelSidebar", 1)[1].split("  function crmReferenceRoute", 1)[0]
     forbidden_sidebar = ["Meu Perfil", "Audit Trail", "Usuários", "Billing"]
     leaked = [label for label in forbidden_sidebar if label in sidebar_source]
@@ -297,7 +298,6 @@ def apply_crm_definitive_architecture() -> int:
     if "nav('#/crm/configuracoes','Configurações'" not in sidebar_source:
         raise RuntimeError("Configurações não está materializado como módulo único")
 
-    # Verify canonical routes and technical-only legacy redirects.
     required_routes = [
         "#/crm/meu-perfil",
         "/crm/administracao/acessos-permissoes",
