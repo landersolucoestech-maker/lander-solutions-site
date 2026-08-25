@@ -3,7 +3,7 @@ import re
 
 ROOT = Path(__file__).resolve().parents[1]
 CSS = ROOT / 'assets' / 'valtren-brand.css'
-VERSION = '20260824-crm-field-colors-v1'
+VERSION = '20260824-crm-field-colors-v2'
 MARKER = '/* VALTREN CRM FIELD COLOR FIX */'
 
 PATCH = '''
@@ -40,6 +40,43 @@ PATCH = '''
   border-color:#D4AF37!important;
   box-shadow:0 0 0 2px rgba(212,175,55,.14)!important;
   outline:none!important;
+}
+
+/* Native browser checkboxes */
+.crm-rel-check input[type="checkbox"],
+.crm-rel-list-actions input[type="checkbox"],
+#crm-rel-select-all,
+#crm-rel-modal-root input[type="checkbox"]{
+  appearance:auto!important;
+  -webkit-appearance:checkbox!important;
+  accent-color:auto!important;
+  width:auto!important;
+  height:auto!important;
+  background:initial!important;
+  border:initial!important;
+  border-radius:initial!important;
+  box-shadow:none!important;
+}
+
+/* Native browser scrollbars */
+.crm-main,
+.crm-main *,
+#crm-rel-modal-root,
+#crm-rel-modal-root *{
+  scrollbar-color:auto!important;
+  scrollbar-width:auto!important;
+}
+.crm-main *::-webkit-scrollbar,
+.crm-main *::-webkit-scrollbar-thumb,
+.crm-main *::-webkit-scrollbar-track,
+.crm-main *::-webkit-scrollbar-corner,
+.crm-main *::-webkit-scrollbar-button,
+#crm-rel-modal-root *::-webkit-scrollbar,
+#crm-rel-modal-root *::-webkit-scrollbar-thumb,
+#crm-rel-modal-root *::-webkit-scrollbar-track,
+#crm-rel-modal-root *::-webkit-scrollbar-corner,
+#crm-rel-modal-root *::-webkit-scrollbar-button{
+  all:revert!important;
 }
 '''
 
