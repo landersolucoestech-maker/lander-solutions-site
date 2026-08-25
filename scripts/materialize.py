@@ -52,6 +52,7 @@ def _apply_valtren_brand() -> bool:
         from crm_invoice_modal_refactor import apply_crm_invoice_modal_refactor
         from crm_complete_module import apply_crm_complete_module
         from crm_definitive_architecture import apply_crm_definitive_architecture
+        from crm_financial_transactions import apply_crm_financial_transactions
 
         apply_branding()
         finalize_branding()
@@ -84,11 +85,12 @@ def _apply_valtren_brand() -> bool:
         apply_crm_finance_transactions_label_fix()
         apply_crm_tableview_header_light_fix()
         apply_crm_invoice_modal_refactor()
-        # Canonical system navigation is resolved first; the CRM patch runs last,
-        # touches only CRM functions/CSS, validates that it does not create sidebar items,
-        # and leaves its cache version as the final published asset version.
+        # Resolve the canonical navigation first. CRM remains the canonical relationship layer.
         apply_crm_definitive_architecture()
         apply_crm_complete_module()
+        # Transactions runs last because it only replaces Financeiro → Transações and its CSS,
+        # validates the definitive sidebar, and must not be overwritten by the legacy finance page.
+        apply_crm_financial_transactions()
         return True
     except Exception as error:
         print(f"Falha ao aplicar a identidade visual da Valtren: {error}", file=sys.stderr)
