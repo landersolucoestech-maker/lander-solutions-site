@@ -144,7 +144,7 @@ def main() -> int:
             archive = _read_packaged_archive(chunks)
             with zipfile.ZipFile(io.BytesIO(archive)) as package:
                 package.extractall(ROOT)
-        except (ValueError, zipfile.BadZip64.binascii.Error, zlib.error) as error:
+        except (ValueError, zipfile.BadZipFile, base64.binascii.Error, zlib.error) as error:
             print(f"Falha ao reconstruir o projeto: {error}", file=sys.stderr)
             return 1
 
