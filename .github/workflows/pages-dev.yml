@@ -60,6 +60,13 @@ jobs:
           node scripts/test_crm_cost_allocations.js
           node scripts/test_crm_cost_allocations_ui.js
 
+      - name: Test Legal Contracts domain
+        run: |
+          node --check scripts/crm_legal_contracts_core.js
+          node --check scripts/crm_legal_contracts_browser.js
+          node scripts/test_crm_legal_contracts.js
+          node scripts/test_crm_legal_contracts_ui.js
+
       - name: Materialize site
         run: python scripts/materialize.py
 
@@ -77,6 +84,8 @@ jobs:
           node scripts/test_crm_fiscal_documents_ui.js --materialized
           node scripts/test_crm_cost_allocations.js --materialized
           node scripts/test_crm_cost_allocations_ui.js --materialized
+          node scripts/test_crm_legal_contracts.js --materialized
+          node scripts/test_crm_legal_contracts_ui.js --materialized
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
