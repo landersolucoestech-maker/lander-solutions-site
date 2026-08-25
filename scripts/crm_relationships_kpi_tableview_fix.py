@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CACHE_VERSION = "20260824-crm-kpi-tableview-v2"
+CACHE_VERSION = "20260824-crm-kpi-tableview-v3"
 MARKER = "/* VALTREN CRM KPI TABLEVIEW */"
 
 CSS_PATCH = r'''
@@ -86,7 +86,7 @@ def apply_crm_relationships_kpi_tableview_fix() -> int:
         r'(<nav class="crm-rel-tabs" aria-label="Abas do CRM">.*?</nav>)\s*(<div class="crm-rel-toolbar">)',
         re.S,
     )
-    app, count = tabs_pattern.subn(r'\1\n\n          ${kpiMarkup}\n\n          \2', app, count=1)
+    app, count = tabs_pattern.subn(r'${kpiMarkup}\n\n          \1\n\n          \2', app, count=1)
     if count != 1:
         raise RuntimeError(f"Âncora estrutural das abas do CRM não encontrada: {count}")
 
@@ -106,7 +106,7 @@ def apply_crm_relationships_kpi_tableview_fix() -> int:
         if updated != original:
             path.write_text(updated, encoding="utf-8")
 
-    print("KPIs e alinhamento do TableView de Contatos/Leads atualizados.")
+    print("KPIs posicionados acima das abas e TableView padronizado.")
     return 1
 
 
