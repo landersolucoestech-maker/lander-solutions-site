@@ -5,7 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
-CACHE_VERSION = "20260825-finance-transactions-label-v2"
+CACHE_VERSION = "20260825-finance-transactions-label-v3"
 
 
 def apply_crm_finance_transactions_label_fix() -> int:
@@ -15,10 +15,14 @@ def apply_crm_finance_transactions_label_fix() -> int:
     app = app.replace("['finance','Financeiro']", "['finance','Transações']")
     app = app.replace('["finance","Financeiro"]', '["finance","Transações"]')
 
-    # Add a direct Transactions action to the Categorization Rules module.
+    # Categorization Rules actions: Transactions MUST be immediately to the left of New Rule.
     rules_actions = '<div class="crm-ref-actions right"><button class="primary" data-action="crm-ref-open" data-kind="categorization-rule">${crmRefIcon(\'plus\')} Nova Regra</button></div>'
-    rules_actions_with_transactions = '<div class="crm-ref-actions right"><a class="secondary" href="#/crm/financeiro">${crmRefIcon(\'database\')} Transações</a><button class="primary" data-action="crm-ref-open" data-kind="categorization-rule">${crmRefIcon(\'plus\')} Nova Regra</button></div>'
+    rules_actions_with_transactions = '<div class="crm-ref-actions right"><button type="button" class="secondary crm-ref-transactions-button" style="order:-1" onclick="location.hash=\'#/crm/financeiro\'">${crmRefIcon(\'database\')} Transações</button><button class="primary" data-action="crm-ref-open" data-kind="categorization-rule">${crmRefIcon(\'plus\')} Nova Regra</button></div>'
     app = app.replace(rules_actions, rules_actions_with_transactions)
+
+    # Normalize the previous implementation too, if this patch runs over an already-patched build.
+    previous_rules_actions = '<div class="crm-ref-actions right"><a class="secondary" href="#/crm/financeiro">${crmRefIcon(\'database\')} Transações</a><button class="primary" data-action="crm-ref-open" data-kind="categorization-rule">${crmRefIcon(\'plus\')} Nova Regra</button></div>'
+    app = app.replace(previous_rules_actions, rules_actions_with_transactions)
 
     APP.write_text(app, encoding="utf-8")
 
@@ -30,7 +34,7 @@ def apply_crm_finance_transactions_label_fix() -> int:
         text = re.sub(r"app\.js(?:\?v=[A-Za-z0-9._-]+)?", f"app.js?v={CACHE_VERSION}", text)
         path.write_text(text, encoding="utf-8")
 
-    print('Sub-menu financeiro renomeado para "Transações" e botão "Transações" adicionado às Regras de Categorização.')
+    print('Sub-menu financeiro renomeado para "Transações" e botão "Transações" fixado imediatamente à esquerda de "Nova Regra".')
     return 1
 
 
