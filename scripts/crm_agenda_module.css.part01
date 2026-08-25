@@ -1,0 +1,7 @@
+
+/* VALTREN CRM AGENDA EVENTS */
+.crm-agenda-workspace{width:100%!important;max-width:none!important;margin:0!important;box-sizing:border-box!important;padding:26px 32px 40px!important;}
+.crm-agenda-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px;}
+.crm-agenda-kpi{background:#fff;border:1px solid rgba(11,29,58,.09);border-radius:12px;padding:15px 16px;min-height:92px;display:flex;align-items:center;gap:13px;box-sizing:border-box;}
+.crm-agenda-kpi-icon{width:38px;height:38px;border-radius:9px;background:#F1F4F8;display:grid;place-items:center;color:#0B1D3A;flex:0 0 auto;}
+.crm-agenda-kpi.success .crm-agenda-kpi-icon{background:#EAF7F0;color:#28734E}.crm-agenda-kpi.warning .crm-agenda-kpi-icon{background:#FFF6E8;color:#9A681C}
