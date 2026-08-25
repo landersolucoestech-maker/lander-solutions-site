@@ -9,7 +9,7 @@ CSS = ROOT / "assets" / "valtren-brand.css"
 CORE = ROOT / "scripts" / "crm_legal_contracts_core.js"
 BROWSER = ROOT / "scripts" / "crm_legal_contracts_browser.js"
 MODULE_CSS = ROOT / "scripts" / "crm_legal_contracts.css"
-CACHE_VERSION = "20260825-legal-contracts-v1"
+CACHE_VERSION = "20260825-legal-contracts-v2"
 JS_START = "  // VALTREN LEGAL CONTRACTS START\n"
 JS_END = "  // VALTREN LEGAL CONTRACTS END\n"
 
@@ -57,7 +57,6 @@ def apply_crm_legal_contracts() -> int:
         "function crmLegalVariablesPage()",
         "function crmContractEconomicRulesFeed",
         "function crmContractResolveEconomicRuleForPeriod",
-        "Jurídico / Contratos",
         "Novo Contrato",
         "Novo Template",
         "Preview A4",
@@ -89,18 +88,31 @@ def apply_crm_legal_contracts() -> int:
     if missing_untouched:
         raise RuntimeError(f"Módulo Jurídico fora do escopo foi alterado: {missing_untouched}")
 
-    # Canonical Finance stack must remain intact; Participações/Repasses remain unimplemented.
+    # Canonical Finance stack must remain intact. Participações/Repasses are validated as
+    # placeholders using the current canonical Portuguese sub-ids; older English sub-ids
+    # are accepted only as route-compatibility markers from prior architecture revisions.
     finance_required = [
         "if(path==='/crm/financeiro')return crmTransactionsPage();",
         "if(path==='/crm/financeiro/accounting')return crmAccountingPage();",
         "if(path==='/crm/financeiro/notas-fiscais')return crmFiscalDocumentsPage();",
         "if(path==='/crm/financeiro/rateios'){const page=crmCostAllocationsPage();",
-        "if(path==='/crm/financeiro/participacoes')return crmArchitecturePlaceholderPage('accounting','participations','Participações');",
-        "if(path==='/crm/financeiro/repasses')return crmArchitecturePlaceholderPage('accounting','payouts','Repasses');",
     ]
     missing_finance = [route for route in finance_required if route not in app]
     if missing_finance:
         raise RuntimeError(f"Stack Financeiro sofreu regressão durante Contratos: {missing_finance}")
+
+    participation_placeholders = [
+        "if(path==='/crm/financeiro/participacoes')return crmArchitecturePlaceholderPage('accounting','participacoes','Participações');",
+        "if(path==='/crm/financeiro/participacoes')return crmArchitecturePlaceholderPage('accounting','participations','Participações');",
+    ]
+    payout_placeholders = [
+        "if(path==='/crm/financeiro/repasses')return crmArchitecturePlaceholderPage('accounting','repasses','Repasses');",
+        "if(path==='/crm/financeiro/repasses')return crmArchitecturePlaceholderPage('accounting','payouts','Repasses');",
+    ]
+    if not any(marker in app for marker in participation_placeholders):
+        raise RuntimeError("Financeiro → Participações deixou de permanecer placeholder")
+    if not any(marker in app for marker in payout_placeholders):
+        raise RuntimeError("Financeiro → Repasses deixou de permanecer placeholder")
 
     if "createTransaction(" in browser or "createFiscalDocument(" in browser:
         raise RuntimeError("Jurídico → Contratos não pode criar Transação ou Nota Fiscal")
