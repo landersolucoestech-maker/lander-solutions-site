@@ -46,6 +46,13 @@ jobs:
           node scripts/test_crm_accounting.js
           node scripts/test_crm_accounting_ui.js
 
+      - name: Test Fiscal Documents domain
+        run: |
+          node --check scripts/crm_fiscal_documents_core.js
+          node --check scripts/crm_fiscal_documents_browser.js
+          node scripts/test_crm_fiscal_documents.js
+          node scripts/test_crm_fiscal_documents_ui.js
+
       - name: Materialize site
         run: python scripts/materialize.py
 
@@ -59,6 +66,8 @@ jobs:
           node scripts/test_crm_financial_transactions_ui.js --materialized
           node scripts/test_crm_accounting.js --materialized
           node scripts/test_crm_accounting_ui.js --materialized
+          node scripts/test_crm_fiscal_documents.js --materialized
+          node scripts/test_crm_fiscal_documents_ui.js --materialized
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
