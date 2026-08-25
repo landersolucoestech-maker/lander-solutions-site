@@ -9,7 +9,7 @@ CSS = ROOT / "assets" / "valtren-brand.css"
 CORE = ROOT / "scripts" / "crm_cost_allocations_core.js"
 BROWSER = ROOT / "scripts" / "crm_cost_allocations_browser.js"
 MODULE_CSS = ROOT / "scripts" / "crm_cost_allocations.css"
-CACHE_VERSION = "20260825-cost-allocations-v1"
+CACHE_VERSION = "20260825-cost-allocations-v2"
 JS_START = "  // VALTREN COST ALLOCATIONS START\n"
 JS_END = "  // VALTREN COST ALLOCATIONS END\n"
 
@@ -90,12 +90,17 @@ def apply_crm_cost_allocations() -> int:
     if dimension_count != 1:
         raise RuntimeError(f"dimensionAmount da Contabilidade não pôde ser adaptado: {dimension_count}")
 
-    old_dimension_filters = "      if(filters.serviceId&&meta.serviceId!==filters.serviceId)return null;\n      if(filters.businessUnitId&&meta.businessUnitId!==filters.businessUnitId)return null;"
-    new_dimension_filters = "      const effectiveAllocations=(Array.isArray(tx.allocations)?tx.allocations:[]).filter((item)=>item.source!=='cost_allocation'||item.status==='posted');\n      const allocatedTo=(type,id)=>effectiveAllocations.some((item)=>(item.destinationType||item.dimension)===type&&(item.destinationId||item.productId||item.serviceId||item.businessUnitId||'')===id);\n      if(filters.serviceId&&meta.serviceId!==filters.serviceId&&!allocatedTo('service',filters.serviceId))return null;\n      if(filters.businessUnitId&&meta.businessUnitId!==filters.businessUnitId&&!allocatedTo('business_unit',filters.businessUnitId))return null;"
-    dimension_filter_count = app.count(old_dimension_filters)
-    if dimension_filter_count < 2:
-        raise RuntimeError(f"Filtros dimensionais esperados da Contabilidade não encontrados: {dimension_filter_count}")
-    app = app.replace(old_dimension_filters, new_dimension_filters)
+    row_filters_old = "      if(filters.serviceId&&meta.serviceId!==filters.serviceId)return null;\n      if(filters.businessUnitId&&meta.businessUnitId!==filters.businessUnitId)return null;"
+    row_filters_new = "      const effectiveAllocations=(Array.isArray(tx.allocations)?tx.allocations:[]).filter((item)=>item.source!=='cost_allocation'||item.status==='posted');\n      const allocatedTo=(type,id)=>effectiveAllocations.some((item)=>(item.destinationType||item.dimension)===type&&(item.destinationId||item.productId||item.serviceId||item.businessUnitId||'')===id);\n      if(filters.serviceId&&meta.serviceId!==filters.serviceId&&!allocatedTo('service',filters.serviceId))return null;\n      if(filters.businessUnitId&&meta.businessUnitId!==filters.businessUnitId&&!allocatedTo('business_unit',filters.businessUnitId))return null;"
+    if app.count(row_filters_old) != 1:
+        raise RuntimeError(f"Filtro dimensional rowFor não encontrado de forma inequívoca: {app.count(row_filters_old)}")
+    app = app.replace(row_filters_old, row_filters_new, 1)
+
+    list_filters_old = "        if(filters.serviceId&&meta.serviceId!==filters.serviceId)continue;\n        if(filters.businessUnitId&&meta.businessUnitId!==filters.businessUnitId)continue;"
+    list_filters_new = "        const effectiveAllocations=(Array.isArray(tx.allocations)?tx.allocations:[]).filter((item)=>item.source!=='cost_allocation'||item.status==='posted');\n        const allocatedTo=(type,id)=>effectiveAllocations.some((item)=>(item.destinationType||item.dimension)===type&&(item.destinationId||item.productId||item.serviceId||item.businessUnitId||'')===id);\n        if(filters.serviceId&&meta.serviceId!==filters.serviceId&&!allocatedTo('service',filters.serviceId))continue;\n        if(filters.businessUnitId&&meta.businessUnitId!==filters.businessUnitId&&!allocatedTo('business_unit',filters.businessUnitId))continue;"
+    if app.count(list_filters_old) != 1:
+        raise RuntimeError(f"Filtro dimensional listEntries não encontrado de forma inequívoca: {app.count(list_filters_old)}")
+    app = app.replace(list_filters_old, list_filters_new, 1)
 
     issues_old = "      const issues=[],resolved=resolveClassification(tx),meta=getTransactionMeta(tx.id);"
     issues_new = "      const issues=[],resolved=resolveClassification(tx),meta=getTransactionMeta(tx.id);\n      if(tx.metadata?.costAllocationProjection?.status==='needs_review')issues.push('allocation_needs_review');"
