@@ -1,0 +1,11 @@
+  function crmRelSidebar(active='relationships',sub=''){
+    const nav=(href,label,ic,key)=>`<a class="${active===key?'active':''}" href="${href}">${icon(ic,18)}<span>${label}</span></a>`;
+    const subgroup=(key,label,ic,base,items)=>`<details class="crm-nav-group" ${active===key?'open':''}><summary>${icon(ic,18)}<span>${label}</span><b>⌄</b></summary><div>${items.map(([id,text])=>`<a class="${active===key&&sub===id?'active':''}" href="#${base}${id==='overview'||id==='finance'||id==='settings'?'':'/'+id}">${text}</a>`).join('')}</div></details>`;
+    return `<aside class="crm-sidebar"><a class="crm-brand" href="#/crm/dashboard" aria-label="Valtren CRM Integrado"><img src="assets/valtren-mark.svg" alt="Valtren Solutions"><span><strong>VALTREN</strong><small>CRM Integrado</small></span></a><nav class="crm-nav" aria-label="Módulos do CRM">
+      ${nav('#/crm/dashboard','Dashboard','layers','dashboard')}${nav('#/crm/relationships','CRM','users','relationships')}${nav('#/crm/agenda','Agenda','calendar','agenda')}
+      ${subgroup('accounting','Financeiro','database','/crm/financeiro',CRM_REF_ACCOUNTING_SUB)}
+      ${subgroup('marketing','Marketing','globe','/crm/marketing',CRM_REF_MARKETING_SUB)}
+      ${nav('#/crm/musicchat','MusicChat','message','musicchat')}${nav('#/crm/relatorios','Relatórios','file','reports')}
+      ${subgroup('settings','Configurações','settings','/crm/configuracoes',CRM_REF_SETTINGS_SUB)}
+    </nav></aside>`;
+  }
