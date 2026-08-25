@@ -1,0 +1,30 @@
+n;}
+      if(a==='crm-ref-campaign-next'||a==='crm-ref-campaign-prev'){
+        const modal=document.querySelector('.crm-ref-campaign-modal');
+        if(!modal)return;
+        const stages=[...modal.querySelectorAll('[data-campaign-step]')];
+        let current=stages.findIndex((x)=>!x.hidden)+1;
+        current=Math.max(1,Math.min(9,current+(a==='crm-ref-campaign-next'?1:-1)));
+        stages.forEach((x)=>x.hidden=Number(x.dataset.campaignStep)!==current);
+        modal.querySelectorAll('[data-campaign-step-button]').forEach((x)=>x.classList.toggle('active',Number(x.dataset.campaignStepButton)===current));
+        const prev=modal.querySelector('[data-action="crm-ref-campaign-prev"]');
+        const next=modal.querySelector('[data-action="crm-ref-campaign-next"]');
+        if(prev)prev.disabled=current===1;
+        if(next)next.textContent=current===9?'Finalizar campanha':'Próximo';
+        return;
+      }
+      if(a==='crm-ref-ai-tab'){state.crmRefAiTab=t.dataset.tab;renderCurrentWithoutReset();return;}
+      if(a==='crm-ref-musicchat-tab'){crmRefEnsureState();state.crmRefMusicChat.tab=t.dataset.tab;renderCurrentWithoutReset();return;}
+      if(a==='crm-ref-settings-tab'){state.crmRefSettingsTab=t.dataset.tab;renderCurrentWithoutReset();return;}
+      if(a==='crm-ref-accounting-tab'){state.crmRefAccountingTab=t.dataset.tab;renderCurrentWithoutReset();return;}
+    });
+    document.addEventListener('submit',(event)=>{
+      const form=event.target;
+      if(!(form instanceof HTMLFormElement)||!form.id.startsWith('crm-ref-'))return;
+      event.preventDefault();
+      crmRefCloseModal();
+      if(typeof renderCurrentWithoutReset==='function')renderCurrentWithoutReset();
+    });
+    document.addEventListener('keydown',(event)=>{if(event.key==='Escape'&&document.getElementById('crm-ref-modal-root'))crmRefCloseModal();});
+  }
+  // VALTREN CRM REFERENCE MODULES END
