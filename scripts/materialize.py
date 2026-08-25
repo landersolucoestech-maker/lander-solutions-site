@@ -54,6 +54,7 @@ def _apply_valtren_brand() -> bool:
         from crm_definitive_architecture import apply_crm_definitive_architecture
         from crm_financial_transactions import apply_crm_financial_transactions
         from crm_accounting import apply_crm_accounting
+        from crm_fiscal_documents import apply_crm_fiscal_documents
 
         apply_branding()
         finalize_branding()
@@ -92,9 +93,12 @@ def _apply_valtren_brand() -> bool:
         # Transactions must be materialized before Accounting because Accounting derives all
         # financial movements from crmFinanceService/state.crmFinancialTransactions.
         apply_crm_financial_transactions()
-        # Accounting is the final finance layer in this stage: it replaces only /accounting,
-        # removes legacy P&L views, validates the sidebar and leaves Transactions untouched.
+        # Accounting consumes Transactions and remains independent from fiscal competence.
         apply_crm_accounting()
+        # Notas Fiscais is the final finance layer in this stage: it replaces only the
+        # fiscal page/route, consumes canonical parties/Transactions and exposes a read-only
+        # adapter for Accounting without changing the sidebar or other module ownership.
+        apply_crm_fiscal_documents()
         return True
     except Exception as error:
         print(f"Falha ao aplicar a identidade visual da Valtren: {error}", file=sys.stderr)
