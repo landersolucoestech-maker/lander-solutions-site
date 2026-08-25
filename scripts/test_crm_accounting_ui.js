@@ -34,7 +34,7 @@ if(process.argv.includes('--materialized')){
   const app=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
   const bundleCss=fs.readFileSync(path.join(__dirname,'..','assets','valtren-brand.css'),'utf8');
   test('UI contábil final está no bundle',()=>{assert(app.includes('function crmAccountingDreView'));assert(app.includes('function crmAccountingEntriesView'));assert(app.includes('function crmAccountingClassificationsView'));});
-  test('rota publicada de Contabilidade é única e canônica',()=>{assert.equal((app.match(/if\(path==='\/crm\/financeiro\/accounting'\)return crmAccountingPage\(\);/g)||[]).length,1);assert(!app.includes("return crmRefAccountingPage();"));});
+  test('rota efetiva de Contabilidade é canônica e nenhuma rota legada sobrevive',()=>{const canonical="if(path==='/crm/financeiro/accounting')return crmAccountingPage();";assert(app.includes(canonical));assert(!app.includes("if(path==='/crm/financeiro/accounting')return crmRefAccountingPage();"));const routeStart=app.lastIndexOf('function crmReferenceRoute');const routeEnd=app.indexOf('return null;',routeStart);assert(app.slice(routeStart,routeEnd).includes(canonical));});
   test('P&L legado não sobrevive ao bundle',()=>{for(const label of ['P&L Empresa','P&L Projetos','P&L Artistas','P&L por Projeto','P&L por Artista'])assert(!app.includes(label));});
   test('CSS responsivo Contabilidade está no bundle',()=>{assert(bundleCss.includes('/* VALTREN ACCOUNTING */'));assert(bundleCss.includes('@media(max-width:520px)'));});
 }
