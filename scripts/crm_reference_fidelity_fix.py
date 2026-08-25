@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 HERE = Path(__file__).resolve().parent
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CACHE_VERSION = "20260825-crm-reference-fidelity-v2"
+CACHE_VERSION = "20260825-crm-reference-fidelity-v3"
 
 
 def _parts(prefix: str) -> str:
@@ -48,6 +48,19 @@ def apply_crm_reference_fidelity_fix() -> int:
     categories_new = '<a class="secondary crm-ref-transactions-button" href="#/crm/financeiro">${crmRefIcon(\'database\')} Transações</a><button class="primary" data-action="crm-ref-open" data-kind="category">${crmRefIcon(\'plus\')} Criar</button>'
     js_block = js_block.replace(categories_old, categories_new)
 
+    # Contabilidade: não existe P&L por projetos nem P&L por artistas.
+    # Mantemos somente a estrutura geral e P&L Empresa até a próxima definição funcional.
+    accounting_page = r'''  function crmRefAccountingPage(){const rawTab=state.crmRefAccountingTab||'all';const tab=rawTab==='company'?'company':'all';const tabs=[['all','Todos'],['company','P&L Empresa']];const k=`<div class="crm-ref-kpis four">${crmRefKpi('Receita Total',crmRefMoney(0),'','success')}${crmRefKpi('Despesa Total',crmRefMoney(0),'','danger')}${crmRefKpi('Lucro Líquido',crmRefMoney(0),'','success')}${crmRefKpi('Margem Líquida','0.0%')}</div>`;const filters=crmRefToolbar(`<input type="date" aria-label="Data início"><input type="date" aria-label="Data fim"><label class="crm-ref-search">${icon('search',14)}<input placeholder="Buscar por descrição ou categoria…"></label><select><option>Todos</option><option>Receitas</option><option>Despesas</option><option>Lucro</option></select>`);const tabnav=`<nav class="crm-ref-ai-tabs crm-fidelity-local-tabs">${tabs.map(([id,l])=>`<button class="${tab===id?'active':''}" data-action="crm-ref-accounting-tab" data-tab="${id}">${l}</button>`).join('')}</nav>`;let body='';if(tab==='company'||tab==='all')body+=crmFidelityTable('Demonstrativo de Resultado (P&L)','Receitas e despesas por categoria no período',['Categoria','Valor','% Receita'],'Nenhum dado contábil disponível');return crmFidelityPage('accounting','accounting','Contabilidade','', '',`${filters}${k}${tabnav}${body}`);}
+'''
+    js_block, accounting_count = re.subn(
+        r"  function crmRefAccountingPage\(\)\{[^\n]*\}\n",
+        accounting_page,
+        js_block,
+        count=1,
+    )
+    if accounting_count != 1:
+        raise RuntimeError("crmRefAccountingPage não encontrada para remover P&L Projetos/Artistas")
+
     app = re.sub(
         r"\n?  // VALTREN CRM REFERENCE FIDELITY FIX START\n.*?  // VALTREN CRM REFERENCE FIDELITY FIX END\n",
         "\n",
@@ -87,7 +100,7 @@ def apply_crm_reference_fidelity_fix() -> int:
     css = re.sub(r"\n?/\* VALTREN CRM REFERENCE FIDELITY FIX \*/.*\Z", "", css, flags=re.S)
     CSS.write_text(css.rstrip() + "\n\n" + css_block.strip() + "\n", encoding="utf-8")
     _write_cache_version()
-    print("Fidelidade dos módulos aplicada com botões financeiros normalizados.")
+    print("Fidelidade dos módulos aplicada; P&L Projetos e P&L Artistas removidos da Contabilidade.")
     return 1
 
 
