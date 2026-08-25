@@ -32,6 +32,9 @@ jobs:
           node scripts/test_crm_complete.js
           node scripts/test_crm_complete_hardening.js
 
+      - name: Test financial Transactions domain
+        run: node scripts/test_crm_financial_transactions.js
+
       - name: Materialize site
         run: python scripts/materialize.py
 
@@ -41,6 +44,7 @@ jobs:
           node scripts/test_crm_canonical_parties.js --materialized
           node scripts/test_crm_complete.js --materialized
           node scripts/test_crm_complete_hardening.js --materialized
+          node scripts/test_crm_financial_transactions.js --materialized
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
