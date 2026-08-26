@@ -2,13 +2,6 @@
 const fs=require('fs');
 const path=require('path');
 
-if(!process.argv.includes('--materialized'))throw new Error('Este wrapper existe somente para certificação --materialized.');
-const targetArg=process.argv[2];
-if(!targetArg)throw new Error('Informe o teste-base a executar.');
-const targetPath=path.resolve(process.cwd(),targetArg);
-const targetName=path.basename(targetPath);
-let source=fs.readFileSync(targetPath,'utf8');
-
 const specs={
   'test_crm_complete.js':{
     old:`const start=app.lastIndexOf('function crmRelSidebar');const end=app.indexOf('function crmReferenceRoute',start);const sidebar=app.slice(start,end);`,
@@ -36,9 +29,31 @@ const specs={
     expected:1,
   },
 };
-const spec=specs[targetName];
-if(!spec)throw new Error(`Teste-base sem boundary materializado mapeado: ${targetName}`);
-const occurrences=source.split(spec.old).length-1;
-if(occurrences!==spec.expected)throw new Error(`Boundary materializado histórico esperado ${spec.expected} vez(es) em ${targetName}; encontrado ${occurrences}`);
-source=source.split(spec.old).join(spec.replacement);
-new Function('require','__dirname','__filename',source)(require,path.dirname(targetPath),targetPath);
+
+function transform(source,targetName){
+  const spec=specs[targetName];
+  if(!spec)throw new Error(`Teste-base sem boundary materializado mapeado: ${targetName}`);
+  const occurrences=source.split(spec.old).length-1;
+  if(occurrences!==spec.expected)throw new Error(`Boundary materializado histórico esperado ${spec.expected} vez(es) em ${targetName}; encontrado ${occurrences}`);
+  return source.split(spec.old).join(spec.replacement);
+}
+
+function execute(source,targetPath){
+  new Function('require','__dirname','__filename',source)(require,path.dirname(targetPath),targetPath);
+}
+
+function runBase(basePath,targetName){
+  let source=fs.readFileSync(basePath,'utf8');
+  if(process.argv.includes('--materialized'))source=transform(source,targetName);
+  execute(source,basePath);
+}
+
+module.exports={specs,transform,runBase};
+
+if(require.main===module){
+  if(!process.argv.includes('--materialized'))throw new Error('Execução direta deste wrapper existe somente para certificação --materialized.');
+  const targetArg=process.argv[2];
+  if(!targetArg)throw new Error('Informe o teste-base a executar.');
+  const targetPath=path.resolve(process.cwd(),targetArg);
+  execute(transform(fs.readFileSync(targetPath,'utf8'),path.basename(targetPath)),targetPath);
+}
