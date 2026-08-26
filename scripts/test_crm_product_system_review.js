@@ -10,14 +10,13 @@ must(materializer.includes('Autenticação desativada'), 'materializer must keep
 must(materializer.includes('Nenhuma identidade é simulada'), 'materializer must prohibit fake logged-in identity');
 must(materializer.includes("state.crmRelContacts = []"), 'legacy CRM contacts must start empty');
 must(materializer.includes("state.crmRelLeads = []"), 'legacy CRM leads must start empty');
+must(materializer.includes("EMPTY_USERS = r'''  function crmFullUsers(){\n    return [];"), 'product review must remove fake current-user options');
 must(materializer.includes("kpi('Contatos'"), 'dashboard must expose Contacts KPI');
 must(materializer.includes("kpi('Leads'"), 'dashboard must expose Leads KPI');
 must(materializer.includes("kpi('Clientes'"), 'dashboard must expose Clients KPI');
 must(materializer.includes("kpi('Receitas'"), 'dashboard must expose Revenue KPI');
 must(materializer.includes("kpi('Despesas'"), 'dashboard must expose Expenses KPI');
 must(materializer.includes("kpi('Resultado'"), 'dashboard must expose Result KPI');
-must(!materializer.includes("state.crmUserName || 'Administrador'"), 'materializer must not invent an Administrator user');
-must(!materializer.includes("state.crmUserInitials || 'AD'"), 'materializer must not invent user initials');
 
 if (materialized) {
   const app = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
@@ -25,6 +24,9 @@ if (materialized) {
   const forbidden = [
     'Protótipo · dados ilustrativos',
     'Usuário logado',
+    "state.crmUserName || 'Administrador'",
+    "state.crmUserName||'Administrador'",
+    "state.crmUserInitials || 'AD'",
     'Marina Costa',
     'Aurora Tecnologia Ltda.',
     'Grupo Horizonte',
