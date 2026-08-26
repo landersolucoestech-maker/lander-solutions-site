@@ -17,10 +17,13 @@ STRUCTURAL = (
     "crm-sidebar-overlay",
 )
 
-# CSS declaration-like selectors only. Runtime querySelector/class references do
-# not match because this expression requires a CSS opening brace.
+# Detect only actual CSS selector preludes. Runtime querySelector/XPath strings,
+# guard/error messages and DOM class references are consumers, not CSS owners.
+# A structural selector must begin a selector group (line/start, after `}` or
+# after a selector-list comma) and reach a CSS opening brace without crossing
+# another declaration block or statement terminator.
 SELECTOR_RE = re.compile(
-    r"\.((?:crm-sidebar-head|crm-sidebar-overlay|crm-sidebar|crm-brand|crm-nav-subgroup|crm-nav-group|crm-nav))(?![-\w])[^{}\n]*\{"
+    r"(?m)(?:^|[},])\s*\.((?:crm-sidebar-head|crm-sidebar-overlay|crm-sidebar|crm-brand|crm-nav-subgroup|crm-nav-group|crm-nav))(?![-\w])[^{};\n]*\{"
 )
 DECL_RE = re.compile(r"^[ \t]*function[ \t]+crmRelSidebar[ \t]*\(", re.M)
 
