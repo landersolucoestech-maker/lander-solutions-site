@@ -23,6 +23,8 @@ python -m http.server 4173
 
 O materializador global `scripts/crm_product_system_review.py` roda por último e permanece estritamente transversal: consolida estados vazios, transparência de capacidades ainda inexistentes e tokens compartilhados, sem assumir ownership de Dashboard, Header, Sidebar ou módulos de domínio.
 
+Artefatos locais de execução Python (`__pycache__`, `*.pyc`) não fazem parte da fonte nem da saída certificada e são ignorados para preservar uma árvore determinística.
+
 ## Ownership canônico
 
 - Dashboard: `scripts/crm_dashboard_module.py`;
