@@ -21,10 +21,14 @@ python scripts/materialize.py
 python -m http.server 4173
 ```
 
-O materializador global `scripts/crm_product_system_review.py` roda por último para consolidar a camada de produto sem alterar ownership de domínio. Ele normaliza o shell compartilhado, Account Menu, Dashboard, estados vazios, transparência de capacidades ainda inexistentes e responsividade.
+O materializador global `scripts/crm_product_system_review.py` roda por último e permanece estritamente transversal: consolida estados vazios, transparência de capacidades ainda inexistentes e tokens compartilhados, sem assumir ownership de Dashboard, Header, Sidebar ou módulos de domínio.
 
 ## Ownership canônico
 
+- Dashboard: `scripts/crm_dashboard_module.py`;
+- Sidebar / navegação: `scripts/crm_sidebar_architecture.py`, único owner de `crmRelSidebar`;
+- Header / Account Menu: `scripts/crm_global_header.py`;
+- Agenda: `scripts/crm_agenda_module.py`, consumidora do Header e da Sidebar;
 - Pessoas / Organizações: `ValtrenPartyCore`;
 - CRM: `ValtrenCrmCore` sobre referências canônicas de Pessoas / Organizações;
 - Transações: `ValtrenFinanceCore`;
@@ -38,7 +42,8 @@ O materializador global `scripts/crm_product_system_review.py` roda por último 
 - Assuntos Jurídicos: `ValtrenLegalMatterCore`;
 - Compliance e Políticas: `ValtrenComplianceCore`;
 - Propriedade Intelectual: `ValtrenIntellectualPropertyCore`;
-- Societário: `ValtrenCorporateGovernanceCore`.
+- Societário: `ValtrenCorporateGovernanceCore`;
+- Configurações e compatibilidade de rotas: `scripts/crm_definitive_architecture.py`.
 
 ## Autenticação
 
