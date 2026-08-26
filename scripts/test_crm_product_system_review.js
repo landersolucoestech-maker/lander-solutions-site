@@ -8,12 +8,14 @@ const must = (condition, message) => { if (!condition) fail(message); };
 const review = fs.readFileSync(path.join(__dirname, 'crm_product_system_review.py'), 'utf8');
 const runner = fs.readFileSync(path.join(__dirname, 'crm_product_system_review_runner.py'), 'utf8');
 const dashboard = fs.readFileSync(path.join(__dirname, 'crm_dashboard_module.py'), 'utf8');
+const header = fs.readFileSync(path.join(__dirname, 'crm_global_header.py'), 'utf8');
 const dashboardPayloadMatch = dashboard.match(/CRM_FUNCTION = r'''([\s\S]*?)'''\n\nCSS_PATCH/);
 must(dashboardPayloadMatch, 'Dashboard canonical payload must be statically identifiable');
 const dashboardPayload = dashboardPayloadMatch[1];
 
-must(review.includes('Autenticação desativada'), 'global review must keep authentication explicitly disabled');
-must(review.includes('Nenhuma identidade é simulada'), 'global review must prohibit fake logged-in identity');
+must(header.includes('Autenticação desativada'), 'Header owner must keep authentication explicitly disabled');
+must(header.includes('Nenhuma identidade é simulada'), 'Header owner must prohibit fake logged-in identity');
+must(!review.includes('HEADER_HELPERS'), 'global review must not own Header implementation');
 must(review.includes("state.crmRelContacts = []"), 'legacy CRM contacts must start empty');
 must(review.includes("state.crmRelLeads = []"), 'legacy CRM leads must start empty');
 must(review.includes("EMPTY_USERS = r'''  function crmFullUsers(){\n    return [];"), 'global review must remove fake current-user options');
@@ -37,6 +39,7 @@ must(!dashboard.includes('source.find("\\n  function ",'), 'Dashboard owner must
   'Protótipo · dados ilustrativos'
 ].forEach((token)=>must(!dashboardPayload.includes(token), `Dashboard canonical payload still contains fake/demo token: ${token}`));
 must(runner.includes('Dashboard materializer idempotence: PASS'), 'materialization runner must enforce Dashboard idempotence');
+must(runner.includes('Sidebar Architecture materializer idempotence: PASS'), 'materialization runner must enforce Sidebar Architecture idempotence');
 must(runner.includes('_assert_js_syntax'), 'materialization runner must validate JS syntax incrementally');
 
 if (materialized) {
@@ -64,6 +67,7 @@ if (materialized) {
   ['Autenticação desativada','Nenhuma identidade é simulada','Contatos','Leads','Clientes','Receitas','Despesas','Resultado','Não configurado'].forEach((token)=>must(app.includes(token), `materialized app missing canonical token: ${token}`));
   must((app.match(/VALTREN CRM DASHBOARD START/g)||[]).length === 1, 'Dashboard start marker must exist exactly once');
   must((app.match(/function crmDashboardPage\(/g)||[]).length === 1, 'crmDashboardPage must exist exactly once');
+  must((app.match(/function crmHeaderActions\(/g)||[]).length === 1, 'crmHeaderActions must exist exactly once');
   must(app.includes("if(path==='/crm/juridico')return crmLegalMattersPage();"), 'Legal Matters owner route changed');
   must(app.includes("if(path==='/crm/juridico/contratos')return crmLegalContractsPage();"), 'Legal Contracts owner route changed');
   must(app.includes("if(path==='/crm/juridico/compliance')return crmCompliancePage();"), 'Compliance owner route changed');
