@@ -60,6 +60,10 @@ def _apply_valtren_brand() -> bool:
         from crm_economic_participations import apply_crm_economic_participations
         from crm_payouts import apply_crm_payouts
         from crm_business import apply_crm_business
+        from crm_legal_matters import apply_crm_legal_matters
+        from crm_compliance import apply_crm_compliance
+        from crm_intellectual_property import apply_crm_intellectual_property
+        from crm_corporate_governance import apply_crm_corporate_governance
 
         apply_branding()
         finalize_branding()
@@ -106,22 +110,21 @@ def _apply_valtren_brand() -> bool:
         # Rateios formalizes allocations of existing expenses only, keeping
         # transaction.allocations as a posted projection for dimensional Accounting.
         apply_crm_cost_allocations()
-        # Legal Contracts is materialized after the canonical Finance stack. It owns only
-        # Contratos/Templates/Variáveis and exposes a read-only economic-rule feed for
-        # Participações; it must not create financial movements.
+        # Legal Contracts owns only Contratos/Templates/Variáveis and exposes read-only rules.
         apply_crm_legal_contracts()
-        # Participações is materialized after Contracts because it consumes only the
-        # read-only economic-rule interfaces plus canonical Accounting/Fiscal/Rateio sources.
-        # It calculates/approves rights and deliberately stops before Repasses.
+        # Participações consumes Contracts and canonical financial sources without becoming Societário.
         apply_crm_economic_participations()
-        # Repasses consumes approved Participation obligations and links only existing
-        # canonical Transactions for settlement/reconciliation; it never recalculates rights.
+        # Repasses settles approved Participações using existing canonical Transactions.
         apply_crm_payouts()
-        # Negócios is intentionally applied after Repasses in the current static materializer.
-        # It owns the Business catalog and patches only the final runtime helpers for
-        # Product/Service/Business Unit lookup, validation and labels so completed module
-        # materializers cannot overwrite those adapters. No prior workflow/calculation changes.
+        # Negócios owns Product/Service/Business Unit and patches final lookup adapters.
         apply_crm_business()
+        # Remaining legal owners run after Contracts and Business so references resolve canonically.
+        # They replace only their four reserved legal placeholders and never rewrite Contracts,
+        # Finance, Business or the canonical sidebar architecture.
+        apply_crm_legal_matters()
+        apply_crm_compliance()
+        apply_crm_intellectual_property()
+        apply_crm_corporate_governance()
         return True
     except Exception as error:
         print(f"Falha ao aplicar a identidade visual da Valtren: {error}", file=sys.stderr)
@@ -148,13 +151,7 @@ def _valid_zip(archive: bytes) -> bool:
 
 def _read_packaged_archive(chunks: list[Path]) -> bytes:
     encoded = "".join(path.read_text(encoding="utf-8").strip() for path in chunks)
-
-    ranges = (
-        range(60970, 61160),
-        range(72320, 72490),
-        range(73720, 73960),
-    )
-
+    ranges = (range(60970, 61160), range(72320, 72490), range(73720, 73960))
     for positions in ranges:
         for position in positions:
             for char in BASE64_ALPHABET:
@@ -163,37 +160,30 @@ def _read_packaged_archive(chunks: list[Path]) -> bytes:
                     archive = base64.b64decode(candidate, validate=True)
                 except (ValueError, base64.binascii.Error):
                     continue
-
                 eof, size, crc = _inflate_app(archive)
                 if not eof or size != APP_UNCOMPRESSED_SIZE or crc != APP_TARGET_CRC:
                     continue
                 if not _valid_zip(archive):
                     continue
-
                 print(f"Bootstrap payload recuperado no offset {position} ({char}).")
                 return archive
-
     raise ValueError("não foi possível recuperar o payload Base64 do site")
 
 
 def main() -> int:
     chunks = sorted(PAYLOAD_DIR.glob("chunk-*"))
-
     if chunks:
         try:
             archive = _read_packaged_archive(chunks)
             with zipfile.ZipFile(io.BytesIO(archive)) as package:
                 package.extractall(ROOT)
-        except (ValueError, zipfile.BadZipFile, base64.binascii.Error, zlib.error) as error:
+        except (ValueError, zipfile.BadZipError, base64.binascii.Error, zlib.error) as error:
             print(f"Falha ao reconstruir o projeto: {error}", file=sys.stderr)
             return 1
-
     if not _apply_valtren_brand():
         return 1
-
     if chunks and PAYLOAD_DIR.exists():
         shutil.rmtree(PAYLOAD_DIR)
-
     print("Projeto da Valtren Solutions materializado e atualizado com sucesso.")
     return 0
 
