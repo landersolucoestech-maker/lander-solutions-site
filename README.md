@@ -1,69 +1,55 @@
-# Valtren Solutions — Site institucional
+# Valtren Solutions — Site institucional e Sistema Interno
 
-Site institucional da **Valtren Solutions**, mantido neste repositório durante a transição da identidade anterior.
+Projeto da **Valtren Solutions** composto pelo site institucional e pelo Sistema Interno materializado pelos scripts deste repositório.
 
-## Identidade visual
+## Regras de desenvolvimento
 
-A interface utiliza a identidade visual oficial da Valtren Solutions:
-
-- Azul-marinho: `#0B1D3A`;
-- Dourado metálico: `#D4AF37`;
-- Branco: `#FFFFFF`;
-- Carvão: `#1E1E1E`;
-- Azul acinzentado: `#475569`;
-- Tipografia principal: **Raleway SemiBold/Bold**;
-- Tipografia secundária: **Montserrat Regular/Medium**.
-
-Os arquivos `assets/valtren-logo.svg`, `assets/valtren-logo-light.svg` e `assets/valtren-mark.svg` foram construídos a partir da identidade visual fornecida para o projeto. O script `scripts/apply_valtren_brand.py` aplica a marca, a paleta, a tipografia e os tratamentos visuais ao projeto materializado.
-
-## Estado do projeto
-
-- Desenvolvimento concentrado exclusivamente na branch `dev`;
-- Branch `main` preservada até validação e liberação formal;
+- Desenvolvimento exclusivamente na branch `dev`;
+- Branch `main` preservada e sem escrita até liberação explícita;
+- Autenticação desativada nesta etapa;
+- Nenhum usuário, sessão, papel, permissão ou notificação deve ser simulado como se viesse de backend;
 - Sem Supabase ou outro backend externo nesta etapa;
-- Conteúdo persistido localmente no navegador;
-- Site disponível em português, inglês e espanhol;
-- Modos claro e escuro;
-- Layout responsivo para desktop, tablet e celular;
-- Painel local para alteração de textos, serviços, produtos, contatos e SEO sem edição manual do código.
+- Credenciais de integrações não devem ser armazenadas no frontend;
+- Dados operacionais devem iniciar vazios quando não houver fonte real; demonstrações não podem ser tratadas como registros reais.
 
-## Serviços apresentados publicamente
+## Materialização
 
-1. Engenharia de Software e Sistemas;
-2. Websites e Soluções Web;
-3. Branding e Design como competência complementar.
-
-Não são comercializados separadamente no site: EAD, automações, inteligência artificial, APIs, dados, infraestrutura, consultoria técnica, marketing digital, audiovisual, dispatching, BPO, back office, assistência administrativa ou suporte operacional.
-
-## Configuração inicial no Windows
-
-1. Clone ou baixe a branch `dev`;
-2. Execute `CONFIGURAR-PROJETO.bat`;
-3. O pacote será reconstruído, a identidade Valtren será aplicada automaticamente e o site abrirá em `http://localhost:4173`.
-
-Também é possível executar manualmente:
+A aplicação final é reconstruída a partir do payload em `.bootstrap` e dos materializadores em `scripts/`.
 
 ```bash
 python scripts/materialize.py
 python -m http.server 4173
 ```
 
-## Painel de conteúdo
+O materializador global `scripts/crm_product_system_review.py` roda por último para consolidar a camada de produto sem alterar ownership de domínio. Ele normaliza o shell compartilhado, Account Menu, Dashboard, estados vazios, transparência de capacidades ainda inexistentes e responsividade.
 
-Acesse:
+## Ownership canônico
 
-```text
-http://localhost:4173/#/admin
-```
+- Pessoas / Organizações: `ValtrenPartyCore`;
+- CRM: `ValtrenCrmCore` sobre referências canônicas de Pessoas / Organizações;
+- Transações: `ValtrenFinanceCore`;
+- Contabilidade: owner próprio derivado de Transações;
+- Notas Fiscais: owner próprio com referências a Pessoas / Organizações e Transações;
+- Rateios: owner próprio de alocação de despesas existentes;
+- Participações: owner econômico próprio;
+- Repasses: owner de liquidação de participações aprovadas;
+- Negócios: Produtos, Serviços e Unidades de Negócio;
+- Contratos: owner jurídico próprio;
+- Assuntos Jurídicos: `ValtrenLegalMatterCore`;
+- Compliance e Políticas: `ValtrenComplianceCore`;
+- Propriedade Intelectual: `ValtrenIntellectualPropertyCore`;
+- Societário: `ValtrenCorporateGovernanceCore`.
 
-Senha inicial local mantida por compatibilidade:
+## Autenticação
 
-```text
-lander-admin
-```
+A autenticação permanece **desativada**. Não existe senha inicial local, usuário conectado, sessão real ou fallback que finja autenticação. A interface deve comunicar esse estado de forma explícita.
 
-A senha deve ser alterada no primeiro uso. Como ainda não existe backend, autenticação, conteúdo editado e mensagens do formulário permanecem no `localStorage` do navegador utilizado.
+Qualquer futura autenticação deverá ser ligada a um provedor real de identidade e persistência segura antes de habilitar Perfil, usuários, papéis, permissões, MFA ou sessões.
 
-## Supabase
+## Integrações
 
-A integração com Supabase permanece adiada. Nenhuma chave, URL de projeto ou credencial foi adicionada ao repositório.
+Integrações sem credenciais e backend seguro devem aparecer apenas como **Não configurado**. Não é permitido simular conexão, sincronização, métricas, envio ou recebimento.
+
+## Identidade visual
+
+A interface usa a identidade visual da Valtren Solutions, com tokens consolidados na camada materializada. Os arquivos `assets/valtren-logo.svg`, `assets/valtren-logo-light.svg` e `assets/valtren-mark.svg` permanecem como ativos oficiais do projeto.

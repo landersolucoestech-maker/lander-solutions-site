@@ -28,8 +28,6 @@ def _apply_valtren_brand() -> bool:
         from header_menu_center_fix import center_header_menu
         from services_logo_refactor import main as apply_services_and_logo_refactor
         from crm_dashboard_module import apply_crm_dashboard
-        from crm_dashboard_visual_fix import apply_crm_dashboard_visual_fix
-        from crm_dashboard_kpi_fix import apply_crm_dashboard_kpi_fix
         from crm_relationships_module import apply_crm_relationships
         from crm_header_modal_fix import apply_crm_header_modal_fix
         from crm_global_header import apply_crm_global_header
@@ -64,6 +62,7 @@ def _apply_valtren_brand() -> bool:
         from crm_compliance import apply_crm_compliance
         from crm_intellectual_property import apply_crm_intellectual_property
         from crm_corporate_governance import apply_crm_corporate_governance
+        from crm_product_system_review import apply_crm_product_system_review
 
         apply_branding()
         finalize_branding()
@@ -74,8 +73,6 @@ def _apply_valtren_brand() -> bool:
         center_header_menu()
         apply_services_and_logo_refactor()
         apply_crm_dashboard()
-        apply_crm_dashboard_visual_fix()
-        apply_crm_dashboard_kpi_fix()
         apply_crm_relationships()
         apply_crm_header_modal_fix()
         apply_crm_global_header()
@@ -125,6 +122,9 @@ def _apply_valtren_brand() -> bool:
         apply_crm_compliance()
         apply_crm_intellectual_property()
         apply_crm_corporate_governance()
+        # Global product review always runs last. It may consolidate UI and legacy projections,
+        # but it must not transfer ownership between domain cores.
+        apply_crm_product_system_review()
         return True
     except Exception as error:
         print(f"Falha ao aplicar a identidade visual da Valtren: {error}", file=sys.stderr)
