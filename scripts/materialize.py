@@ -58,6 +58,7 @@ def _apply_valtren_brand() -> bool:
         from crm_cost_allocations import apply_crm_cost_allocations
         from crm_legal_contracts import apply_crm_legal_contracts
         from crm_economic_participations import apply_crm_economic_participations
+        from crm_payouts import apply_crm_payouts
 
         apply_branding()
         finalize_branding()
@@ -105,13 +106,16 @@ def _apply_valtren_brand() -> bool:
         # transaction.allocations as a posted projection for dimensional Accounting.
         apply_crm_cost_allocations()
         # Legal Contracts is materialized after the canonical Finance stack. It owns only
-        # Contratos/Templates/Variáveis and exposes a read-only economic-rule feed for a
-        # future Participações module; it must not create financial movements.
+        # Contratos/Templates/Variáveis and exposes a read-only economic-rule feed for
+        # Participações; it must not create financial movements.
         apply_crm_legal_contracts()
         # Participações is materialized after Contracts because it consumes only the
         # read-only economic-rule interfaces plus canonical Accounting/Fiscal/Rateio sources.
         # It calculates/approves rights and deliberately stops before Repasses.
         apply_crm_economic_participations()
+        # Repasses consumes approved Participation obligations and links only existing
+        # canonical Transactions for settlement/reconciliation; it never recalculates rights.
+        apply_crm_payouts()
         return True
     except Exception as error:
         print(f"Falha ao aplicar a identidade visual da Valtren: {error}", file=sys.stderr)

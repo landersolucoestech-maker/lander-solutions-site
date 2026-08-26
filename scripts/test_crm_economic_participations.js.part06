@@ -18,7 +18,7 @@ if(process.argv.includes('--materialized')){
   test('bundle contém domínio canônico de Participações',()=>{assert(app.includes('VALTREN ECONOMIC PARTICIPATIONS START'));assert(app.includes('ValtrenParticipationCore'));assert(app.includes('state.crmEconomicParticipations'));});
   test('rota canônica Participações está materializada',()=>{assert(app.includes("if(path==='/crm/financeiro/participacoes')return crmEconomicParticipationsPage();"));});
   test('placeholder de Participações não sobrevive',()=>{assert(!app.includes("if(path==='/crm/financeiro/participacoes')return crmArchitecturePlaceholderPage"));});
-  test('Repasses permanece placeholder',()=>{assert(app.includes("if(path==='/crm/financeiro/repasses')return crmArchitecturePlaceholderPage('accounting','repasses','Repasses');"));});
+  test('Repasses materializado possui handler canônico sem placeholder',()=>{assert(app.includes("if(path==='/crm/financeiro/repasses')return crmPayoutsPage();"));assert(!app.includes("if(path==='/crm/financeiro/repasses')return crmArchitecturePlaceholderPage('accounting','repasses','Repasses');"));});
   test('Contratos continua canônico',()=>{assert(app.includes("if(path==='/crm/juridico/contratos')return crmLegalContractsPage();"));});
   test('Rateios continua canônico',()=>{assert(app.includes("if(path==='/crm/financeiro/rateios'){const page=crmCostAllocationsPage();"));});
   test('Notas Fiscais continua canônica',()=>{assert(app.includes("if(path==='/crm/financeiro/notas-fiscais')return crmFiscalDocumentsPage();"));});

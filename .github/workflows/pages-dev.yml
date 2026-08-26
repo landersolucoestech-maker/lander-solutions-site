@@ -75,6 +75,14 @@ jobs:
           node scripts/test_crm_economic_participations.js
           node scripts/test_crm_economic_participations_ui.js
 
+      - name: Test Payouts domain
+        run: |
+          node --check scripts/crm_payouts_core.js
+          node --check scripts/crm_payouts_browser.js
+          python -m py_compile scripts/crm_payouts.py
+          node scripts/test_crm_payouts.js
+          node scripts/test_crm_payouts_ui.js
+
       - name: Materialize site
         run: python scripts/materialize.py
 
@@ -90,7 +98,12 @@ jobs:
             echo "Participações ainda está em placeholder" >&2
             exit 1
           fi
-          grep -Fq "if(path==='/crm/financeiro/repasses')return crmArchitecturePlaceholderPage('accounting','repasses','Repasses');" app.js
+          grep -Fq "if(path==='/crm/financeiro/repasses')return crmPayoutsPage();" app.js
+          if grep -Fq "if(path==='/crm/financeiro/repasses')return crmArchitecturePlaceholderPage('accounting','repasses','Repasses');" app.js; then
+            echo "Repasses ainda está em placeholder" >&2
+            exit 1
+          fi
+          grep -Fq "function crmPayoutService()" app.js
           grep -Fq "function crmContractEconomicRulesFeed(filters={})" app.js
           grep -Fq "function crmContractResolveEconomicRuleForPeriod(input={})" app.js
           grep -Fq "function crmParticipationObligationsFeed(filters={})" app.js
@@ -127,6 +140,8 @@ jobs:
           readonly_suite scripts/test_crm_legal_contracts_ui.js --materialized
           readonly_suite scripts/test_crm_economic_participations.js --materialized
           readonly_suite scripts/test_crm_economic_participations_ui.js --materialized
+          readonly_suite scripts/test_crm_payouts.js --materialized
+          readonly_suite scripts/test_crm_payouts_ui.js --materialized
           FINAL_SHA="$(sha256sum app.js | awk '{print $1}')"
           test "$APP_SHA" = "$FINAL_SHA"
           echo "MATERIALIZED_APP_SHA=$APP_SHA" >> "$GITHUB_ENV"
