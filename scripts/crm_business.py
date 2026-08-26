@@ -30,6 +30,23 @@ def _replace_block_function(app: str, name: str, next_name: str, replacement: st
     return re.sub(pattern, replacement + "\nfunction " + next_name, app, count=1, flags=re.S)
 
 
+def _assert_business_code_generator(source: str, location: str) -> None:
+    """Validate the canonical generator structurally instead of grepping runtime codes."""
+    compact = re.sub(r"\s+", "", source)
+    checks = {
+        "mapeamento product → PRD, service → SRV e business_unit → BU": "constprefix=(kind)=>kind==='product'?'PRD':kind==='service'?'SRV':'BU';",
+        "função nextCode usa o prefixo e a coleção da dimensão": "functionnextCode(kind){constp=prefix(kind),rows=entityRows(kind)||[]",
+        "sequência usa o maior código existente sem colisão": "constnext=(numbers.length?Math.max(...numbers):0)+1",
+        "padding determinístico de três dígitos": "String(next).padStart(3,'0')",
+        "Produto usa nextCode(product)": "input.code||nextCode('product')",
+        "Serviço usa nextCode(service)": "input.code||nextCode('service')",
+        "Unidade usa nextCode(business_unit)": "input.code||nextCode('business_unit')",
+    }
+    missing = [label for label, token in checks.items() if token not in compact]
+    if missing:
+        raise RuntimeError(f"Gerador canônico de códigos de Negócios inválido em {location}: {missing}")
+
+
 def apply_crm_business() -> int:
     for path in (APP, CSS, CORE, BROWSER, MODULE_CSS):
         if not path.exists():
@@ -38,6 +55,7 @@ def apply_crm_business() -> int:
     app = APP.read_text(encoding="utf-8")
     core = CORE.read_text(encoding="utf-8").strip()
     browser = BROWSER.read_text(encoding="utf-8").strip()
+    _assert_business_code_generator(core, "crm_business_core.js")
 
     # The Business owner runs after the already-materialized domains so these adapters
     # patch the final runtime helpers rather than being overwritten by later stages.
@@ -48,6 +66,12 @@ def apply_crm_business() -> int:
         raise RuntimeError(f"Âncora contactPage inválida para Negócios: {app.count(anchor)} ocorrência(s)")
     at = app.index(anchor)
     app = app[:at].rstrip("\n") + "\n\n" + block + "\n" + app[at:]
+
+    business_start = app.find(JS_START)
+    business_end = app.find(JS_END, business_start)
+    if business_start < 0 or business_end <= business_start:
+        raise RuntimeError("Bloco canônico de Negócios não localizado após injeção")
+    _assert_business_code_generator(app[business_start:business_end + len(JS_END)], "app.js materializado")
 
     routes = {
         "if(path==='/crm/negocios')return crmArchitecturePlaceholderPage('business','products','Produtos');": "if(path==='/crm/negocios')return crmBusinessProductsPage();",
@@ -104,7 +128,7 @@ def apply_crm_business() -> int:
     required = [
         "ValtrenBusinessCore", "state.crmBusinessCatalog", "function crmBusinessProductsPage()", "function crmBusinessServicesPage()",
         "function crmBusinessUnitsPage()", "function crmBusinessProductsFeed", "function crmBusinessServicesFeed", "function crmBusinessUnitsFeed",
-        "function crmBusinessResolveDimension", "Referência não resolvida", "PRD-", "SRV-", "BU-", "potential_catalog_reference",
+        "function crmBusinessResolveDimension", "Referência não resolvida", "potential_catalog_reference",
     ]
     missing = [x for x in required if x not in app]
     if missing:
