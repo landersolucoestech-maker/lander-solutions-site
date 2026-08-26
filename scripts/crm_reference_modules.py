@@ -35,14 +35,24 @@ def apply_crm_reference_modules()->int:
     app=APP.read_text(encoding='utf-8')
     js_block=_parts('crm_reference_modules.js.part*')
     css_block=_parts('crm_reference_modules.css.part*')
-    sidebar=(HERE/'crm_reference_sidebar.txt').read_text(encoding='utf-8')
+    # Keep only shared primitives/runtime. Page/navigation ownership belongs to
+    # definitive/domain materializers and the dedicated Sidebar owner.
+    js_block = re.sub(r"\n  const CRM_REF_MARKETING_SUB=.*?;\n", "\n", js_block, count=1)
+    js_block = re.sub(r"\n    if\(!state\.crmRefMusicChat\)\{.*?\}\n", "\n", js_block, count=1)
+    for start_anchor,end_anchor,label in [
+        ("\n  function crmRefFinancePage", "\n  function crmRefTransactionModal", "legacy finance pages"),
+        ("\n  function crmRefMarketingOverview", "\n  function crmRefReportsPage", "legacy marketing pages"),
+        ("\n  function crmRefReportsPage", "\n  function crmRefSettingsPage", "legacy reports pages"),
+        ("\n  function crmRefSettingsPage", "\n  function crmRefUserModal", "legacy settings pages"),
+        ("\n  function crmReferenceRoute(path){", "\n  // VALTREN CRM REFERENCE MODULES END", "legacy reference router"),
+    ]:
+        start=js_block.find(start_anchor)
+        end=js_block.find(end_anchor,start+1) if start>=0 else -1
+        if start<0 or end<0:
+            raise RuntimeError(f"Reference Modules boundary ausente: {label}")
+        js_block=js_block[:start]+js_block[end:]
 
     app=re.sub(r"\n?  // VALTREN CRM REFERENCE MODULES START\n.*?  // VALTREN CRM REFERENCE MODULES END\n",'\n',app,flags=re.S)
-
-    pat=r"  function crmRelSidebar\(active='relationships'(?:,sub='')?\)\{.*?\n  \}\n\n  function crmRelActions"
-    if not re.search(pat,app,flags=re.S):
-        raise RuntimeError('crmRelSidebar não encontrado')
-    app=re.sub(pat,sidebar+'\n  function crmRelActions',app,count=1,flags=re.S)
 
     # Dashboard pertence ao seu próprio materializador e já consome o sidebar
     # compartilhado. Reference Modules não deve procurar/regravar markup inline.
@@ -75,7 +85,7 @@ def apply_crm_reference_modules()->int:
         t=re.sub(r'valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?',f'valtren-brand.css?v={CACHE_VERSION}',t)
         p.write_text(t,encoding='utf-8')
 
-    print('Módulos de referência materializados sem reescrever Dashboard ou criar segundo owner de sidebar nele.')
+    print('Módulos de referência materializados como consumers da navegação canônica; Dashboard e sidebar permanecem com seus owners.')
     return 1
 
 

@@ -21,11 +21,10 @@ JS_BLOCK = r'''  // VALTREN CRM DEFINITIVE ARCHITECTURE START
     }).join('')}</nav>`;
   }
 
-  function crmAdminPlaceholderPage(sub,title,description='Estrutura administrativa preparada para a próxima etapa de implementação.'){
-    const href=sub==='structure'?'#/crm/administracao':'#/crm/administracao/patrimonio-licencas';
-    const breadcrumb=crmArchitectureBreadcrumb([{label:'Administração',href:'#/crm/administracao'},{label:title,href}]);
-    const body=crmFidelityPanel(title,'',crmRefEmpty('Módulo preparado para implementação','A estrutura e a rota já fazem parte da arquitetura oficial do Sistema Interno.'));
-    return crmFidelityPage('admin',sub,title,description,'',`${breadcrumb}${body}`);
+  function crmMarketingUnavailablePage(){
+    const breadcrumb=crmArchitectureBreadcrumb([{label:'Marketing',href:'#/crm/marketing'}]);
+    const body=crmFidelityPanel('Operação de Marketing','',crmRefEmpty('Marketing ainda não está conectado','Campanhas, calendário, métricas, publicações e anúncios dependem de persistência e integrações reais. Nenhuma campanha, atividade ou métrica externa é simulada.'),'<a class="crm-empty-action" href="#/crm/configuracoes?tab=integracoes">Ver integrações</a>');
+    return crmFidelityPage('marketing','overview','Marketing','Planejamento preparado sem simular execução externa','',`${breadcrumb}${body}`);
   }
 
   function crmSettingsCompanyBody(){
@@ -103,60 +102,6 @@ JS_BLOCK = r'''  // VALTREN CRM DEFINITIVE ARCHITECTURE START
     return render();
   }
 
-  function crmRelSidebar(active='relationships',sub=''){
-    const nav=(href,label,ic,key)=>`<a class="${active===key?'active':''}" href="${href}">${icon(ic,18)}<span>${label}</span></a>`;
-    const subgroup=(key,label,ic,items)=>`<details class="crm-nav-group" ${active===key?'open':''}><summary>${icon(ic,18)}<span>${label}</span><b>⌄</b></summary><div>${items.map(([id,text,href])=>`<a class="${active===key&&sub===id?'active':''}" href="${href}">${text}</a>`).join('')}</div></details>`;
-    const finance=[
-      ['finance','Transações','#/crm/financeiro'],
-      ['accounting','Contabilidade','#/crm/financeiro/accounting'],
-      ['invoices','Notas Fiscais','#/crm/financeiro/invoices'],
-      ['rateios','Rateios','#/crm/financeiro/rateios'],
-      ['participacoes','Participações','#/crm/financeiro/participacoes'],
-      ['repasses','Repasses','#/crm/financeiro/repasses']
-    ];
-    const marketing=[
-      ['overview','Visão Geral','#/crm/marketing'],
-      ['campaigns','Campanhas','#/crm/marketing/campaigns'],
-      ['calendar','Calendário','#/crm/marketing/calendar'],
-      ['metrics','Métricas','#/crm/marketing/metrics'],
-      ['tasks','Tarefas','#/crm/marketing/tasks']
-    ];
-    const business=[
-      ['products','Produtos','#/crm/negocios'],
-      ['services','Serviços','#/crm/negocios/servicos'],
-      ['units','Unidades de Negócio','#/crm/negocios/unidades']
-    ];
-    const administration=[
-      ['structure','Estrutura Organizacional','#/crm/administracao'],
-      ['assets','Patrimônio e Licenças','#/crm/administracao/patrimonio-licencas']
-    ];
-    const legal=`<details class="crm-nav-group crm-nav-legal" ${active==='legal'?'open':''}><summary>${icon('file',18)}<span>Jurídico</span><b>⌄</b></summary><div>
-      <a class="${active==='legal'&&sub==='matters'?'active':''}" href="#/crm/juridico">Assuntos Jurídicos</a>
-      <details class="crm-nav-subgroup" ${active==='legal'&&String(sub).startsWith('contracts')?'open':''}><summary><span>Contratos</span><b>⌄</b></summary><div>
-        <a class="${active==='legal'&&sub==='contracts'?'active':''}" href="#/crm/juridico/contratos">Contratos</a>
-        <a class="${active==='legal'&&sub==='contracts-templates'?'active':''}" href="#/crm/juridico/contratos/templates">Templates</a>
-        <a class="${active==='legal'&&sub==='contracts-variables'?'active':''}" href="#/crm/juridico/contratos/variaveis">Variáveis</a>
-      </div></details>
-      <a class="${active==='legal'&&sub==='compliance'?'active':''}" href="#/crm/juridico/compliance">Compliance e Políticas</a>
-      <a class="${active==='legal'&&sub==='ip'?'active':''}" href="#/crm/juridico/propriedade-intelectual">Propriedade Intelectual</a>
-      <a class="${active==='legal'&&sub==='corporate'?'active':''}" href="#/crm/juridico/societario">Societário</a>
-    </div></details>`;
-    return `<aside class="crm-sidebar"><a class="crm-brand" href="#/crm/dashboard" aria-label="Valtren Sistema Interno"><img src="assets/valtren-mark.svg" alt="Valtren Solutions"><span><strong>VALTREN</strong><small>Sistema Interno</small></span></a><nav class="crm-nav" aria-label="Módulos do Sistema Interno">
-      ${nav('#/crm/dashboard','Dashboard','layers','dashboard')}
-      ${nav('#/crm/relationships','CRM','users','relationships')}
-      ${nav('#/crm/agenda','Agenda','calendar','agenda')}
-      ${subgroup('accounting','Financeiro','database',finance)}
-      ${legal}
-      ${nav('#/crm/valtrenchat','ValtrenChat','message','valtrenchat')}
-      ${nav('#/crm/rh','RH','users','hr')}
-      ${subgroup('marketing','Marketing','globe',marketing)}
-      ${subgroup('business','Negócios','layers',business)}
-      ${nav('#/crm/relatorios','Relatórios','file','reports')}
-      ${nav('#/crm/configuracoes','Configurações','settings','settings')}
-      ${subgroup('admin','Administração','settings',administration)}
-    </nav></aside>`;
-  }
-
   function crmReferenceRoute(path){
     if(path==='/crm/financeiro')return crmRefFinancePage();
     if(path==='/crm/financeiro/accounting')return crmRefAccountingPage();
@@ -175,28 +120,21 @@ JS_BLOCK = r'''  // VALTREN CRM DEFINITIVE ARCHITECTURE START
     if(path==='/crm/juridico/propriedade-intelectual')return crmArchitecturePlaceholderPage('legal','ip','Propriedade Intelectual');
     if(path==='/crm/juridico/societario')return crmArchitecturePlaceholderPage('legal','corporate','Societário');
 
-    if(path==='/crm/rh')return crmArchitecturePlaceholderPage('hr','hr','RH');
+    if(path==='/crm/rh')return crmArchitecturePlaceholderPage('','hr','RH','Domínio de RH ainda não implementado. Pessoas e Organizações permanecem identidades canônicas e não são tratadas como RH.');
 
-    if(path==='/crm/marketing')return crmRefMarketingOverview();
-    if(path==='/crm/marketing/campaigns')return crmRefCampaignsPage();
-    if(path==='/crm/marketing/calendar')return crmRefCalendarPage();
-    if(path==='/crm/marketing/metrics')return crmRefMetricsPage();
-    if(path==='/crm/marketing/tasks')return crmRefTasksPage();
-    if(path==='/crm/marketing/briefings')return crmRefBriefingsPage();
-    if(path==='/crm/marketing/ai')return crmRefMarketingOverview();
+    if(path.startsWith('/crm/marketing'))return crmMarketingUnavailablePage();
 
     if(path==='/crm/negocios')return crmArchitecturePlaceholderPage('business','products','Produtos');
     if(path==='/crm/negocios/servicos')return crmArchitecturePlaceholderPage('business','services','Serviços');
     if(path==='/crm/negocios/unidades')return crmArchitecturePlaceholderPage('business','units','Unidades de Negócio');
 
-    if(path==='/crm/valtrenchat'||path==='/crm/musicchat')return crmRefValtrenChatPage();
+    if(path==='/crm/valtrenchat'||path==='/crm/musicchat')return crmLegacyRoute('#/crm/configuracoes?tab=integracoes',crmCanonicalSettingsPage);
     if(path==='/crm/relatorios')return crmRefReportsPage();
 
     if(path==='/crm/configuracoes')return crmCanonicalSettingsPage();
     if(path==='/crm/meu-perfil')return crmCanonicalProfilePage();
 
-    if(path==='/crm/administracao')return crmAdminPlaceholderPage('structure','Estrutura Organizacional');
-    if(path==='/crm/administracao/patrimonio-licencas')return crmAdminPlaceholderPage('assets','Patrimônio e Licenças');
+    if(path==='/crm/administracao'||path==='/crm/administracao/patrimonio-licencas')return crmArchitecturePlaceholderPage('','admin','Administração','Área administrativa ainda não implementada como domínio operacional. Configurações de acesso, auditoria e integrações permanecem em Configurações.');
 
     if(path==='/crm/configuracoes/profile')return crmLegacyRoute('#/crm/meu-perfil',crmCanonicalProfilePage);
     if(path==='/crm/configuracoes/users'||path==='/crm/administracao/acessos-permissoes')return crmLegacyRoute('#/crm/configuracoes?tab=usuarios',crmCanonicalSettingsPage);
@@ -226,26 +164,6 @@ JS_BLOCK = r'''  // VALTREN CRM DEFINITIVE ARCHITECTURE START
 
 CSS_PATCH = r'''
 /* VALTREN CRM DEFINITIVE ARCHITECTURE */
-.crm-sidebar .crm-nav-subgroup{
-  margin:2px 0;
-  border:0;
-  background:transparent;
-}
-.crm-sidebar .crm-nav-subgroup>summary{
-  list-style:none;
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  gap:8px;
-  min-height:34px;
-  padding:7px 12px 7px 30px;
-  font-size:inherit;
-  font-weight:inherit;
-}
-.crm-sidebar .crm-nav-subgroup>summary::-webkit-details-marker{display:none;}
-.crm-sidebar .crm-nav-subgroup>summary>b{margin-left:auto;font-size:10px;}
-.crm-sidebar .crm-nav-subgroup>div{display:grid;}
-.crm-sidebar .crm-nav-subgroup>div>a{padding-left:48px!important;}
 .crm-architecture-breadcrumb{
   display:flex;
   align-items:center;
@@ -311,26 +229,8 @@ def apply_crm_definitive_architecture() -> int:
         raise RuntimeError("Âncora contactPage ausente para arquitetura definitiva")
     app = app.replace(anchor, JS_BLOCK.rstrip() + "\n\n" + anchor, 1)
 
-    sidebar_source = JS_BLOCK.split("  function crmRelSidebar", 1)[1].split("  function crmReferenceRoute", 1)[0]
-    if "nav('#/crm/configuracoes','Configurações'" not in sidebar_source:
-        raise RuntimeError("Configurações não está materializado como módulo único")
-    if "subgroup('settings','Configurações'" in sidebar_source:
-        raise RuntimeError("Configurações ainda está sendo materializado como grupo")
-
-    forbidden_sidebar = ["Meu Perfil", "Acessos e Permissões", "Auditoria", "Integrações", "Usuários", "Billing"]
-    leaked = [label for label in forbidden_sidebar if label in sidebar_source]
-    if leaked:
-        raise RuntimeError(f"Itens proibidos ainda presentes no sidebar definitivo: {leaked}")
-
-    admin_source = sidebar_source.split("const administration=[", 1)[1].split("];", 1)[0]
-    required_admin = ["Estrutura Organizacional", "Patrimônio e Licenças"]
-    missing_admin = [label for label in required_admin if label not in admin_source]
-    if missing_admin:
-        raise RuntimeError(f"Administração incompleta: {missing_admin}")
-    forbidden_admin = ["Acessos e Permissões", "Auditoria", "Integrações"]
-    leaked_admin = [label for label in forbidden_admin if label in admin_source]
-    if leaked_admin:
-        raise RuntimeError(f"Administração contém itens revogados: {leaked_admin}")
+    if "function crmRelSidebar" in JS_BLOCK:
+        raise RuntimeError("Arquitetura definitiva não pode emitir crmRelSidebar; o owner é crm_sidebar_architecture.py")
 
     settings_source = JS_BLOCK.split("  function crmCanonicalSettingsPage", 1)[1].split("  function crmCanonicalProfilePage", 1)[0]
     expected_tabs = ["['empresa','Empresa']", "['notificacoes','Notificações']", "['seguranca','Segurança']", "['integracoes','Integrações']", "['auditoria','Auditoria']", "['usuarios','Usuários']"]
@@ -356,8 +256,17 @@ def apply_crm_definitive_architecture() -> int:
     APP.write_text(app, encoding="utf-8")
 
     css = CSS.read_text(encoding="utf-8")
-    css = re.sub(r"\n?/\* VALTREN CRM DEFINITIVE ARCHITECTURE \*/.*\Z", "", css, flags=re.S)
-    CSS.write_text(css.rstrip() + "\n\n" + CSS_PATCH.strip() + "\n", encoding="utf-8")
+    desired_css = CSS_PATCH.strip()
+    marker_at = css.find("/* VALTREN CRM DEFINITIVE ARCHITECTURE */")
+    if marker_at < 0:
+        css = css.rstrip() + "\n\n" + desired_css + "\n"
+    else:
+        next_marker = css.find("\n/* " , marker_at + len("/* VALTREN CRM DEFINITIVE ARCHITECTURE */"))
+        end = len(css) if next_marker < 0 else next_marker + 1
+        prefix = css[:marker_at].rstrip()
+        suffix = css[end:].lstrip("\n")
+        css = prefix + "\n\n" + desired_css + "\n" + (("\n" + suffix) if suffix else "")
+    CSS.write_text(css, encoding="utf-8")
 
     for path in ROOT.rglob("*.html"):
         rel = path.relative_to(ROOT)
@@ -368,7 +277,7 @@ def apply_crm_definitive_architecture() -> int:
         text = re.sub(r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?", f"valtren-brand.css?v={CACHE_VERSION}", text)
         path.write_text(text, encoding="utf-8")
 
-    print("Configurações materializado com seis abas internas; Administração restrita a dois submódulos; Meu Perfil preservado no menu do usuário.")
+    print("Arquitetura de rotas e Configurações materializada sem ownership de Sidebar; Meu Perfil preservado no menu da conta.")
     return 1
 
 

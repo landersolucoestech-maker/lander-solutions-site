@@ -114,11 +114,9 @@ CSS_PATCH = r'''
 .crm-sidebar-head .crm-brand{flex:1;min-width:0}
 .crm-sidebar-close{display:none;width:36px;height:36px;flex:0 0 auto;border:1px solid rgba(255,255,255,.16);border-radius:8px;background:rgba(255,255,255,.08);color:inherit;align-items:center;justify-content:center;cursor:pointer}
 .crm-sidebar-overlay{display:none}
-.crm-mobile-nav-toggle{display:none}
 @media(max-width:980px) and (min-width:761px){.crm-app-shell{padding-left:210px}.crm-sidebar{width:210px}}
 @media(max-width:760px){
   .crm-app-shell{padding-left:0}
-  .crm-mobile-nav-toggle{display:inline-flex}
   .crm-sidebar{display:block;position:fixed;inset:0 auto 0 0;width:min(86vw,320px);height:100dvh;max-height:100dvh;overflow-y:auto;transform:translateX(-104%);transition:transform .2s ease;z-index:750;box-shadow:18px 0 48px rgba(4,15,31,.24)}
   .crm-sidebar.is-open{transform:translateX(0)}
   .crm-sidebar-head{position:sticky;top:0;z-index:2;background:inherit;padding-right:8px}

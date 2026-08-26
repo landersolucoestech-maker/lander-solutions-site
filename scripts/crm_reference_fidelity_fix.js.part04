@@ -1,7 +1,2 @@
 
-  function crmReferenceRoute(path){
-    if(path==='/crm/financeiro')return crmRefFinancePage(); if(path==='/crm/financeiro/accounting')return crmRefAccountingPage(); if(path==='/crm/financeiro/invoices')return crmRefInvoicesPage(); if(path==='/crm/financeiro/rules')return crmRefCategorizationRulesPage(); if(path==='/crm/financeiro/categories')return crmRefCategoriesPage(); if(path==='/crm/financeiro/automations')return crmRefFinancialRulesPage();
-    if(path==='/crm/marketing')return crmRefMarketingOverview(); if(path==='/crm/marketing/campaigns')return crmRefCampaignsPage(); if(path==='/crm/marketing/calendar')return crmRefCalendarPage(); if(path==='/crm/marketing/metrics')return crmRefMetricsPage(); if(path==='/crm/marketing/briefings')return crmRefBriefingsPage(); if(path==='/crm/marketing/tasks')return crmRefTasksPage(); if(path==='/crm/marketing/ai')return crmRefMarketingOverview();
-    if(path==='/crm/valtrenchat'||path==='/crm/musicchat')return crmRefValtrenChatPage(); if(path==='/crm/relatorios')return crmRefReportsPage(); if(path==='/crm/configuracoes')return crmRefSettingsPage(); if(path==='/crm/configuracoes/users')return crmRefUsersPage(); if(path==='/crm/configuracoes/profile')return crmRefProfilePage(); if(path==='/crm/configuracoes/audit')return crmRefAuditPage(); if(path==='/crm/configuracoes/billing')return crmRefBillingPage(); return null;
-  }
   // VALTREN CRM REFERENCE FIDELITY FIX END

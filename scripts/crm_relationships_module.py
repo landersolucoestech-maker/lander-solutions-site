@@ -10,34 +10,8 @@ CSS_VERSION = "20260824-crm-relationships-v1"
 MARKER = "/* VALTREN CRM RELATIONSHIPS */"
 
 JS_BLOCK = r'''  function crmRelEnsureState(){
-    if (!state.crmRelContacts) {
-      state.crmRelContacts = [
-        {id:'c1',tipo_pessoa:'pessoa_fisica',name:'Marina Costa',company:'',segment:'Parceiro',profile:'Parceiro Comercial',phone:'(11) 98888-1020',email:'marina@exemplo.com',city:'São Paulo / SP',responsible:'Equipe Valtren',status:'Ativo',priority:'Estratégico',cpf:'123.456.789-00',instagram:'@marinacosta',function:'Relacionamento',address:'Av. Paulista, 1000',notes:'Contato estratégico para parcerias.',interactions:[{type:'WhatsApp',date:'24/08/2026',text:'Apresentação institucional enviada.'}]},
-        {id:'c2',tipo_pessoa:'pessoa_juridica',name:'Aurora Tecnologia Ltda.',company:'Aurora Tecnologia',segment:'Fornecedor',profile:'Cloud Provider',phone:'(11) 97777-2040',email:'contato@aurora.exemplo',city:'São Paulo / SP',responsible:'Lucas Almeida',status:'Ativo',priority:'Alta',cnpj:'12.345.678/0001-90',instagram:'@auroratech',address:'Rua das Flores, 245',notes:'Fornecedor de infraestrutura.',interactions:[]},
-        {id:'c3',tipo_pessoa:'pessoa_juridica',name:'Grupo Horizonte',company:'Horizonte',segment:'Cliente',profile:'Empresa',phone:'(21) 96666-3050',email:'comercial@horizonte.exemplo',city:'Rio de Janeiro / RJ',responsible:'Camila Rocha',status:'Negociando',priority:'Alta',cnpj:'98.765.432/0001-10',instagram:'@horizonte',address:'Av. Atlântica, 520',notes:'Relacionamento comercial em andamento.',interactions:[{type:'Reunião',date:'22/08/2026',text:'Levantamento inicial realizado.'}]},
-        {id:'c4',tipo_pessoa:'pessoa_fisica',name:'Rafael Nunes',company:'',segment:'Prestador de Serviços',profile:'Designer',phone:'(31) 95555-4060',email:'rafael@exemplo.com',city:'Belo Horizonte / MG',responsible:'Equipe Valtren',status:'Ativo',priority:'Média',cpf:'321.654.987-00',instagram:'@rafaelnunes',function:'Designer',address:'Rua Central, 88',notes:'Prestador homologado.',interactions:[]}
-      ];
-    }
-    if (!state.crmRelLeads) {
-      state.crmRelLeads = [
-        {id:'l1',name:'Paulo Mendes',company:'Norte Digital',email:'paulo@nortedigital.exemplo',phone:'(11) 94444-5100',source:'Indicação',stage:'Novo',responsible:'Equipe Valtren',status:'Aberto',priority:'Alta',notes:'Interessado em sistema de gestão.'},
-        {id:'l2',name:'Fernanda Lima',company:'Vértice Educação',email:'fernanda@vertice.exemplo',phone:'(41) 93333-6200',source:'Site',stage:'Em contato',responsible:'Equipe Valtren',status:'Aberto',priority:'Média',notes:'Solicitou contato sobre plataforma EAD.'},
-        {id:'l3',name:'Daniel Souza',company:'Atlas Serviços',email:'daniel@atlas.exemplo',phone:'(51) 92222-7300',source:'Landing page',stage:'Qualificado',responsible:'Equipe Valtren',status:'Em negociação',priority:'Alta',notes:'Lead qualificado para CRM personalizado.'}
-      ];
-    }
-  }
-
-  function crmRelSidebar(active='relationships'){
-    return `<aside class="crm-sidebar">
-      <a class="crm-brand" href="#/crm/dashboard" aria-label="Valtren CRM Integrado">
-        <img src="assets/valtren-mark.svg" alt="Valtren Solutions">
-        <span><strong>VALTREN</strong><small>CRM Integrado</small></span>
-      </a>
-      <nav class="crm-nav" aria-label="Módulos do CRM">
-        <a class="${active === 'dashboard' ? 'active' : ''}" href="#/crm/dashboard">${icon('layers',18)}<span>Dashboard</span></a>
-        <a class="${active === 'relationships' ? 'active' : ''}" href="#/crm/relationships">${icon('users',18)}<span>CRM</span></a>
-      </nav>
-    </aside>`;
+    if (!Array.isArray(state.crmRelContacts)) state.crmRelContacts = [];
+    if (!Array.isArray(state.crmRelLeads)) state.crmRelLeads = [];
   }
 
   function crmRelActions(kind,id){

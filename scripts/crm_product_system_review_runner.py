@@ -8,6 +8,7 @@ from pathlib import Path
 
 import crm_dashboard_module as dashboard
 import crm_product_system_review as review
+import crm_sidebar_architecture as sidebar
 
 
 def _assert_js_syntax(source: str, stage: str) -> None:
@@ -40,6 +41,23 @@ def _verify_dashboard_idempotence() -> None:
     print("Dashboard materializer idempotence: PASS")
 
 
+
+def _verify_sidebar_idempotence() -> None:
+    tracked = [sidebar.APP, sidebar.CSS, sidebar.ROOT / "index.html"]
+    before = {path: _digest(path) for path in tracked if path.exists()}
+    position_before = sidebar.APP.read_text(encoding="utf-8").index(sidebar.JS_START)
+    sidebar.apply_crm_sidebar_architecture()
+    after = {path: _digest(path) for path in tracked if path.exists()}
+    position_after = sidebar.APP.read_text(encoding="utf-8").index(sidebar.JS_START)
+    if before != after or position_before != position_after:
+        changed = [str(path.relative_to(sidebar.ROOT)) for path in before if before.get(path) != after.get(path)]
+        raise RuntimeError(f"Sidebar Architecture não é idempotente após a cadeia: {changed}")
+    app = sidebar.APP.read_text(encoding="utf-8")
+    if len(re.findall(r"function\s+crmRelSidebar\s*\(", app)) != 1:
+        raise RuntimeError("crmRelSidebar não possui owner único após rerun")
+    _assert_js_syntax(app, "rerun idempotente da Sidebar Architecture")
+    print("Sidebar Architecture materializer idempotence: PASS")
+
 def apply_crm_product_system_review() -> int:
     if not review.APP.exists() or not review.CSS.exists():
         raise FileNotFoundError("app.js ou assets/valtren-brand.css ausente")
@@ -50,9 +68,13 @@ def apply_crm_product_system_review() -> int:
         raise RuntimeError("Dashboard não chegou à revisão global sob ownership canônico")
     _verify_dashboard_idempotence()
 
+    _verify_sidebar_idempotence()
     app = review.APP.read_text(encoding="utf-8")
-    app = review._replace_marked_block(app, review.HEADER_START, review.HEADER_END, review.HEADER_HELPERS, "Account Menu")
-    _assert_js_syntax(app, "Account Menu compartilhado")
+    if app.count("  function crmHeaderActions(context=''){") != 1:
+        raise RuntimeError("Header compartilhado não possui owner único")
+    if 'Autenticação desativada' not in app or 'Nenhuma identidade é simulada' not in app:
+        raise RuntimeError("Header perdeu transparência de autenticação")
+    _assert_js_syntax(app, "Header e Sidebar canônicos")
 
     for start_anchor, end_anchor, replacement, label in review.REPLACEMENTS:
         app = review._replace_between(app, start_anchor, end_anchor, replacement, label)

@@ -43,12 +43,12 @@ def apply_crm_canonical_parties() -> int:
     injected = START + party_js + "\n" + END + "\n" + anchor
     app = app.replace(anchor, injected, 1)
 
-    ensure_match = re.search(r"  function crmRelEnsureState\(\)\{.*?\n  \}\n\n  function crmRelSidebar", app, flags=re.S)
+    ensure_match = re.search(r"  function crmRelEnsureState\(\)\{.*?\n  \}\n\n  function crmRelActions", app, flags=re.S)
     if not ensure_match:
         raise RuntimeError("Função crmRelEnsureState não localizada após injeção")
     ensure_src = ensure_match.group(0)
     if "crmCanonicalEnsureFromLegacy();" not in ensure_src:
-        ensure_new = ensure_src.replace("\n  }\n\n  function crmRelSidebar", "\n    crmCanonicalEnsureFromLegacy();\n  }\n\n  function crmRelSidebar", 1)
+        ensure_new = ensure_src.replace("\n  }\n\n  function crmRelActions", "\n    crmCanonicalEnsureFromLegacy();\n  }\n\n  function crmRelActions", 1)
         app = app[: ensure_match.start()] + ensure_new + app[ensure_match.end() :]
 
     app = _replace_once(

@@ -7,8 +7,6 @@ ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
 CACHE_VERSION = "20260826-product-system-review-v4"
-HEADER_START = "  // VALTREN CRM GLOBAL HEADER START\n"
-HEADER_END = "  // VALTREN CRM GLOBAL HEADER END\n"
 CSS_MARKER = "/* VALTREN PRODUCT SYSTEM REVIEW */"
 
 
@@ -30,43 +28,10 @@ def _replace_between(source: str, start_anchor: str, end_anchor: str, replacemen
     return source if current == desired else source[:start] + desired + source[end:]
 
 
-def _replace_marked_block(source: str, start_marker: str, end_marker: str, replacement: str, label: str) -> str:
-    start_count = source.count(start_marker)
-    end_count = source.count(end_marker)
-    if start_count != 1 or end_count != 1:
-        raise RuntimeError(f"Marcadores de {label} divergentes: {start_count}/{end_count}")
-    start = source.index(start_marker)
-    end = source.index(end_marker, start) + len(end_marker)
-    desired = replacement.rstrip() + "\n"
-    current = source[start:end]
-    return source if current == desired else source[:start] + desired + source[end:]
-
-
-HEADER_HELPERS = r'''  // VALTREN CRM GLOBAL HEADER START
-  function crmGlobalLoadingScreen(){
-    return `<div class="crm-global-loading" role="status" aria-live="polite"><div class="crm-global-loading-inner"><img src="assets/valtren-logo.svg" alt="Valtren Solutions"><div class="crm-global-loading-bar" aria-hidden="true"></div><span class="sr-only">Carregando</span></div></div>`;
-  }
-
-  function crmHeaderActions(context=''){
-    const create = context === 'contacts'
-      ? `<button class="crm-header-create crm-header-create-contact" type="button" data-action="crm-rel-create" data-kind="contacts">${icon('plus',15)}<span>Novo Contato</span></button>`
-      : context === 'leads'
-        ? `<button class="crm-header-create crm-header-create-lead" type="button" data-action="crm-rel-create" data-kind="leads">${icon('plus',15)}<span>Novo Lead</span></button>`
-        : context === 'agenda'
-          ? `<button class="crm-header-create crm-header-create-agenda" type="button" data-action="crm-agenda-create">${icon('plus',15)}<span>Novo Evento</span></button>`
-          : '';
-    return `<div class="crm-header-actions">${create}<details class="crm-account-menu"><summary aria-label="Menu da conta"><span class="crm-account-icon" aria-hidden="true">${icon('user',16)}</span><span class="crm-account-copy"><strong>Conta</strong><small>Autenticação desativada</small></span><span class="crm-account-chevron" aria-hidden="true">⌄</span></summary><div class="crm-account-popover"><strong>Sem sessão ativa</strong><p>Este ambiente não possui autenticação ou usuário conectado. Nenhuma identidade é simulada.</p><a href="#/crm/configuracoes">Configurações</a></div></details></div>`;
-  }
-
-  function crmHeaderCloseMenus(){
-    document.querySelectorAll('.crm-account-menu[open]').forEach((menu)=>menu.removeAttribute('open'));
-  }
-  // VALTREN CRM GLOBAL HEADER END
-'''
-
 EMPTY_RELATIONSHIP_STATE = r'''  function crmRelEnsureState(){
     if (!Array.isArray(state.crmRelContacts)) state.crmRelContacts = [];
     if (!Array.isArray(state.crmRelLeads)) state.crmRelLeads = [];
+    crmCanonicalEnsureFromLegacy();
   }
 '''
 
@@ -117,20 +82,19 @@ PROFILE = r'''  function crmCanonicalProfilePage(){
 CSS_PATCH = r'''
 /* VALTREN PRODUCT SYSTEM REVIEW */
 :root{--crm-bg:#f4f6f8;--crm-surface:#fff;--crm-surface-soft:#f8fafc;--crm-text:#0b1d3a;--crm-muted:#687386;--crm-border:rgba(11,29,58,.12);--crm-accent:#d4af37;--crm-danger:#a72828;--crm-radius-sm:8px;--crm-radius-md:12px;--crm-radius-lg:16px;--crm-shadow-sm:0 1px 2px rgba(11,29,58,.05);--crm-space-1:6px;--crm-space-2:10px;--crm-space-3:14px;--crm-space-4:18px;--crm-space-5:24px;--crm-space-6:30px}
-.crm-app-shell{display:block;grid-template-columns:none;min-height:100vh;background:var(--crm-bg);color:var(--crm-text);padding-left:250px}.crm-sidebar{position:fixed;inset:0 auto 0 0;width:250px;height:100vh;box-sizing:border-box;overflow-y:auto;overscroll-behavior:contain;z-index:100}.crm-main{width:100%;min-width:0;margin:0}.crm-app-shell .crm-topbar{min-height:88px;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;gap:24px;background:var(--crm-surface);border-bottom:1px solid var(--crm-border);box-sizing:border-box}.crm-app-shell .crm-topbar>div:first-child{min-width:0}.crm-app-shell .crm-topbar h1{margin:2px 0 4px;line-height:1.15}.crm-app-shell .crm-topbar p{margin:0;color:var(--crm-muted);max-width:760px}.crm-workspace{width:min(100%,1500px);margin:0 auto;padding:var(--crm-space-6);box-sizing:border-box}.crm-page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:var(--crm-space-5)}.crm-page-header h2{margin:0 0 6px;font-size:24px;line-height:1.2}.crm-page-header p{margin:0;color:var(--crm-muted)}
-.crm-header-actions{display:flex;align-items:center;gap:10px;flex:0 0 auto}.crm-header-create{min-height:40px;border:0;border-radius:var(--crm-radius-sm);background:var(--crm-text);color:#fff;padding:0 15px;display:inline-flex;align-items:center;gap:8px;font:inherit;font-weight:700;cursor:pointer}.crm-account-menu{position:relative}.crm-account-menu>summary{list-style:none;min-height:44px;display:flex;align-items:center;gap:10px;padding:5px 10px;border:1px solid var(--crm-border);border-radius:var(--crm-radius-md);background:var(--crm-surface);cursor:pointer}.crm-account-menu>summary::-webkit-details-marker{display:none}.crm-account-icon{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--crm-surface-soft);border:1px solid var(--crm-border)}.crm-account-copy{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15}.crm-account-copy strong{font-size:13px}.crm-account-copy small{font-size:10px;color:var(--crm-muted);margin-top:3px}.crm-account-chevron{color:var(--crm-muted)}.crm-account-popover{position:absolute;right:0;top:calc(100% + 8px);width:min(320px,calc(100vw - 28px));padding:16px;border:1px solid var(--crm-border);border-radius:var(--crm-radius-md);background:var(--crm-surface);box-shadow:0 16px 40px rgba(11,29,58,.16);z-index:500}.crm-account-popover p{font-size:12px;line-height:1.5;color:var(--crm-muted);margin:7px 0 12px}.crm-account-popover a{color:var(--crm-text);font-weight:700;text-decoration:none}
+.crm-app-shell{display:block;grid-template-columns:none;min-height:100vh;background:var(--crm-bg);color:var(--crm-text)}.crm-main{width:100%;min-width:0;margin:0}.crm-app-shell .crm-topbar{min-height:88px;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;gap:24px;background:var(--crm-surface);border-bottom:1px solid var(--crm-border);box-sizing:border-box}.crm-app-shell .crm-topbar>div:first-child{min-width:0}.crm-app-shell .crm-topbar h1{margin:2px 0 4px;line-height:1.15}.crm-app-shell .crm-topbar p{margin:0;color:var(--crm-muted);max-width:760px}.crm-workspace{width:min(100%,1500px);margin:0 auto;padding:var(--crm-space-6);box-sizing:border-box}.crm-page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:var(--crm-space-5)}.crm-page-header h2{margin:0 0 6px;font-size:24px;line-height:1.2}.crm-page-header p{margin:0;color:var(--crm-muted)}
 .crm-kpi-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}.crm-kpi{min-width:0;background:var(--crm-surface);border:1px solid var(--crm-border);border-radius:var(--crm-radius-md);padding:18px;box-shadow:var(--crm-shadow-sm)}.crm-kpi>span{display:block;color:var(--crm-muted);font-size:12px;font-weight:700}.crm-kpi>strong{display:block;margin-top:9px;font-size:22px;line-height:1.15;overflow-wrap:anywhere}.crm-kpi>small{display:block;margin-top:7px;color:var(--crm-muted);font-size:10px;line-height:1.35}.crm-panel{background:var(--crm-surface);border:1px solid var(--crm-border);border-radius:var(--crm-radius-md);box-shadow:var(--crm-shadow-sm);padding:20px}.crm-panel-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}.crm-panel-heading span{color:var(--crm-muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}.crm-panel-heading h2{font-size:18px;margin:4px 0 0}
 .crm-empty-state{min-height:130px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;border:1px dashed var(--crm-border);border-radius:var(--crm-radius-md);background:var(--crm-surface-soft)}.crm-empty-state strong{font-size:15px}.crm-empty-state p{max-width:620px;margin:8px auto 0;color:var(--crm-muted);font-size:13px;line-height:1.55}.crm-empty-action{margin-top:14px;color:var(--crm-text);font-weight:700;text-decoration:none}.crm-auth-disabled-state{min-height:180px}.crm-settings-readonly-brand{display:flex;align-items:center;gap:14px}.crm-settings-readonly-brand img{width:46px;height:46px;object-fit:contain}.crm-settings-readonly-brand div{display:flex;flex-direction:column;gap:4px}.crm-settings-readonly-brand span{color:var(--crm-muted);font-size:12px}.crm-integration-grid-readonly article{min-height:150px}.crm-integration-note{display:block;color:var(--crm-muted);font-size:10px;line-height:1.45;margin-top:8px}
 .crm-table-wrap,.crm-rel-table-wrap,.crm-fidelity-table-wrap{max-width:100%;overflow:auto}.crm-table th,.crm-table td,.crm-rel-table th,.crm-rel-table td,.crm-fidelity-table th,.crm-fidelity-table td{vertical-align:middle}.crm-table th,.crm-rel-table th,.crm-fidelity-table th{white-space:nowrap}.crm-rel-table td,.crm-table td,.crm-fidelity-table td{padding-top:12px;padding-bottom:12px}.crm-ref-form-grid input,.crm-ref-form-grid select,.crm-ref-form-grid textarea,.crm-rel-field input,.crm-rel-field select,.crm-rel-field textarea{min-height:42px;border-radius:var(--crm-radius-sm);border-color:var(--crm-border);box-sizing:border-box}.crm-modal,.crm-drawer,.crm-rel-modal{max-width:calc(100vw - 28px)}
 .crm-global-loading{position:fixed;inset:0;z-index:2000;display:grid;place-items:center;background:var(--crm-bg)}.crm-global-loading-inner{width:min(300px,70vw);display:grid;justify-items:center;gap:20px}.crm-global-loading-inner img{width:90px;max-height:80px;object-fit:contain}.crm-global-loading-bar{width:100%;height:4px;border-radius:999px;overflow:hidden;background:rgba(11,29,58,.12)}.crm-global-loading-bar::after{content:"";display:block;width:38%;height:100%;border-radius:inherit;background:var(--crm-accent);animation:crm-loading-slide 1.2s ease-in-out infinite}@keyframes crm-loading-slide{0%{transform:translateX(-120%)}100%{transform:translateX(320%)}}
 @media(max-width:1200px){.crm-kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:980px) and (min-width:761px){.crm-app-shell{padding-left:210px}.crm-sidebar{width:210px}.crm-workspace{padding:24px}.crm-app-shell .crm-topbar{padding-inline:24px}}
-@media(max-width:760px){.crm-app-shell{padding-left:0}.crm-sidebar{position:static;width:auto;height:auto;max-height:none;overflow:visible}.crm-app-shell .crm-topbar{min-height:auto;padding:18px;align-items:flex-start;flex-direction:column}.crm-header-actions{width:100%;justify-content:space-between}.crm-account-menu{margin-left:auto}.crm-workspace{padding:18px}.crm-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.crm-page-header{flex-direction:column}.crm-panel{padding:16px}}
-@media(max-width:480px){.crm-kpi-grid{grid-template-columns:1fr}.crm-header-create{flex:1;justify-content:center}.crm-account-copy{display:none}.crm-workspace{padding:14px}.crm-panel{border-radius:10px}}
+@media(max-width:980px) and (min-width:761px){.crm-workspace{padding:24px}.crm-app-shell .crm-topbar{padding-inline:24px}}
+@media(max-width:760px){.crm-app-shell .crm-topbar{min-height:auto;padding:18px;align-items:flex-start;flex-direction:column}.crm-workspace{padding:18px}.crm-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.crm-page-header{flex-direction:column}.crm-panel{padding:16px}}
+@media(max-width:480px){.crm-kpi-grid{grid-template-columns:1fr}.crm-workspace{padding:14px}.crm-panel{border-radius:10px}}
 '''
 
 REPLACEMENTS = [
-    ("  function crmRelEnsureState(){", "  function crmRelSidebar(", EMPTY_RELATIONSHIP_STATE, "crmRelEnsureState"),
+    ("  function crmRelEnsureState(){", "  function crmRelActions(", EMPTY_RELATIONSHIP_STATE, "crmRelEnsureState"),
     ("  function crmFullUsers(){", "  function crmFullResponsibleName(", EMPTY_USERS, "crmFullUsers"),
     ("  function crmSettingsCompanyBody(){", "  function crmSettingsNotificationsBody(){", SETTINGS_COMPANY, "crmSettingsCompanyBody"),
     ("  function crmSettingsNotificationsBody(){", "  function crmSettingsSecurityBody(){", SETTINGS_NOTIFICATIONS, "crmSettingsNotificationsBody"),
@@ -157,7 +121,10 @@ def apply_crm_product_system_review() -> int:
     if not APP.exists() or not CSS.exists():
         raise FileNotFoundError("app.js ou assets/valtren-brand.css ausente")
     app = APP.read_text(encoding="utf-8")
-    app = _replace_marked_block(app, HEADER_START, HEADER_END, HEADER_HELPERS, "Account Menu")
+    if app.count("  function crmHeaderActions(context=''){") != 1:
+        raise RuntimeError('Header owner divergente antes da revisão global')
+    if 'Autenticação desativada' not in app or 'Nenhuma identidade é simulada' not in app:
+        raise RuntimeError('Header owner perdeu transparência de autenticação')
     for start_anchor, end_anchor, replacement, label in REPLACEMENTS:
         app = _replace_between(app, start_anchor, end_anchor, replacement, label)
     for old, new in [

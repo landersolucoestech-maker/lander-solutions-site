@@ -10,3 +10,19 @@
 @media(max-width:1180px){.crm-fin-inline{width:125px}.crm-fin-table{min-width:1160px}.crm-fin-account-card,.crm-fin-account-add{flex-basis:218px}}
 @media(max-width:900px){.crm-fin-toolbar{align-items:stretch}.crm-fin-search{flex-basis:100%}.crm-fin-toolbar>select,.crm-fin-toolbar>input{max-width:none;flex:1 1 150px}.crm-fin-form-grid{grid-template-columns:1fr}.crm-fin-field.full{grid-column:auto}.crm-fin-table{min-width:920px}.crm-fin-table [data-col="counterparty"],.crm-fin-table [data-col="status"],.crm-fin-table [data-col="indicators"]{display:none}}
 @media(max-width:640px){.crm-fin-account-card,.crm-fin-account-add{flex-basis:190px}.crm-fin-status-tabs{width:100%}.crm-fin-status-tabs button{flex:1;justify-content:center;padding:0 7px}.crm-fin-table{min-width:820px}.crm-fin-modal{max-height:94vh}.crm-fin-drawer{width:100%}.crm-fin-drawer dl{grid-template-columns:1fr}.crm-fin-allocation-row{grid-template-columns:1fr 100px 32px}.crm-fin-pagination{gap:8px}.crm-fin-pagination b{white-space:nowrap}}
+@media(max-width:760px){
+  .crm-fin-account-strip{display:grid;grid-template-columns:1fr;overflow:visible;padding-bottom:0}
+  .crm-fin-account-card,.crm-fin-account-add{width:100%;max-width:100%;flex:0 0 auto;box-sizing:border-box}
+  .crm-fin-status-tabs{width:100%;overflow-x:auto;box-sizing:border-box}
+  .crm-fin-status-tabs button{flex:0 0 auto}
+  .crm-fin-toolbar{display:grid;grid-template-columns:1fr;align-items:stretch}
+  .crm-fin-search{width:100%;min-width:0;max-width:none;box-sizing:border-box;flex:none}
+  .crm-fin-toolbar>select,.crm-fin-toolbar>input,.crm-fin-more,.crm-fin-more>summary{width:100%;max-width:none;box-sizing:border-box}
+  .crm-fin-more>div{left:0;right:auto;width:100%;min-width:0;box-sizing:border-box}
+  .crm-fin-bulk{align-items:stretch;flex-direction:column}
+  .crm-fin-bulk select,.crm-fin-bulk button{width:100%;max-width:none;box-sizing:border-box}
+  .crm-fin-form-grid{grid-template-columns:1fr}
+  .crm-fin-allocation-row{grid-template-columns:minmax(0,1fr) 88px 32px}
+  .crm-fin-pagination{min-height:48px;flex-wrap:wrap;gap:8px;padding-block:8px}
+  .crm-fin-modal footer{flex-wrap:wrap}.crm-fin-modal footer button{flex:1 1 120px}
+}

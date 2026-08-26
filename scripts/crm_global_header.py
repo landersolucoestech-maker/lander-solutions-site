@@ -23,7 +23,8 @@ HELPERS = r'''  // VALTREN CRM GLOBAL HEADER START
         : context === 'agenda'
           ? `<button class="crm-header-create crm-header-create-agenda" type="button" data-action="crm-agenda-create">${icon('plus',15)}<span>Novo Evento</span></button>`
           : '';
-    return `<div class="crm-header-actions">${create}<details class="crm-account-menu"><summary aria-label="Menu da conta"><span class="crm-account-icon" aria-hidden="true">${icon('user',16)}</span><span class="crm-account-copy"><strong>Conta</strong><small>Autenticação desativada</small></span><span class="crm-account-chevron" aria-hidden="true">⌄</span></summary><div class="crm-account-popover"><strong>Sem sessão ativa</strong><p>Este ambiente não possui autenticação ou usuário conectado. Nenhuma identidade é simulada.</p><a href="#/crm/configuracoes">Configurações</a></div></details></div>`;
+    const navToggle=`<button class="crm-mobile-nav-toggle" type="button" data-action="crm-sidebar-toggle" aria-controls="crm-system-sidebar" aria-expanded="false" aria-label="Abrir navegação">${icon('menu',18)}<span>Menu</span></button>`;
+    return `<div class="crm-header-actions">${navToggle}${create}<details class="crm-account-menu"><summary aria-label="Menu da conta"><span class="crm-account-icon" aria-hidden="true">${icon('user',16)}</span><span class="crm-account-copy"><strong>Conta</strong><small>Autenticação desativada</small></span><span class="crm-account-chevron" aria-hidden="true">⌄</span></summary><div class="crm-account-popover"><strong>Sem sessão ativa</strong><p>Este ambiente não possui autenticação ou usuário conectado. Nenhuma identidade é simulada.</p><a href="#/crm/configuracoes">Configurações</a></div></details></div>`;
   }
 
   function crmHeaderCloseMenus(){
@@ -35,13 +36,19 @@ HELPERS = r'''  // VALTREN CRM GLOBAL HEADER START
 CSS_PATCH = r'''
 /* VALTREN CRM GLOBAL HEADER */
 .crm-app-shell .crm-topbar{position:relative;z-index:80;overflow:visible}
-.crm-header-actions{margin-left:auto;display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0}
-.crm-header-create{min-height:38px;border-radius:8px;padding:0 12px;border:0;display:inline-flex;align-items:center;justify-content:center;gap:7px;font:inherit;font-weight:700;cursor:pointer;white-space:nowrap}
-.crm-account-menu{position:relative}
-.crm-account-menu>summary{list-style:none;cursor:pointer}
+.crm-header-actions{margin-left:auto;display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;flex:0 0 auto}
+.crm-header-create,.crm-mobile-nav-toggle{min-height:38px;border-radius:8px;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;gap:7px;font:inherit;font-weight:700;cursor:pointer;white-space:nowrap}
+.crm-header-create{border:0;background:#0B1D3A;color:#fff}
+.crm-mobile-nav-toggle{display:none;border:1px solid rgba(11,29,58,.14);background:#fff;color:#0B1D3A}
+.crm-account-menu{position:relative;min-width:0}
+.crm-account-menu>summary{list-style:none;min-height:44px;display:flex;align-items:center;gap:10px;padding:5px 10px;border:1px solid rgba(11,29,58,.12);border-radius:12px;background:#fff;cursor:pointer;box-sizing:border-box}
 .crm-account-menu>summary::-webkit-details-marker{display:none}
-.crm-account-popover{position:absolute;right:0;top:calc(100% + 8px);z-index:500}
-@media(max-width:760px){.crm-header-actions{width:100%;justify-content:flex-start;flex-wrap:wrap;margin-left:0}}
+.crm-account-icon{width:30px;height:30px;flex:0 0 30px;border-radius:50%;display:grid;place-items:center;background:#f8fafc;border:1px solid rgba(11,29,58,.12)}
+.crm-account-copy{display:flex;min-width:0;flex-direction:column;align-items:flex-start;line-height:1.15}.crm-account-copy strong{font-size:13px}.crm-account-copy small{font-size:10px;color:#687386;margin-top:3px;white-space:nowrap}
+.crm-account-chevron{color:#687386;flex:0 0 auto}
+.crm-account-popover{position:absolute;right:0;top:calc(100% + 8px);width:min(320px,calc(100vw - 28px));box-sizing:border-box;padding:16px;border:1px solid rgba(11,29,58,.12);border-radius:12px;background:#fff;box-shadow:0 16px 40px rgba(11,29,58,.16);z-index:800}.crm-account-popover p{font-size:12px;line-height:1.5;color:#687386;margin:7px 0 12px}.crm-account-popover a{color:#0B1D3A;font-weight:700;text-decoration:none}
+@media(max-width:980px){.crm-account-copy{display:none}.crm-account-menu>summary{gap:6px;padding:5px 8px}.crm-account-popover{max-width:calc(100vw - 24px)}}
+@media(max-width:760px){.crm-header-actions{width:100%;justify-content:flex-start;flex-wrap:wrap;margin-left:0}.crm-mobile-nav-toggle{display:inline-flex}.crm-account-menu{margin-left:auto}.crm-account-popover{position:fixed;right:12px;top:auto;max-width:calc(100vw - 24px)}}
 '''
 
 
