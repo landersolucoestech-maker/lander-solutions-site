@@ -135,6 +135,7 @@ jobs:
       - name: Test Sidebar Architecture source ownership
         run: |
           python -m py_compile scripts/crm_sidebar_architecture.py scripts/crm_global_header.py scripts/test_crm_route_guards.py scripts/certify_visual.py scripts/certify_interactions.py
+          node --check scripts/test_materialized_admin_compatibility.js
           node scripts/test_crm_sidebar_architecture.js
 
       - name: Materialize site
@@ -234,17 +235,17 @@ jobs:
           readonly_suite scripts/test_crm_financial_transactions_ui.js --materialized
           readonly_suite scripts/test_crm_accounting.js --materialized
           readonly_suite scripts/test_crm_accounting_ui.js --materialized
-          readonly_suite scripts/test_crm_fiscal_documents.js --materialized
+          readonly_suite scripts/test_materialized_admin_compatibility.js scripts/test_crm_fiscal_documents.js --materialized
           readonly_suite scripts/test_crm_fiscal_documents_ui.js --materialized
-          readonly_suite scripts/test_crm_cost_allocations.js --materialized
+          readonly_suite scripts/test_materialized_admin_compatibility.js scripts/test_crm_cost_allocations.js --materialized
           readonly_suite scripts/test_crm_cost_allocations_ui.js --materialized
           readonly_suite scripts/test_crm_legal_contracts.js --materialized
           readonly_suite scripts/test_crm_legal_contracts_ui.js --materialized
           readonly_suite scripts/test_crm_economic_participations.js --materialized
           readonly_suite scripts/test_crm_economic_participations_ui.js --materialized
-          readonly_suite scripts/test_crm_payouts.js --materialized
+          readonly_suite scripts/test_materialized_admin_compatibility.js scripts/test_crm_payouts.js --materialized
           readonly_suite scripts/test_crm_payouts_ui.js --materialized
-          readonly_suite scripts/test_crm_business.js --materialized
+          readonly_suite scripts/test_materialized_admin_compatibility.js scripts/test_crm_business.js --materialized
           readonly_suite scripts/test_crm_business_ui.js --materialized
           readonly_suite scripts/test_crm_legal_matters.js --materialized
           readonly_suite scripts/test_crm_legal_matters_ui.js --materialized
