@@ -45,6 +45,8 @@ O materializador global `scripts/crm_product_system_review.py` roda por último 
 - Societário: `ValtrenCorporateGovernanceCore`;
 - Configurações e compatibilidade de rotas: `scripts/crm_definitive_architecture.py`.
 
+Materializadores de domínio que verificam a navegação validam exclusivamente o bloco delimitado por `VALTREN SIDEBAR ARCHITECTURE START/END`; nenhum domínio usa conteúdo posterior do bundle como boundary nem reescreve `crmRelSidebar`.
+
 ## Autenticação
 
 A autenticação permanece **desativada**. Não existe senha inicial local, usuário conectado, sessão real ou fallback que finja autenticação. A interface deve comunicar esse estado de forma explícita.
