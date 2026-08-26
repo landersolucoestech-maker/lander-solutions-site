@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 HERE = Path(__file__).resolve().parent
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CACHE_VERSION = "20260825-crm-agenda-events-v2"
+CACHE_VERSION = "20260826-crm-agenda-events-v3"
 
 
 def _parts(prefix: str) -> str:
@@ -48,7 +48,6 @@ def apply_crm_agenda_module() -> int:
 
     app = app.replace('\n          <a href="#/crm/agenda">${icon(\'calendar\',18)}<span>Agenda</span></a>', '')
     app = app.replace('\n        <a class="${active === \'agenda\' ? \'active\' : \'\'}" href="#/crm/agenda">${icon(\'calendar\',18)}<span>Agenda</span></a>', '')
-    app = app.replace('\n      ${context === \'agenda\' ? `<button class="crm-header-create crm-header-create-agenda" type="button" data-action="crm-agenda-create">${icon(\'plus\',15)}<span>Novo Evento</span></button>` : \'\'}', '')
     app = app.replace("\n    else if (path === '/crm/agenda') app.innerHTML = crmAgendaPage(query);", '')
 
     dashboard_nav = '''          <a class="active" href="#/crm/dashboard">${icon('layers',18)}<span>Dashboard</span></a>\n          <a href="#/crm/relationships">${icon('users',18)}<span>CRM</span></a>'''
@@ -62,11 +61,12 @@ def apply_crm_agenda_module() -> int:
         raise RuntimeError("Link compartilhado do CRM não encontrado para adicionar Agenda")
     app = app.replace(rel_link, rel_agenda, 1)
 
-    lead_button = '''      ${context === 'leads' ? `<button class="crm-header-create crm-header-create-lead" type="button" data-action="crm-rel-create" data-kind="leads">${icon('plus',15)}<span>Novo Lead</span></button>` : ''}'''
-    agenda_button = lead_button + '''\n      ${context === 'agenda' ? `<button class="crm-header-create crm-header-create-agenda" type="button" data-action="crm-agenda-create">${icon('plus',15)}<span>Novo Evento</span></button>` : ''}'''
-    if lead_button not in app:
-        raise RuntimeError("Ações contextuais do header CRM não encontradas")
-    app = app.replace(lead_button, agenda_button, 1)
+    # Agenda consome o header compartilhado. Não reescreve mais a implementação
+    # interna de crmHeaderActions, evitando ownership concorrente entre módulos.
+    if app.count("  function crmHeaderActions(context=''){") != 1:
+        raise RuntimeError("Header compartilhado contextual não encontrado para Agenda")
+    if "context === 'agenda'" not in app:
+        raise RuntimeError("Header compartilhado não oferece o contexto Agenda")
 
     anchor = "  function contactPage(query)"
     if anchor not in app:
@@ -87,7 +87,7 @@ def apply_crm_agenda_module() -> int:
     css = re.sub(r"\n?/\* VALTREN CRM AGENDA EVENTS \*/.*\Z", "", css, flags=re.S)
     CSS.write_text(css.rstrip() + "\n\n" + css_patch.strip() + "\n", encoding="utf-8")
     _write_cache_version()
-    print("Módulo Agenda & Eventos alinhado fielmente à referência anexada.")
+    print("Módulo Agenda & Eventos materializado como consumidor do header compartilhado.")
     return 1
 
 
