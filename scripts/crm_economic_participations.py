@@ -118,8 +118,10 @@ def apply_crm_economic_participations() -> int:
     if leaked:
         raise RuntimeError(f"Participações contém responsabilidade proibida/concorrente: {leaked}")
 
-    sidebar_start = app.rfind("function crmRelSidebar")
-    sidebar_end = app.find("function crmReferenceRoute", sidebar_start)
+    sidebar_start = app.find("// VALTREN SIDEBAR ARCHITECTURE START")
+    sidebar_end = app.find("// VALTREN SIDEBAR ARCHITECTURE END", sidebar_start)
+    if sidebar_start < 0 or sidebar_end <= sidebar_start:
+        raise RuntimeError("Bloco canônico da Sidebar não localizado para validação")
     sidebar = app[sidebar_start:sidebar_end]
     expected_finance = ["Transações", "Contabilidade", "Notas Fiscais", "Rateios", "Participações", "Repasses"]
     missing_sidebar = [label for label in expected_finance if label not in sidebar]

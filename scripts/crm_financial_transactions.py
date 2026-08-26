@@ -62,8 +62,10 @@ def apply_crm_financial_transactions() -> int:
     if "if(path==='/crm/financeiro')return crmTransactionsPage();" not in app:
         raise RuntimeError("Rota Financeiro não aponta para Transações canônicas")
 
-    sidebar_start = app.rfind("function crmRelSidebar")
-    sidebar_end = app.find("function crmReferenceRoute", sidebar_start)
+    sidebar_start = app.find("// VALTREN SIDEBAR ARCHITECTURE START")
+    sidebar_end = app.find("// VALTREN SIDEBAR ARCHITECTURE END", sidebar_start)
+    if sidebar_start < 0 or sidebar_end <= sidebar_start:
+        raise RuntimeError("Bloco canônico da Sidebar não localizado para validação")
     sidebar = app[sidebar_start:sidebar_end]
     expected_finance = ["Transações", "Contabilidade", "Notas Fiscais", "Rateios", "Participações", "Repasses"]
     missing_sidebar = [label for label in expected_finance if label not in sidebar]

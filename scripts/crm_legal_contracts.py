@@ -119,8 +119,10 @@ def apply_crm_legal_contracts() -> int:
     if "participationAmount" in core or "payoutAmount" in core:
         raise RuntimeError("Contratos não pode calcular Participação ou Repasse")
 
-    sidebar_start = app.rfind("function crmRelSidebar")
-    sidebar_end = app.find("function crmReferenceRoute", sidebar_start)
+    sidebar_start = app.find("// VALTREN SIDEBAR ARCHITECTURE START")
+    sidebar_end = app.find("// VALTREN SIDEBAR ARCHITECTURE END", sidebar_start)
+    if sidebar_start < 0 or sidebar_end <= sidebar_start:
+        raise RuntimeError("Bloco canônico da Sidebar não localizado para validação")
     sidebar = app[sidebar_start:sidebar_end]
     expected_legal = [
         "Assuntos Jurídicos",
