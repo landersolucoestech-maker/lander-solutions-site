@@ -195,21 +195,26 @@ def apply_crm_sidebar_architecture() -> int:
         raise FileNotFoundError('app.js ou assets/valtren-brand.css ausente')
     app=APP.read_text(encoding='utf-8')
     updated_app=_materialize_js(app)
-    if updated_app!=app:
+    app_changed=updated_app!=app
+    if app_changed:
         APP.write_text(updated_app,encoding='utf-8')
     css=CSS.read_text(encoding='utf-8')
     updated_css=_materialize_css(css)
-    if updated_css!=css:
+    css_changed=updated_css!=css
+    if css_changed:
         CSS.write_text(updated_css,encoding='utf-8')
-    for path in ROOT.rglob('*.html'):
-        rel=path.relative_to(ROOT)
-        if any(part in {'.git','.bootstrap','node_modules','scripts'} for part in rel.parts):
-            continue
-        text=path.read_text(encoding='utf-8')
-        updated=re.sub(r'app\.js(?:\?v=[A-Za-z0-9._-]+)?',f'app.js?v={CACHE_VERSION}',text)
-        updated=re.sub(r'valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?',f'valtren-brand.css?v={CACHE_VERSION}',updated)
-        if updated!=text:
-            path.write_text(updated,encoding='utf-8')
+    # Cache ownership changes only when this owner actually changes its output.
+    # A no-op rerun after later materializers must remain byte-stable, including HTML.
+    if app_changed or css_changed:
+        for path in ROOT.rglob('*.html'):
+            rel=path.relative_to(ROOT)
+            if any(part in {'.git','.bootstrap','node_modules','scripts'} for part in rel.parts):
+                continue
+            text=path.read_text(encoding='utf-8')
+            updated=re.sub(r'app\.js(?:\?v=[A-Za-z0-9._-]+)?',f'app.js?v={CACHE_VERSION}',text)
+            updated=re.sub(r'valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?',f'valtren-brand.css?v={CACHE_VERSION}',updated)
+            if updated!=text:
+                path.write_text(updated,encoding='utf-8')
     print('Sidebar Architecture materializada com owner único, drawer mobile e saída byte-stable.')
     return 1
 
