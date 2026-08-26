@@ -24,7 +24,7 @@ jobs:
 
       - name: Verify sidebar source ownership
         run: |
-          python -m py_compile scripts/crm_sidebar_architecture.py scripts/crm_global_header.py scripts/crm_product_system_review.py scripts/crm_reference_modules.py scripts/test_sidebar_css_ownership.py
+          python -m py_compile scripts/crm_dashboard_module.py scripts/crm_sidebar_architecture.py scripts/crm_global_header.py scripts/crm_product_system_review.py scripts/crm_reference_modules.py scripts/test_sidebar_css_ownership.py scripts/certify_visual.py
           python scripts/test_sidebar_css_ownership.py
           node scripts/test_crm_sidebar_architecture.js
           node scripts/test_crm_product_system_review.js
@@ -41,6 +41,25 @@ jobs:
           grep -Fq "if(path==='/crm/valtrenchat'||path==='/crm/musicchat')return crmLegacyRoute('#/crm/configuracoes?tab=integracoes',crmCanonicalSettingsPage);" app.js
           grep -Fq "if(path==='/crm/rh')return crmArchitecturePlaceholderPage('','hr','RH'" app.js
           grep -Fq "if(path==='/crm/administracao'||path==='/crm/administracao/patrimonio-licencas')return crmArchitecturePlaceholderPage('','admin','Administração'" app.js
+
+      - name: Verify Dashboard byte stability
+        run: |
+          APP_BEFORE="$(sha256sum app.js | awk '{print $1}')"
+          CSS_BEFORE="$(sha256sum assets/valtren-brand.css | awk '{print $1}')"
+          INDEX_BEFORE="$(sha256sum index.html | awk '{print $1}')"
+          POSITION_BEFORE="$(grep -b -o 'VALTREN CRM DASHBOARD START' app.js | head -1 | cut -d: -f1)"
+          python scripts/crm_dashboard_module.py
+          APP_AFTER="$(sha256sum app.js | awk '{print $1}')"
+          CSS_AFTER="$(sha256sum assets/valtren-brand.css | awk '{print $1}')"
+          INDEX_AFTER="$(sha256sum index.html | awk '{print $1}')"
+          POSITION_AFTER="$(grep -b -o 'VALTREN CRM DASHBOARD START' app.js | head -1 | cut -d: -f1)"
+          echo "Dashboard app.js SHA before: $APP_BEFORE"
+          echo "Dashboard app.js SHA after:  $APP_AFTER"
+          test "$APP_BEFORE" = "$APP_AFTER"
+          test "$CSS_BEFORE" = "$CSS_AFTER"
+          test "$INDEX_BEFORE" = "$INDEX_AFTER"
+          test "$POSITION_BEFORE" = "$POSITION_AFTER"
+          node --check app.js
 
       - name: Verify Sidebar Architecture byte stability
         run: |
