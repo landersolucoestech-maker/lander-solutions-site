@@ -22,11 +22,19 @@ const oldAssertion=oldAssertions[targetName];
 if(!oldAssertion)throw new Error(`Teste-base sem contrato de Administração mapeado: ${targetName}`);
 
 let source=fs.readFileSync(targetPath,'utf8');
-const occurrences=source.split(oldAssertion).length-1;
-if(occurrences!==1){
-  throw new Error(`Assertion materializada histórica de Administração esperada exatamente 1 vez em ${targetName}; encontrada ${occurrences}.`);
+const replaceExactlyOnce=(oldText,newText,label)=>{
+  const occurrences=source.split(oldText).length-1;
+  if(occurrences!==1)throw new Error(`${label} esperada exatamente 1 vez em ${targetName}; encontrada ${occurrences}.`);
+  source=source.replace(oldText,newText);
+};
+
+const newAdministration=String.raw`test('Administração legacy preservada fora da Sidebar',()=>{const start=app.indexOf('// VALTREN SIDEBAR ARCHITECTURE START'),end=app.indexOf('// VALTREN SIDEBAR ARCHITECTURE END',start),sidebar=app.slice(start,end),compact=app.replace(/\s+/g,'');assert(start>=0&&end>start);for(const label of ['Administração','Estrutura Organizacional','Patrimônio e Licenças'])assert(!sidebar.includes(label));assert(compact.includes("path==='/crm/administracao'||path==='/crm/administracao/patrimonio-licencas'"));assert(compact.includes('Áreaadministrativaaindanãoimplementadacomodomíniooperacional.'));});`;
+replaceExactlyOnce(oldAssertion,newAdministration,'Assertion materializada histórica de Administração');
+
+if(targetName==='test_crm_cost_allocations.js'){
+  const oldSidebarBoundary=`test('82 nenhum submódulo de Rateios foi adicionado ao sidebar',()=>{const start=app.lastIndexOf('function crmRelSidebar'),end=app.indexOf('function crmReferenceRoute',start),sidebar=app.slice(start,end);['Direcionadores','Critérios de Rateio','Alocações','Memória de Cálculo'].forEach((x)=>assert(!sidebar.includes(x)));});`;
+  const newSidebarBoundary=`test('82 nenhum submódulo de Rateios foi adicionado ao sidebar canônico',()=>{const start=app.indexOf('// VALTREN SIDEBAR ARCHITECTURE START'),end=app.indexOf('// VALTREN SIDEBAR ARCHITECTURE END',start),sidebar=app.slice(start,end);assert(start>=0&&end>start);['Direcionadores','Critérios de Rateio','Alocações','Memória de Cálculo'].forEach((x)=>assert(!sidebar.includes(x)));});`;
+  replaceExactlyOnce(oldSidebarBoundary,newSidebarBoundary,'Assertion materializada de boundary da Sidebar de Rateios');
 }
 
-const newAssertion=String.raw`test('Administração legacy preservada fora da Sidebar',()=>{const start=app.indexOf('// VALTREN SIDEBAR ARCHITECTURE START'),end=app.indexOf('// VALTREN SIDEBAR ARCHITECTURE END',start),sidebar=app.slice(start,end),compact=app.replace(/\s+/g,'');assert(start>=0&&end>start);for(const label of ['Administração','Estrutura Organizacional','Patrimônio e Licenças'])assert(!sidebar.includes(label));assert(compact.includes("path==='/crm/administracao'||path==='/crm/administracao/patrimonio-licencas'"));assert(compact.includes('Áreaadministrativaaindanãoimplementadacomodomíniooperacional.'));});`;
-source=source.replace(oldAssertion,newAssertion);
 new Function('require','__dirname','__filename',source)(require,path.dirname(targetPath),targetPath);
