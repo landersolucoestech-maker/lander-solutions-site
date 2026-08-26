@@ -59,6 +59,7 @@ def _apply_valtren_brand() -> bool:
         from crm_legal_contracts import apply_crm_legal_contracts
         from crm_economic_participations import apply_crm_economic_participations
         from crm_payouts import apply_crm_payouts
+        from crm_business import apply_crm_business
 
         apply_branding()
         finalize_branding()
@@ -116,6 +117,11 @@ def _apply_valtren_brand() -> bool:
         # Repasses consumes approved Participation obligations and links only existing
         # canonical Transactions for settlement/reconciliation; it never recalculates rights.
         apply_crm_payouts()
+        # Negócios is intentionally applied after Repasses in the current static materializer.
+        # It owns the Business catalog and patches only the final runtime helpers for
+        # Product/Service/Business Unit lookup, validation and labels so completed module
+        # materializers cannot overwrite those adapters. No prior workflow/calculation changes.
+        apply_crm_business()
         return True
     except Exception as error:
         print(f"Falha ao aplicar a identidade visual da Valtren: {error}", file=sys.stderr)
