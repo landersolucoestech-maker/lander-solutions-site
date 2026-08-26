@@ -41,22 +41,37 @@ def _verify_dashboard_idempotence() -> None:
     print("Dashboard materializer idempotence: PASS")
 
 
+def _sidebar_declaration_lines(source: str) -> list[int]:
+    pattern = re.compile(r"^[ \t]*function[ \t]+crmRelSidebar[ \t]*\(", re.MULTILINE)
+    return [source.count("\n", 0, match.start()) + 1 for match in pattern.finditer(source)]
+
 
 def _verify_sidebar_idempotence() -> None:
     tracked = [sidebar.APP, sidebar.CSS, sidebar.ROOT / "index.html"]
     before = {path: _digest(path) for path in tracked if path.exists()}
-    position_before = sidebar.APP.read_text(encoding="utf-8").index(sidebar.JS_START)
+    source_before = sidebar.APP.read_text(encoding="utf-8")
+    if source_before.count(sidebar.JS_START) != 1 or source_before.count(sidebar.JS_END) != 1:
+        raise RuntimeError("Sidebar Architecture não chegou ao rerun com exatamente um par de markers")
+    position_before = source_before.index(sidebar.JS_START)
     sidebar.apply_crm_sidebar_architecture()
     after = {path: _digest(path) for path in tracked if path.exists()}
-    position_after = sidebar.APP.read_text(encoding="utf-8").index(sidebar.JS_START)
+    source_after = sidebar.APP.read_text(encoding="utf-8")
+    position_after = source_after.index(sidebar.JS_START)
     if before != after or position_before != position_after:
         changed = [str(path.relative_to(sidebar.ROOT)) for path in before if before.get(path) != after.get(path)]
         raise RuntimeError(f"Sidebar Architecture não é idempotente após a cadeia: {changed}")
-    app = sidebar.APP.read_text(encoding="utf-8")
-    if len(re.findall(r"function\s+crmRelSidebar\s*\(", app)) != 1:
-        raise RuntimeError("crmRelSidebar não possui owner único após rerun")
-    _assert_js_syntax(app, "rerun idempotente da Sidebar Architecture")
+    if source_after.count(sidebar.JS_START) != 1 or source_after.count(sidebar.JS_END) != 1:
+        raise RuntimeError("Sidebar Architecture duplicou markers após rerun")
+    declaration_lines = _sidebar_declaration_lines(source_after)
+    canonical_declaration = "  function crmRelSidebar(active='relationships',sub=''){"
+    if len(declaration_lines) != 1 or source_after.count(canonical_declaration) != 1:
+        raise RuntimeError(
+            "crmRelSidebar não possui exatamente uma declaração canônica após rerun: "
+            f"declarations={len(declaration_lines)} lines={declaration_lines} canonical={source_after.count(canonical_declaration)}"
+        )
+    _assert_js_syntax(source_after, "rerun idempotente da Sidebar Architecture")
     print("Sidebar Architecture materializer idempotence: PASS")
+
 
 def apply_crm_product_system_review() -> int:
     if not review.APP.exists() or not review.CSS.exists():
