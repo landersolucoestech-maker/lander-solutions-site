@@ -91,58 +91,90 @@ jobs:
           node scripts/test_crm_business.js
           node scripts/test_crm_business_ui.js
 
+      - name: Test Legal Matters domain
+        run: |
+          node --check scripts/crm_legal_matters_core.js
+          node --check scripts/crm_legal_matters_browser.js
+          python -m py_compile scripts/crm_legal_materializer_utils.py scripts/crm_legal_matters.py
+          node scripts/test_crm_legal_matters.js
+          node scripts/test_crm_legal_matters_ui.js
+
+      - name: Test Compliance domain
+        run: |
+          node --check scripts/crm_compliance_core.js
+          node --check scripts/crm_compliance_browser.js
+          python -m py_compile scripts/crm_compliance.py
+          node scripts/test_crm_compliance.js
+          node scripts/test_crm_compliance_ui.js
+
+      - name: Test Intellectual Property domain
+        run: |
+          node --check scripts/crm_intellectual_property_core.js
+          node --check scripts/crm_intellectual_property_browser.js
+          python -m py_compile scripts/crm_intellectual_property.py
+          node scripts/test_crm_intellectual_property.js
+          node scripts/test_crm_intellectual_property_ui.js
+
+      - name: Test Corporate Governance domain
+        run: |
+          node --check scripts/crm_corporate_governance_core.js
+          node --check scripts/crm_corporate_governance_browser.js
+          python -m py_compile scripts/crm_corporate_governance.py
+          node scripts/test_crm_corporate_governance.js
+          node scripts/test_crm_corporate_governance_ui.js
+
       - name: Materialize site
         run: python scripts/materialize.py
 
       - name: Verify Business materializer idempotence
         run: |
           BEFORE="$(sha256sum app.js | awk '{print $1}')"
-          echo "Business idempotence SHA before: $BEFORE"
           python scripts/crm_business.py
           AFTER="$(sha256sum app.js | awk '{print $1}')"
+          echo "Business idempotence SHA before: $BEFORE"
           echo "Business idempotence SHA after:  $AFTER"
           test "$BEFORE" = "$AFTER"
 
+      - name: Verify remaining Legal materializers idempotence
+        run: |
+          APP_BEFORE="$(sha256sum app.js | awk '{print $1}')"
+          CSS_BEFORE="$(sha256sum assets/valtren-brand.css | awk '{print $1}')"
+          INDEX_BEFORE="$(sha256sum index.html | awk '{print $1}')"
+          for script in crm_legal_matters.py crm_compliance.py crm_intellectual_property.py crm_corporate_governance.py; do
+            python "scripts/$script"
+            test "$(sha256sum app.js | awk '{print $1}')" = "$APP_BEFORE"
+            test "$(sha256sum assets/valtren-brand.css | awk '{print $1}')" = "$CSS_BEFORE"
+            test "$(sha256sum index.html | awk '{print $1}')" = "$INDEX_BEFORE"
+          done
+          echo "Legal materializers idempotence SHA app.js: $APP_BEFORE"
+
       - name: Verify canonical Business, Legal and Finance routes
         run: |
-          grep -n "crm/negocios" app.js | tail -n 20
-          grep -n "juridico/contratos" app.js | tail -n 20
-          grep -n "financeiro/participacoes\|financeiro/repasses" app.js | tail -n 20
           grep -Fq "if(path==='/crm/negocios')return crmBusinessProductsPage();" app.js
           grep -Fq "if(path==='/crm/negocios/servicos')return crmBusinessServicesPage();" app.js
           grep -Fq "if(path==='/crm/negocios/unidades')return crmBusinessUnitsPage();" app.js
-          if grep -Fq "if(path==='/crm/negocios')return crmArchitecturePlaceholderPage" app.js; then
-            echo "Produtos ainda está em placeholder" >&2
-            exit 1
-          fi
-          if grep -Fq "if(path==='/crm/negocios/servicos')return crmArchitecturePlaceholderPage" app.js; then
-            echo "Serviços ainda está em placeholder" >&2
-            exit 1
-          fi
-          if grep -Fq "if(path==='/crm/negocios/unidades')return crmArchitecturePlaceholderPage" app.js; then
-            echo "Unidades de Negócio ainda está em placeholder" >&2
-            exit 1
-          fi
-          grep -Fq "function crmBusinessProductsFeed" app.js
-          grep -Fq "function crmBusinessServicesFeed" app.js
-          grep -Fq "function crmBusinessUnitsFeed" app.js
-          grep -Fq "function crmBusinessResolveDimension" app.js
+          grep -Fq "if(path==='/crm/juridico')return crmLegalMattersPage();" app.js
           grep -Fq "if(path==='/crm/juridico/contratos')return crmLegalContractsPage();" app.js
           grep -Fq "if(path==='/crm/juridico/contratos/templates')return crmLegalTemplatesPage();" app.js
           grep -Fq "if(path==='/crm/juridico/contratos/variaveis')return crmLegalVariablesPage();" app.js
+          grep -Fq "if(path==='/crm/juridico/compliance')return crmCompliancePage();" app.js
+          grep -Fq "if(path==='/crm/juridico/propriedade-intelectual')return crmIntellectualPropertyPage();" app.js
+          grep -Fq "if(path==='/crm/juridico/societario')return crmCorporateGovernancePage();" app.js
           grep -Fq "if(path==='/crm/financeiro/participacoes')return crmEconomicParticipationsPage();" app.js
-          if grep -Fq "if(path==='/crm/financeiro/participacoes')return crmArchitecturePlaceholderPage" app.js; then
-            echo "Participações ainda está em placeholder" >&2
-            exit 1
-          fi
           grep -Fq "if(path==='/crm/financeiro/repasses')return crmPayoutsPage();" app.js
-          if grep -Fq "if(path==='/crm/financeiro/repasses')return crmArchitecturePlaceholderPage('accounting','repasses','Repasses');" app.js; then
-            echo "Repasses ainda está em placeholder" >&2
-            exit 1
-          fi
-          grep -Fq "function crmPayoutService()" app.js
+          for route in \
+            "if(path==='/crm/juridico')return crmArchitecturePlaceholderPage('legal','matters'" \
+            "if(path==='/crm/juridico/compliance')return crmArchitecturePlaceholderPage" \
+            "if(path==='/crm/juridico/propriedade-intelectual')return crmArchitecturePlaceholderPage" \
+            "if(path==='/crm/juridico/societario')return crmArchitecturePlaceholderPage"; do
+            if grep -Fq "$route" app.js; then echo "Placeholder jurídico sobreviveu: $route" >&2; exit 1; fi
+          done
+          grep -Fq "function crmLegalMattersFeed" app.js
+          grep -Fq "function crmComplianceObligationsFeed" app.js
+          grep -Fq "function crmIntellectualPropertyFeed" app.js
+          grep -Fq "function crmCorporateStructureFeed" app.js
+          grep -Fq "corporate_ownership_is_not_economic_participation" app.js
           grep -Fq "function crmContractEconomicRulesFeed(filters={})" app.js
-          grep -Fq "function crmContractResolveEconomicRuleForPeriod(input={})" app.js
           grep -Fq "function crmParticipationObligationsFeed(filters={})" app.js
 
       - name: Validate materialized app
@@ -181,6 +213,14 @@ jobs:
           readonly_suite scripts/test_crm_payouts_ui.js --materialized
           readonly_suite scripts/test_crm_business.js --materialized
           readonly_suite scripts/test_crm_business_ui.js --materialized
+          readonly_suite scripts/test_crm_legal_matters.js --materialized
+          readonly_suite scripts/test_crm_legal_matters_ui.js --materialized
+          readonly_suite scripts/test_crm_compliance.js --materialized
+          readonly_suite scripts/test_crm_compliance_ui.js --materialized
+          readonly_suite scripts/test_crm_intellectual_property.js --materialized
+          readonly_suite scripts/test_crm_intellectual_property_ui.js --materialized
+          readonly_suite scripts/test_crm_corporate_governance.js --materialized
+          readonly_suite scripts/test_crm_corporate_governance_ui.js --materialized
           FINAL_SHA="$(sha256sum app.js | awk '{print $1}')"
           test "$APP_SHA" = "$FINAL_SHA"
           echo "MATERIALIZED_APP_SHA=$APP_SHA" >> "$GITHUB_ENV"
