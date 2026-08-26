@@ -16,22 +16,24 @@ def _parts(prefix:str)->str:
     return ''.join(p.read_text(encoding='utf-8') for p in files)
 
 
-def _strip_legacy_sidebar_css(css_block:str)->str:
-    # Reference Modules is a navigation consumer. Any selector exclusively
-    # styling the canonical sidebar belongs to crm_sidebar_architecture.py.
-    lines=[]
-    removed=0
-    for line in css_block.splitlines():
-        if '.crm-nav-group' in line or '.crm-nav-subgroup' in line:
-            removed+=1
-            continue
-        lines.append(line)
-    cleaned='\n'.join(lines).strip()+'\n'
-    if removed<1:
-        raise RuntimeError('CSS legado da Sidebar esperado em Reference Modules não foi localizado')
-    if '.crm-nav-group' in cleaned or '.crm-nav-subgroup' in cleaned:
-        raise RuntimeError('Reference Modules ainda contém CSS de ownership da Sidebar')
-    return cleaned
+def _assert_no_sidebar_css(css_block:str)->str:
+    # Reference Modules is a navigation consumer. Structural Sidebar CSS must
+    # already be absent at source and belongs exclusively to
+    # crm_sidebar_architecture.py. Never strip it silently here.
+    forbidden=(
+        '.crm-sidebar',
+        '.crm-sidebar-head',
+        '.crm-brand',
+        '.crm-nav{',
+        '.crm-nav>',
+        '.crm-nav-group',
+        '.crm-nav-subgroup',
+        '.crm-sidebar-overlay',
+    )
+    found=[selector for selector in forbidden if selector in css_block]
+    if found:
+        raise RuntimeError(f'Reference Modules contém CSS estrutural da Sidebar: {", ".join(found)}')
+    return css_block.strip()+'\n'
 
 
 def _replace_css_block(css:str, block:str)->str:
@@ -52,7 +54,7 @@ def _replace_css_block(css:str, block:str)->str:
 def apply_crm_reference_modules()->int:
     app=APP.read_text(encoding='utf-8')
     js_block=_parts('crm_reference_modules.js.part*')
-    css_block=_strip_legacy_sidebar_css(_parts('crm_reference_modules.css.part*'))
+    css_block=_assert_no_sidebar_css(_parts('crm_reference_modules.css.part*'))
     # Keep only shared primitives/runtime. Page/navigation ownership belongs to
     # definitive/domain materializers and the dedicated Sidebar owner.
     js_block = re.sub(r"\n  const CRM_REF_MARKETING_SUB=.*?;\n", "\n", js_block, count=1)
@@ -103,7 +105,7 @@ def apply_crm_reference_modules()->int:
         t=re.sub(r'valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?',f'valtren-brand.css?v={CACHE_VERSION}',t)
         p.write_text(t,encoding='utf-8')
 
-    print('Módulos de referência materializados como consumers da navegação canônica; CSS estrutural da sidebar removido deste owner.')
+    print('Módulos de referência materializados como consumers da navegação canônica; CSS estrutural da sidebar ausente neste owner.')
     return 1
 
 
