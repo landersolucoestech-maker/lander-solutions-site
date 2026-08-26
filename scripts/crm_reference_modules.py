@@ -6,7 +6,8 @@ ROOT=Path(__file__).resolve().parents[1]
 HERE=Path(__file__).resolve().parent
 APP=ROOT/'app.js'
 CSS=ROOT/'assets'/'valtren-brand.css'
-CACHE_VERSION='20260826-crm-reference-modules-v4'
+CONSISTENCY_CSS=HERE/'crm_reference_modules_consistency.css'
+CACHE_VERSION='20260826-crm-reference-modules-v5'
 CSS_MARKER='/* VALTREN CRM REFERENCE MODULES */'
 
 
@@ -54,7 +55,11 @@ def _replace_css_block(css:str, block:str)->str:
 def apply_crm_reference_modules()->int:
     app=APP.read_text(encoding='utf-8')
     js_block=_parts('crm_reference_modules.js.part*')
-    css_block=_assert_no_sidebar_css(_parts('crm_reference_modules.css.part*'))
+    if not CONSISTENCY_CSS.exists():
+        raise FileNotFoundError(CONSISTENCY_CSS)
+    base_css=_parts('crm_reference_modules.css.part*')
+    consistency_css=CONSISTENCY_CSS.read_text(encoding='utf-8')
+    css_block=_assert_no_sidebar_css(base_css+'\n'+consistency_css)
     # Keep only shared primitives/runtime. Page/navigation ownership belongs to
     # definitive/domain materializers and the dedicated Sidebar owner.
     js_block = re.sub(r"\n  const CRM_REF_MARKETING_SUB=.*?;\n", "\n", js_block, count=1)
@@ -105,7 +110,7 @@ def apply_crm_reference_modules()->int:
         t=re.sub(r'valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?',f'valtren-brand.css?v={CACHE_VERSION}',t)
         p.write_text(t,encoding='utf-8')
 
-    print('Módulos de referência materializados como consumers da navegação canônica; CSS estrutural da sidebar ausente neste owner.')
+    print('Módulos de referência materializados como consumers da navegação canônica; primitives visuais normalizados e CSS estrutural da sidebar ausente neste owner.')
     return 1
 
 
