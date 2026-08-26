@@ -42,6 +42,7 @@ def _apply_valtren_brand() -> bool:
         from crm_reference_modules import apply_crm_reference_modules
         from crm_reference_fidelity_fix import apply_crm_reference_fidelity_fix
         from crm_agenda_calendar_layout_fix import apply_crm_agenda_calendar_layout_fix
+        from crm_agenda_overflow_fix import apply_crm_agenda_overflow_fix
         from crm_global_light_surface_fix import apply_crm_global_light_surface_fix
         from crm_header_text_visibility_fix import apply_crm_header_text_visibility_fix
         from crm_financial_automations_remove import apply_crm_financial_automations_remove
@@ -63,7 +64,9 @@ def _apply_valtren_brand() -> bool:
         from crm_compliance import apply_crm_compliance
         from crm_intellectual_property import apply_crm_intellectual_property
         from crm_corporate_governance import apply_crm_corporate_governance
+        from crm_accessibility_semantics import apply_crm_accessibility_semantics
         from crm_product_system_review_runner import apply_crm_product_system_review
+        from crm_browser_readiness_assertions import assert_browser_readiness
 
         apply_branding()
         finalize_branding()
@@ -88,6 +91,9 @@ def _apply_valtren_brand() -> bool:
         apply_crm_reference_modules()
         apply_crm_reference_fidelity_fix()
         apply_crm_agenda_calendar_layout_fix()
+        # Agenda owns its responsive overflow: wide week/month grids remain readable
+        # inside an internal horizontal scroller instead of expanding the document root.
+        apply_crm_agenda_overflow_fix()
         apply_crm_global_light_surface_fix()
         apply_crm_header_text_visibility_fix()
         apply_crm_financial_automations_remove()
@@ -124,9 +130,15 @@ def _apply_valtren_brand() -> bool:
         apply_crm_compliance()
         apply_crm_intellectual_property()
         apply_crm_corporate_governance()
+        # Accessibility semantics is a narrow cross-cutting frontend pass. It adds only
+        # explicit accessible names/hit areas to already-owned controls and never mutates
+        # state, persistence, routes, domain rules or ownership.
+        apply_crm_accessibility_semantics()
         # Global product review always runs last. It may consolidate UI and legacy projections,
         # but it must not transfer ownership between domain cores.
         apply_crm_product_system_review()
+        # Read-only post-materialization gate: no ownership or bytes are changed here.
+        assert_browser_readiness()
         return True
     except Exception as error:
         print(f"Falha ao aplicar a identidade visual da Valtren: {error}", file=sys.stderr)
