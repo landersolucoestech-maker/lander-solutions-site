@@ -6,13 +6,14 @@ ROOT = Path(__file__).resolve().parents[1]
 CORE = ROOT / "scripts" / "crm_legal_matters_core.js"
 BROWSER = ROOT / "scripts" / "crm_legal_matters_browser.js"
 MODULE_CSS = ROOT / "scripts" / "crm_legal_matters.css"
+CONSISTENCY_CSS = ROOT / "scripts" / "crm_legal_matters_consistency.css"
 JS_START = "  // VALTREN LEGAL MATTERS START\n"
 JS_END = "  // VALTREN LEGAL MATTERS END\n"
 OLD_ROUTE = "if(path==='/crm/juridico')return crmArchitecturePlaceholderPage('legal','matters','Assuntos Jurídicos');"
 NEW_ROUTE = "if(path==='/crm/juridico')return crmLegalMattersPage();"
 
 def apply_crm_legal_matters() -> int:
-    for path in (APP, CSS, CORE, BROWSER, MODULE_CSS):
+    for path in (APP, CSS, CORE, BROWSER, MODULE_CSS, CONSISTENCY_CSS):
         if not path.exists(): raise FileNotFoundError(path)
     app = APP.read_text(encoding="utf-8")
     core = CORE.read_text(encoding="utf-8").strip()
@@ -28,9 +29,10 @@ def apply_crm_legal_matters() -> int:
     if OLD_ROUTE in app or app.count(NEW_ROUTE) != 1: raise RuntimeError("Handler canônico de Assuntos Jurídicos inválido")
     validate_previous_owners(app); validate_legal_sidebar(app)
     APP.write_text(app, encoding="utf-8")
-    css = replace_css(CSS.read_text(encoding="utf-8"), "VALTREN LEGAL MATTERS", MODULE_CSS.read_text(encoding="utf-8"))
+    module_css = MODULE_CSS.read_text(encoding="utf-8").rstrip() + "\n" + CONSISTENCY_CSS.read_text(encoding="utf-8")
+    css = replace_css(CSS.read_text(encoding="utf-8"), "VALTREN LEGAL MATTERS", module_css)
     CSS.write_text(css, encoding="utf-8"); update_cache_version()
-    print("Jurídico → Assuntos Jurídicos materializado como owner canônico de demandas, partes, prazos, eventos, risco, documentos e acordos; sem criar movimentos financeiros.")
+    print("Jurídico → Assuntos Jurídicos materializado como owner canônico de demandas, partes, prazos, eventos, risco, documentos e acordos; escala visual normalizada; sem criar movimentos financeiros.")
     return 1
 
 if __name__ == "__main__": apply_crm_legal_matters()
