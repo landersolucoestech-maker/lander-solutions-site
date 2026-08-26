@@ -53,12 +53,12 @@ test('Corporativo não depende de cadastro de Produto',()=>assert(!browser.inclu
 test('demo não é habilitado implicitamente no feed',()=>has(browser,'includeDemo:!!filters.includeDemo'));
 test('referências históricas consultam somente módulos concluídos',()=>has(browser,"['transactions',state.crmFinancialTransactions]","['fiscal_documents',state.crmFiscalDocuments]","['legal_contracts',state.crmLegalContracts]","['economic_participations',state.crmEconomicParticipations]","['payouts',state.crmPayouts]"));
 test('Projetos não foi criado pela UI de Negócios',()=>assert(!browser.includes('Projetos')));
-test('Sistemas não foi criado como subpágina de Negócios',()=>assert(!browser.includes('crmBusinessSystemsPage'));
+test('Sistemas não foi criado como subpágina de Negócios',()=>assert(!browser.includes('crmBusinessSystemsPage')));
 test('nenhum produto real conhecido foi hardcoded',()=>{for(const x of ['Music OS 360','Vivendo da Música','Dica de Cria','Visa Fácil'])assert(!browser.includes(x));});
 test('responsividade possui breakpoint 1380',()=>assert(css.includes('@media(max-width:1380px)')));
 test('responsividade possui breakpoint 1050',()=>assert(css.includes('@media(max-width:1050px)')));
 test('responsividade possui breakpoint 760',()=>assert(css.includes('@media(max-width:760px)')));
-test('responsividade possui breakpoint 520',()=>assert(css.includes('@media(max-width:520px)'));
+test('responsividade possui breakpoint 520',()=>assert(css.includes('@media(max-width:520px)')));
 test('TableView possui overflow controlado',()=>has(css,'.crm-business-table-wrap{overflow:auto}'));
 test('drawer respeita viewport',()=>has(css,'height:100%','width:min(620px,100vw)'));
 test('modal respeita viewport',()=>has(css,'width:min(880px,calc(100vw - 32px))'));
@@ -92,7 +92,7 @@ if(process.argv.includes('--materialized')){
   test('CSS de Negócios foi materializado',()=>has(brand,'/* VALTREN BUSINESS CATALOG */','.crm-business-table-wrap{overflow:auto}'));
   test('sidebar Negócios mantém exatamente três itens oficiais',()=>{const start=app.lastIndexOf('const business=['),end=app.indexOf('];',start),block=app.slice(start,end);for(const x of ["['products','Produtos','#/crm/negocios']","['services','Serviços','#/crm/negocios/servicos']","['units','Unidades de Negócio','#/crm/negocios/unidades']"])assert(block.includes(x));for(const x of ['Projetos','Portfolio','Sistemas','Categorias','Planos'])assert(!block.includes(x));});
   test('Produto Serviço Unidade não viraram item genérico',()=>assert(!app.includes("['items','Itens','#/crm/negocios")));
-  test('Transações preserva Corporativo',()=>has(app,"<option value=\"corporate\"",'Corporativo'));
+  test('Transações preserva Corporativo',()=>has(app,"<option value=\"corporate\"","Corporativo"));
   test('Transações resolve Produto por Negócios',()=>has(app,'crmBusinessProductsFeed','crmBusinessDimensionLabel'));
   test('Contabilidade mantém DRE canônica',()=>has(app,'function crmAccountingDreView','Demonstrativo de Resultado'));
   test('Notas Fiscais mantém domínio fiscal canônico',()=>has(app,'function crmFiscalDocumentsPage()','state.crmFiscalDocuments'));
