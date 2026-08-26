@@ -37,7 +37,6 @@ def replace_marked_block(text: str, start: str, end: str, body: str, anchor: str
         a = text.index(start)
         b = text.index(end, a) + len(end)
         current = text[a:b]
-        # Preserve byte identity when the domain block is already materialized.
         if current == block:
             return text
         return text[:a] + block + text[b:]
@@ -63,8 +62,6 @@ def replace_css(css: str, marker: str, body: str) -> str:
     block = body.strip()
     if len(matches) == 1:
         current = matches[0].group(0)
-        # The final presentation layer can add separator whitespace after the last
-        # domain block. A no-op domain rerun must not normalize that whitespace.
         if current.strip() == block:
             return css
         return css[:matches[0].start()] + block + css[matches[0].end():]
@@ -73,10 +70,12 @@ def replace_css(css: str, marker: str, body: str) -> str:
     return css.rstrip() + "\n" + block
 
 def validate_legal_sidebar(app: str) -> None:
-    sidebar_start = app.rfind("function crmRelSidebar")
-    sidebar_end = app.find("function crmReferenceRoute", sidebar_start)
+    start_marker = "// VALTREN SIDEBAR ARCHITECTURE START"
+    end_marker = "// VALTREN SIDEBAR ARCHITECTURE END"
+    sidebar_start = app.find(start_marker)
+    sidebar_end = app.find(end_marker, sidebar_start + len(start_marker)) if sidebar_start >= 0 else -1
     if sidebar_start < 0 or sidebar_end <= sidebar_start:
-        raise RuntimeError("Sidebar canônico não localizado")
+        raise RuntimeError("Markers canônicos da Sidebar não localizados")
     sidebar = app[sidebar_start:sidebar_end]
     missing = [x for x in LEGAL_SIDEBAR_REQUIRED if x not in sidebar]
     if missing:
@@ -97,9 +96,6 @@ def validate_previous_owners(app: str) -> None:
 def update_cache_version() -> None:
     if not INDEX.exists():
         raise FileNotFoundError(INDEX)
-    # A revisão global é o último owner da camada de apresentação. Quando ela já
-    # foi materializada, um rerun jurídico deve ser idempotente e não pode
-    # rebaixar o cache-buster final para uma versão intermediária do Jurídico.
     if CSS.exists() and "/* VALTREN PRODUCT SYSTEM REVIEW */" in CSS.read_text(encoding="utf-8"):
         return
     html = INDEX.read_text(encoding="utf-8")
