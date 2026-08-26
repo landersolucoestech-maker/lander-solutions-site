@@ -49,6 +49,12 @@ Artefatos locais de execução Python (`__pycache__`, `*.pyc`) não fazem parte 
 
 Materializadores de domínio que verificam a navegação validam exclusivamente o bloco delimitado por `VALTREN SIDEBAR ARCHITECTURE START/END`; nenhum domínio usa conteúdo posterior do bundle como boundary nem reescreve `crmRelSidebar`.
 
+## Certificação de publicação
+
+Um pipeline verde, isoladamente, não certifica a apresentação final. A saída da `dev` só pode ser tratada como candidata certificada quando o mesmo bundle materializado passar pelos testes de source e materialized, mantiver idempotência e ownership canônico, tiver os hashes de `app.js` e `assets/valtren-brand.css` preservados em `_site` e no artifact publicado, e esse artifact for inspecionado visualmente antes do deploy.
+
+Após o deploy do GitHub Pages, a URL pública é um gate separado: a versão servida deve ser aberta e verificada em desktop, tablet e mobile, com Sidebar, Header/Account Menu, drawer, overflow, console e assets públicos conferidos contra o artifact. O deploy não é considerado concluído apenas porque a action terminou com `success`.
+
 ## Autenticação
 
 A autenticação permanece **desativada**. Não existe senha inicial local, usuário conectado, sessão real ou fallback que finja autenticação. A interface deve comunicar esse estado de forma explícita.
