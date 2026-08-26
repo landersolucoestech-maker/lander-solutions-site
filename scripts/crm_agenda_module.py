@@ -45,24 +45,10 @@ def apply_crm_agenda_module() -> int:
         app,
         flags=re.S,
     )
-
-    app = app.replace('\n          <a href="#/crm/agenda">${icon(\'calendar\',18)}<span>Agenda</span></a>', '')
-    app = app.replace('\n        <a class="${active === \'agenda\' ? \'active\' : \'\'}" href="#/crm/agenda">${icon(\'calendar\',18)}<span>Agenda</span></a>', '')
     app = app.replace("\n    else if (path === '/crm/agenda') app.innerHTML = crmAgendaPage(query);", '')
 
-    dashboard_nav = '''          <a class="active" href="#/crm/dashboard">${icon('layers',18)}<span>Dashboard</span></a>\n          <a href="#/crm/relationships">${icon('users',18)}<span>CRM</span></a>'''
-    dashboard_agenda = dashboard_nav + '''\n          <a href="#/crm/agenda">${icon('calendar',18)}<span>Agenda</span></a>'''
-    if dashboard_nav in app and 'href="#/crm/agenda"' not in app:
-        app = app.replace(dashboard_nav, dashboard_agenda, 1)
-
-    rel_link = '''        <a class="${active === 'relationships' ? 'active' : ''}" href="#/crm/relationships">${icon('users',18)}<span>CRM</span></a>'''
-    rel_agenda = rel_link + '''\n        <a class="${active === 'agenda' ? 'active' : ''}" href="#/crm/agenda">${icon('calendar',18)}<span>Agenda</span></a>'''
-    if rel_link not in app:
-        raise RuntimeError("Link compartilhado do CRM não encontrado para adicionar Agenda")
-    app = app.replace(rel_link, rel_agenda, 1)
-
-    # Agenda consome o header compartilhado. Não reescreve mais a implementação
-    # interna de crmHeaderActions, evitando ownership concorrente entre módulos.
+    # Agenda é consumer da navegação e do header compartilhados. Ela não cria,
+    # adiciona, remove ou reescreve itens de crmRelSidebar.
     if app.count("  function crmHeaderActions(context=''){") != 1:
         raise RuntimeError("Header compartilhado contextual não encontrado para Agenda")
     if "context === 'agenda'" not in app:
@@ -87,7 +73,7 @@ def apply_crm_agenda_module() -> int:
     css = re.sub(r"\n?/\* VALTREN CRM AGENDA EVENTS \*/.*\Z", "", css, flags=re.S)
     CSS.write_text(css.rstrip() + "\n\n" + css_patch.strip() + "\n", encoding="utf-8")
     _write_cache_version()
-    print("Módulo Agenda & Eventos materializado como consumidor do header compartilhado.")
+    print("Módulo Agenda & Eventos materializado como consumidor de Header e Sidebar canônicos.")
     return 1
 
 
