@@ -103,6 +103,6 @@ if(process.argv.includes('--materialized')){
   test('Repasses mantém liquidação canônica',()=>has(app,'ValtrenPayoutCore','function crmPayoutsPage()'));
   test('referência não resolvida nunca vira undefined',()=>has(app,'Referência não resolvida'));
   test('Configurações continua com seis abas',()=>{const start=app.indexOf('function crmCanonicalSettingsPage()'),end=app.indexOf('function crmCanonicalProfilePage()',start),s=app.slice(start,end);for(const x of ['Empresa','Notificações','Segurança','Integrações','Auditoria','Usuários'])assert(s.includes(x));});
-  test('Administração continua com dois submódulos',()=>{const start=app.lastIndexOf('const administration=['),end=app.indexOf('];',start),s=app.slice(start,end);assert(s.includes('Estrutura Organizacional'));assert(s.includes('Patrimônio e Licenças'));});
+  test('Administração permanece fora da sidebar canônica',()=>{const start=app.indexOf('VALTREN SIDEBAR ARCHITECTURE START'),end=app.indexOf('VALTREN SIDEBAR ARCHITECTURE END',start);assert(start>=0&&end>start);const sidebar=app.slice(start,end);for(const label of ['Administração','Estrutura Organizacional','Patrimônio e Licenças'])assert(!sidebar.includes(label));});
 }
 console.log(`Business catalog UI tests: ${passed} passed`);
