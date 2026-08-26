@@ -12,7 +12,6 @@ const targetPath=path.resolve(process.cwd(),targetArg);
 const targetName=path.basename(targetPath);
 
 const oldAssertions={
-  'test_crm_accounting.js':`test('68 Administração mantém dois itens',()=>{assert(app.includes('Estrutura Organizacional'));assert(app.includes('Patrimônio e Licenças'))});`,
   'test_crm_fiscal_documents.js':`test('92 Administração continua com dois itens',()=>{assert(app.includes("['structure','Estrutura Organizacional'"));assert(app.includes("['assets','Patrimônio e Licenças'"));});`,
   'test_crm_cost_allocations.js':`test('84 Administração continua com dois itens',()=>{assert(app.includes("['structure','Estrutura Organizacional'"));assert(app.includes("['assets','Patrimônio e Licenças'"));});`,
   'test_crm_payouts.js':`test('Administração preserva dois itens atuais',()=>{const start=app.lastIndexOf('const administration=['),end=app.indexOf('];',start),admin=app.slice(start,end);for(const item of ["['structure','Estrutura Organizacional','#/crm/administracao']","['assets','Patrimônio e Licenças','#/crm/administracao/patrimonio-licencas']"])assert(admin.includes(item));});`,
