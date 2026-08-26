@@ -28,6 +28,7 @@ def apply_crm_product_system_review() -> int:
 
     app = review.APP.read_text(encoding="utf-8")
     _assert_js_syntax(app, "entrada da revisão global")
+    _assert_js_syntax("(()=>{\n" + review.DASHBOARD + "\n})();\n", "snippet isolado crmDashboardPage")
 
     start = app.find(review.HEADER_START)
     end = app.find(review.HEADER_END, start) if start >= 0 else -1
