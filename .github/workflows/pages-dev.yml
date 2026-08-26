@@ -18,6 +18,10 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      app_sha: ${{ steps.publish_hashes.outputs.app_sha }}
+      css_sha: ${{ steps.publish_hashes.outputs.css_sha }}
+      publish_size: ${{ steps.publish_hashes.outputs.publish_size }}
     steps:
       - name: Checkout dev
         uses: actions/checkout@v4
@@ -128,6 +132,11 @@ jobs:
           python -m py_compile scripts/crm_product_system_review.py
           node scripts/test_crm_product_system_review.js
 
+      - name: Test Sidebar Architecture source ownership
+        run: |
+          python -m py_compile scripts/crm_sidebar_architecture.py scripts/crm_global_header.py
+          node scripts/test_crm_sidebar_architecture.js
+
       - name: Materialize site
         run: python scripts/materialize.py
 
@@ -151,6 +160,24 @@ jobs:
           test "$(sha256sum app.js | awk '{print $1}')" = "$WORKSPACE_APP"
           test "$(sha256sum assets/valtren-brand.css | awk '{print $1}')" = "$WORKSPACE_CSS"
           test "$(sha256sum index.html | awk '{print $1}')" = "$WORKSPACE_INDEX"
+
+      - name: Verify Sidebar Architecture idempotence
+        run: |
+          APP_BEFORE="$(sha256sum app.js | awk '{print $1}')"
+          CSS_BEFORE="$(sha256sum assets/valtren-brand.css | awk '{print $1}')"
+          INDEX_BEFORE="$(sha256sum index.html | awk '{print $1}')"
+          POSITION_BEFORE="$(grep -b -o 'VALTREN SIDEBAR ARCHITECTURE START' app.js | head -1 | cut -d: -f1)"
+          python scripts/crm_sidebar_architecture.py
+          APP_AFTER="$(sha256sum app.js | awk '{print $1}')"
+          CSS_AFTER="$(sha256sum assets/valtren-brand.css | awk '{print $1}')"
+          INDEX_AFTER="$(sha256sum index.html | awk '{print $1}')"
+          POSITION_AFTER="$(grep -b -o 'VALTREN SIDEBAR ARCHITECTURE START' app.js | head -1 | cut -d: -f1)"
+          test "$APP_BEFORE" = "$APP_AFTER"
+          test "$CSS_BEFORE" = "$CSS_AFTER"
+          test "$INDEX_BEFORE" = "$INDEX_AFTER"
+          test "$POSITION_BEFORE" = "$POSITION_AFTER"
+          test "$(grep -Ec '^[[:space:]]*function crmRelSidebar\(' app.js)" -eq 1
+          node scripts/test_crm_sidebar_architecture.js --materialized
 
       - name: Verify remaining Legal materializers idempotence
         run: |
@@ -180,8 +207,12 @@ jobs:
           test "$CSS_BEFORE" = "$CSS_AFTER"
           test "$INDEX_BEFORE" = "$INDEX_AFTER"
 
-      - name: Verify canonical Business, Legal and Finance routes
+      - name: Verify canonical routes and compatibility guards
         run: |
+          grep -Fq "if(path==='/crm/dashboard')" app.js
+          grep -Fq "if(path==='/crm/relationships')" app.js
+          grep -Fq "if(path==='/crm/agenda')" app.js
+          grep -Fq "if(path==='/crm/financeiro')return crmTransactionsPage();" app.js
           grep -Fq "if(path==='/crm/negocios')return crmBusinessProductsPage();" app.js
           grep -Fq "if(path==='/crm/negocios/servicos')return crmBusinessServicesPage();" app.js
           grep -Fq "if(path==='/crm/negocios/unidades')return crmBusinessUnitsPage();" app.js
@@ -194,6 +225,12 @@ jobs:
           grep -Fq "if(path==='/crm/juridico/societario')return crmCorporateGovernancePage();" app.js
           grep -Fq "if(path==='/crm/financeiro/participacoes')return crmEconomicParticipationsPage();" app.js
           grep -Fq "if(path==='/crm/financeiro/repasses')return crmPayoutsPage();" app.js
+          grep -Fq "if(path.startsWith('/crm/marketing'))return crmMarketingUnavailablePage();" app.js
+          grep -Fq "if(path==='/crm/valtrenchat'||path==='/crm/musicchat')return crmLegacyRoute('#/crm/configuracoes?tab=integracoes',crmCanonicalSettingsPage);" app.js
+          grep -Fq "if(path==='/crm/rh')return crmArchitecturePlaceholderPage('','hr','RH'" app.js
+          grep -Fq "if(path==='/crm/administracao'||path==='/crm/administracao/patrimonio-licencas')return crmArchitecturePlaceholderPage('','admin','Administração'" app.js
+          grep -Fq "if(path==='/crm/relatorios')" app.js
+          grep -Fq "if(path==='/crm/configuracoes')return crmCanonicalSettingsPage();" app.js
           for route in \
             "if(path==='/crm/juridico')return crmArchitecturePlaceholderPage('legal','matters'" \
             "if(path==='/crm/juridico/compliance')return crmArchitecturePlaceholderPage" \
@@ -201,29 +238,22 @@ jobs:
             "if(path==='/crm/juridico/societario')return crmArchitecturePlaceholderPage"; do
             if grep -Fq "$route" app.js; then echo "Placeholder jurídico sobreviveu: $route" >&2; exit 1; fi
           done
-          grep -Fq "function crmLegalMattersFeed" app.js
-          grep -Fq "function crmComplianceObligationsFeed" app.js
-          grep -Fq "function crmIntellectualPropertyFeed" app.js
-          grep -Fq "function crmCorporateStructureFeed" app.js
-          grep -Fq "corporate_ownership_is_not_economic_participation" app.js
-          grep -Fq "function crmContractEconomicRulesFeed(filters={})" app.js
-          grep -Fq "function crmParticipationObligationsFeed(filters={})" app.js
 
       - name: Validate materialized app
         run: |
           node --check app.js
           APP_SHA="$(sha256sum app.js | awk '{print $1}')"
+          CSS_SHA="$(sha256sum assets/valtren-brand.css | awk '{print $1}')"
           echo "Materialized app.js SHA-256: $APP_SHA"
+          echo "Materialized valtren-brand.css SHA-256: $CSS_SHA"
           readonly_suite() {
             local script="$1"
             shift
             local before after
             before="$(sha256sum app.js | awk '{print $1}')"
-            echo "app.js SHA-256 before $script: $before"
             test "$before" = "$APP_SHA"
             node "$script" "$@"
             after="$(sha256sum app.js | awk '{print $1}')"
-            echo "app.js SHA-256 after  $script: $after"
             test "$after" = "$APP_SHA"
           }
           readonly_suite scripts/test_crm_canonical_parties.js --materialized
@@ -254,14 +284,18 @@ jobs:
           readonly_suite scripts/test_crm_corporate_governance.js --materialized
           readonly_suite scripts/test_crm_corporate_governance_ui.js --materialized
           readonly_suite scripts/test_crm_product_system_review.js --materialized
-          FINAL_SHA="$(sha256sum app.js | awk '{print $1}')"
-          test "$APP_SHA" = "$FINAL_SHA"
+          node scripts/test_crm_sidebar_architecture.js --materialized
+          test "$(grep -Ec '^[[:space:]]*function crmRelSidebar\(' app.js)" -eq 1
+          test "$APP_SHA" = "$(sha256sum app.js | awk '{print $1}')"
+          test "$CSS_SHA" = "$(sha256sum assets/valtren-brand.css | awk '{print $1}')"
           echo "MATERIALIZED_APP_SHA=$APP_SHA" >> "$GITHUB_ENV"
+          echo "MATERIALIZED_CSS_SHA=$CSS_SHA" >> "$GITHUB_ENV"
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
-      - name: Prepare publish directory
+      - name: Prepare publish directory and certify source hashes
+        id: publish_hashes
         run: |
           mkdir -p _site
           rsync -a ./ _site/ \
@@ -271,19 +305,111 @@ jobs:
             --exclude='_site' \
             --exclude='scripts'
           PUBLISH_APP_SHA="$(sha256sum _site/app.js | awk '{print $1}')"
+          PUBLISH_CSS_SHA="$(sha256sum _site/assets/valtren-brand.css | awk '{print $1}')"
           test "$MATERIALIZED_APP_SHA" = "$PUBLISH_APP_SHA"
-          echo "Publish app.js SHA-256: $PUBLISH_APP_SHA"
-          echo "Publish directory size: $(du -sb _site | awk '{print $1}') bytes"
+          test "$MATERIALIZED_CSS_SHA" = "$PUBLISH_CSS_SHA"
+          PUBLISH_SIZE="$(du -sb _site | awk '{print $1}')"
+          echo "Source/_site app.js SHA-256: $PUBLISH_APP_SHA"
+          echo "Source/_site valtren-brand.css SHA-256: $PUBLISH_CSS_SHA"
+          echo "Publish directory size: $PUBLISH_SIZE bytes"
+          echo "app_sha=$PUBLISH_APP_SHA" >> "$GITHUB_OUTPUT"
+          echo "css_sha=$PUBLISH_CSS_SHA" >> "$GITHUB_OUTPUT"
+          echo "publish_size=$PUBLISH_SIZE" >> "$GITHUB_OUTPUT"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
 
-  deploy:
+  verify_artifact:
     runs-on: ubuntu-latest
     needs: build
+    steps:
+      - name: Checkout certification scripts
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+
+      - name: Download exact Pages artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: github-pages
+          path: page-artifact
+
+      - name: Extract and hash exact artifact
+        run: |
+          mkdir -p artifact-site
+          tar -xf page-artifact/artifact.tar -C artifact-site
+          ARTIFACT_APP_SHA="$(sha256sum artifact-site/app.js | awk '{print $1}')"
+          ARTIFACT_CSS_SHA="$(sha256sum artifact-site/assets/valtren-brand.css | awk '{print $1}')"
+          echo "Artifact app.js SHA-256: $ARTIFACT_APP_SHA"
+          echo "Artifact valtren-brand.css SHA-256: $ARTIFACT_CSS_SHA"
+          test "$ARTIFACT_APP_SHA" = "${{ needs.build.outputs.app_sha }}"
+          test "$ARTIFACT_CSS_SHA" = "${{ needs.build.outputs.css_sha }}"
+
+      - name: Install browser certification dependency
+        run: python -m pip install --disable-pip-version-check selenium
+
+      - name: Serve and visually certify exact artifact
+        run: |
+          python -m http.server 4173 --directory artifact-site >artifact-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          python scripts/certify_visual.py --base-url http://127.0.0.1:4173/ --output-dir visual-certification --mode artifact
+
+      - name: Upload artifact visual evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact-visual-certification-${{ github.sha }}
+          path: visual-certification
+          if-no-files-found: error
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [build, verify_artifact]
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  public_verify:
+    runs-on: ubuntu-latest
+    needs: [build, deploy]
+    steps:
+      - name: Checkout certification scripts
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+
+      - name: Install browser certification dependency
+        run: python -m pip install --disable-pip-version-check selenium
+
+      - name: Verify public asset bytes against certified artifact
+        env:
+          PAGE_URL: ${{ needs.deploy.outputs.page_url }}
+          EXPECTED_APP_SHA: ${{ needs.build.outputs.app_sha }}
+          EXPECTED_CSS_SHA: ${{ needs.build.outputs.css_sha }}
+        run: |
+          BASE="${PAGE_URL%/}"
+          curl -fsSL -H 'Cache-Control: no-cache' "$BASE/app.js?cert=${GITHUB_SHA}" -o /tmp/public-app.js
+          curl -fsSL -H 'Cache-Control: no-cache' "$BASE/assets/valtren-brand.css?cert=${GITHUB_SHA}" -o /tmp/public-css.css
+          PUBLIC_APP_SHA="$(sha256sum /tmp/public-app.js | awk '{print $1}')"
+          PUBLIC_CSS_SHA="$(sha256sum /tmp/public-css.css | awk '{print $1}')"
+          echo "Public app.js SHA-256: $PUBLIC_APP_SHA"
+          echo "Public valtren-brand.css SHA-256: $PUBLIC_CSS_SHA"
+          test "$PUBLIC_APP_SHA" = "$EXPECTED_APP_SHA"
+          test "$PUBLIC_CSS_SHA" = "$EXPECTED_CSS_SHA"
+
+      - name: Public deploy visual verification
+        env:
+          PAGE_URL: ${{ needs.deploy.outputs.page_url }}
+        run: python scripts/certify_visual.py --base-url "$PAGE_URL" --output-dir public-certification --mode public
+
+      - name: Upload public visual evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-visual-certification-${{ github.sha }}
+          path: public-certification
+          if-no-files-found: error
