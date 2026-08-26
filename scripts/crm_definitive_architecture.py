@@ -144,6 +144,17 @@ JS_BLOCK = r'''  // VALTREN CRM DEFINITIVE ARCHITECTURE START
     return null;
   }
 
+  if(!window.__valtrenCanonicalSettingsTabsBound){
+    window.__valtrenCanonicalSettingsTabsBound=true;
+    document.addEventListener('click',(event)=>{
+      const target=event.target.closest('[data-action="crm-ref-settings-tab"]');
+      if(!target)return;
+      event.preventDefault();
+      const next=target.dataset.tab||'empresa';
+      location.hash=`#/crm/configuracoes?tab=${encodeURIComponent(next)}`;
+    });
+  }
+
   if(!window.__valtrenCanonicalAccountMenuBound){
     window.__valtrenCanonicalAccountMenuBound=true;
     document.addEventListener('click',(event)=>{
@@ -212,12 +223,6 @@ def apply_crm_definitive_architecture() -> int:
         '<button type="button" data-action="crm-header-account-item" data-account-item="profile">Meu Perfil</button>',
     )
 
-    old_settings_handler = "if(a==='crm-ref-settings-tab'){state.crmRefSettingsTab=t.dataset.tab;renderCurrentWithoutReset();return;}"
-    new_settings_handler = "if(a==='crm-ref-settings-tab'){const next=t.dataset.tab;if(routeInfo().path==='/crm/configuracoes'){location.hash=`#/crm/configuracoes?tab=${encodeURIComponent(next)}`;return;}state.crmRefSettingsTab=next;renderCurrentWithoutReset();return;}"
-    if old_settings_handler not in app:
-        raise RuntimeError("Handler de tabs de Configurações não encontrado")
-    app = app.replace(old_settings_handler, new_settings_handler, 1)
-
     old_route_tail = "path.startsWith('/crm/configuracoes')"
     new_route_tail = "(path.startsWith('/crm/configuracoes') || path === '/crm/meu-perfil' || path.startsWith('/crm/juridico') || path === '/crm/rh' || path.startsWith('/crm/negocios') || path.startsWith('/crm/administracao'))"
     if old_route_tail not in app:
@@ -250,8 +255,8 @@ def apply_crm_definitive_architecture() -> int:
     missing_alias_targets = [route for route in required_alias_targets if route not in JS_BLOCK]
     if missing_alias_targets:
         raise RuntimeError(f"Destinos canônicos de compatibilidade ausentes: {missing_alias_targets}")
-    if "#/crm/configuracoes?tab=${encodeURIComponent(next)}" not in new_settings_handler:
-        raise RuntimeError("Handler de deep link das abas de Configurações ausente")
+    if "window.__valtrenCanonicalSettingsTabsBound" not in JS_BLOCK or "#/crm/configuracoes?tab=${encodeURIComponent(next)}" not in JS_BLOCK:
+        raise RuntimeError("Handler canônico de deep link das abas de Configurações ausente")
 
     APP.write_text(app, encoding="utf-8")
 
