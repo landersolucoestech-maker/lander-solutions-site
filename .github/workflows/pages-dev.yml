@@ -134,7 +134,7 @@ jobs:
 
       - name: Test Sidebar Architecture source ownership
         run: |
-          python -m py_compile scripts/crm_sidebar_architecture.py scripts/crm_global_header.py scripts/test_crm_route_guards.py
+          python -m py_compile scripts/crm_sidebar_architecture.py scripts/crm_global_header.py scripts/test_crm_route_guards.py scripts/certify_visual.py scripts/certify_interactions.py
           node scripts/test_crm_sidebar_architecture.js
 
       - name: Materialize site
@@ -328,6 +328,7 @@ jobs:
           SERVER_PID=$!
           trap 'kill $SERVER_PID || true' EXIT
           python scripts/certify_visual.py --base-url http://127.0.0.1:4173/ --output-dir visual-certification --mode artifact
+          python scripts/certify_interactions.py --base-url http://127.0.0.1:4173/ --output-dir visual-certification --mode artifact
 
       - name: Upload artifact visual evidence
         uses: actions/upload-artifact@v4
@@ -377,7 +378,9 @@ jobs:
       - name: Public deploy visual verification
         env:
           PAGE_URL: ${{ needs.deploy.outputs.page_url }}
-        run: python scripts/certify_visual.py --base-url "$PAGE_URL" --output-dir public-certification --mode public
+        run: |
+          python scripts/certify_visual.py --base-url "$PAGE_URL" --output-dir public-certification --mode public
+          python scripts/certify_interactions.py --base-url "$PAGE_URL" --output-dir public-certification --mode public
 
       - name: Upload public visual evidence
         uses: actions/upload-artifact@v4
