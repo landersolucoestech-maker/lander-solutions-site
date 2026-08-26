@@ -25,6 +25,7 @@ jobs:
           python scripts/source_migrate_part1.py
           python scripts/source_migrate_part2.py
           python scripts/source_migrate_part3.py
+          python scripts/source_migrate_part4.py
 
       - name: Validate migrated sources
         run: |
@@ -43,7 +44,7 @@ jobs:
 
       - name: Commit consolidated source
         run: |
-          rm -f scripts/source_migrate_bootstrap_fix.py scripts/source_migrate_part1.py scripts/source_migrate_part2.py scripts/source_migrate_part3.py
+          rm -f scripts/source_migrate_bootstrap_fix.py scripts/source_migrate_part1.py scripts/source_migrate_part2.py scripts/source_migrate_part3.py scripts/source_migrate_part4.py
           rm .github/workflows/source-migration.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
