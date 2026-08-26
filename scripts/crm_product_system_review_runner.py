@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import hashlib
 import re
 import subprocess
 import tempfile
 from pathlib import Path
 
+import crm_dashboard_module as dashboard
 import crm_product_system_review as review
 
 
@@ -22,36 +24,39 @@ def _assert_js_syntax(source: str, stage: str) -> None:
         temp_path.unlink(missing_ok=True)
 
 
+def _digest(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _verify_dashboard_idempotence() -> None:
+    tracked = [dashboard.APP, dashboard.CSS, dashboard.ROOT / "index.html"]
+    before = {path: _digest(path) for path in tracked if path.exists()}
+    dashboard.apply_crm_dashboard()
+    after = {path: _digest(path) for path in tracked if path.exists()}
+    if before != after:
+        changed = [str(path.relative_to(dashboard.ROOT)) for path in before if before.get(path) != after.get(path)]
+        raise RuntimeError(f"Dashboard materializer não é idempotente após a cadeia: {changed}")
+    _assert_js_syntax(dashboard.APP.read_text(encoding="utf-8"), "rerun idempotente do Dashboard")
+    print("Dashboard materializer idempotence: PASS")
+
+
 def apply_crm_product_system_review() -> int:
     if not review.APP.exists() or not review.CSS.exists():
         raise FileNotFoundError("app.js ou assets/valtren-brand.css ausente")
 
     app = review.APP.read_text(encoding="utf-8")
     _assert_js_syntax(app, "entrada da revisão global")
-    _assert_js_syntax("(()=>{\n" + review.DASHBOARD + "\n})();\n", "snippet isolado crmDashboardPage")
+    if app.count(dashboard.DASHBOARD_START) != 1 or app.count(dashboard.DASHBOARD_END) != 1:
+        raise RuntimeError("Dashboard não chegou à revisão global sob ownership canônico")
+    _verify_dashboard_idempotence()
 
-    start = app.find(review.HEADER_START)
-    end = app.find(review.HEADER_END, start) if start >= 0 else -1
-    if start < 0 or end < 0:
-        raise RuntimeError("Bloco compartilhado do Account Menu não encontrado")
-    app = app[:start] + review.HEADER_HELPERS + app[end + len(review.HEADER_END):]
+    app = review.APP.read_text(encoding="utf-8")
+    app = review._replace_marked_block(app, review.HEADER_START, review.HEADER_END, review.HEADER_HELPERS, "Account Menu")
     _assert_js_syntax(app, "Account Menu compartilhado")
 
-    replacements = {
-        "crmRelEnsureState": review.EMPTY_RELATIONSHIP_STATE,
-        "crmFullUsers": review.EMPTY_USERS,
-        "crmDashboardPage": review.DASHBOARD,
-        "crmSettingsCompanyBody": review.SETTINGS_COMPANY,
-        "crmSettingsNotificationsBody": review.SETTINGS_NOTIFICATIONS,
-        "crmSettingsSecurityBody": review.SETTINGS_SECURITY,
-        "crmSettingsIntegrationsBody": review.SETTINGS_INTEGRATIONS,
-        "crmSettingsAuditBody": review.SETTINGS_AUDIT,
-        "crmSettingsUsersBody": review.SETTINGS_USERS,
-        "crmCanonicalProfilePage": review.PROFILE,
-    }
-    for name, replacement in replacements.items():
-        app = review._replace_function(app, name, replacement)
-        _assert_js_syntax(app, name)
+    for start_anchor, end_anchor, replacement, label in review.REPLACEMENTS:
+        app = review._replace_between(app, start_anchor, end_anchor, replacement, label)
+        _assert_js_syntax(app, label)
 
     for old, new in [
         ("Protótipo · dados ilustrativos", ""),
@@ -60,29 +65,28 @@ def apply_crm_product_system_review() -> int:
         ("Não conectado", "Não configurado"),
         ("state.crmUserName || 'Administrador'", "state.crmUserName || ''"),
         ("state.crmUserName||'Administrador'", "state.crmUserName||''"),
+        ("state.crmUserInitials || 'AD'", "state.crmUserInitials || ''"),
+        ("state.crmUserInitials||'AD'", "state.crmUserInitials||''"),
     ]:
         app = app.replace(old, new)
     _assert_js_syntax(app, "normalização textual final")
     review.APP.write_text(app, encoding="utf-8")
 
     css = review.CSS.read_text(encoding="utf-8")
-    css = re.sub(r"\n?/\* VALTREN PRODUCT SYSTEM REVIEW \*/.*\Z", "", css, flags=re.S)
-    review.CSS.write_text(css.rstrip() + "\n\n" + review.CSS_PATCH.strip() + "\n", encoding="utf-8")
+    updated_css = review._replace_css(css)
+    if updated_css != css:
+        review.CSS.write_text(updated_css, encoding="utf-8")
 
     for path in review.ROOT.rglob("*.html"):
         rel = path.relative_to(review.ROOT)
         if any(part in {".git", ".bootstrap", "node_modules", "scripts"} for part in rel.parts):
             continue
         original = path.read_text(encoding="utf-8")
-        updated = re.sub(
-            r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?",
-            f"valtren-brand.css?v={review.CACHE_VERSION}",
-            original,
-        )
+        updated = re.sub(r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?", f"valtren-brand.css?v={review.CACHE_VERSION}", original)
         if updated != original:
             path.write_text(updated, encoding="utf-8")
 
-    print("Revisão global materializada com validação sintática por etapa.")
+    print("Revisão global materializada com validação sintática incremental e Dashboard sob owner canônico.")
     return 1
 
 
