@@ -36,8 +36,8 @@ must(!ownsSidebar(fidelity),'fidelity still owns sidebar');
 must(!ownsSidebar(definitive),'definitive architecture still owns sidebar');
 must(!reference.includes('crm_reference_sidebar.txt'),'reference modules still rewrites sidebar');
 must(!fs.existsSync(path.join(__dirname,'crm_reference_sidebar.txt')),'dead crm_reference_sidebar.txt must be removed');
-must(reference.includes('_strip_legacy_sidebar_css'),'reference modules must explicitly strip its legacy sidebar CSS');
-must(rawReferenceCss.includes('.crm-nav-group'),'expected audited legacy navigation CSS missing from reference source');
+must(reference.includes('_assert_no_sidebar_css'),'reference modules must reject structural sidebar CSS instead of stripping it silently');
+['.crm-sidebar','.crm-sidebar-head','.crm-brand','.crm-nav-group','.crm-nav-subgroup','.crm-sidebar-overlay'].forEach((selector)=>must(!rawReferenceCss.includes(selector),`Reference Modules source still contains structural Sidebar CSS: ${selector}`));
 must(materialize.includes('from crm_sidebar_architecture import apply_crm_sidebar_architecture'),'materialize missing sidebar owner import');
 must((materialize.match(/apply_crm_sidebar_architecture\(\)/g)||[]).length===1,'materialize must call sidebar owner exactly once');
 for(const [name,source] of [['Payouts',payouts],['Business',business],['Legal shared validator',legalUtils]]){
