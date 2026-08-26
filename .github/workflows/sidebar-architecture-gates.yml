@@ -24,7 +24,7 @@ jobs:
 
       - name: Verify sidebar and visual-system source ownership
         run: |
-          python -m py_compile scripts/crm_dashboard_module.py scripts/crm_sidebar_architecture.py scripts/crm_global_header.py scripts/crm_product_system_review.py scripts/crm_reference_modules.py scripts/test_sidebar_css_ownership.py scripts/test_frontend_visual_system.py scripts/certify_visual.py
+          python -m py_compile scripts/crm_dashboard_module.py scripts/crm_sidebar_architecture.py scripts/crm_global_header.py scripts/crm_product_system_review.py scripts/crm_reference_modules.py scripts/test_sidebar_css_ownership.py scripts/test_frontend_visual_system.py scripts/test_crm_route_guards.py scripts/certify_visual.py
           python scripts/test_sidebar_css_ownership.py
           python scripts/test_frontend_visual_system.py
           node scripts/test_crm_sidebar_architecture.js
@@ -38,11 +38,8 @@ jobs:
           node --check app.js
           python scripts/test_frontend_visual_system.py --materialized
           node scripts/test_crm_sidebar_architecture.js --materialized
+          python scripts/test_crm_route_guards.py
           test "$(grep -Ec '^[[:space:]]*function crmRelSidebar\(' app.js)" -eq 1
-          grep -Fq "if(path.startsWith('/crm/marketing'))return crmMarketingUnavailablePage();" app.js
-          grep -Fq "if(path==='/crm/valtrenchat'||path==='/crm/musicchat')return crmLegacyRoute('#/crm/configuracoes?tab=integracoes',crmCanonicalSettingsPage);" app.js
-          grep -Fq "if(path==='/crm/rh')return crmArchitecturePlaceholderPage('','hr','RH'" app.js
-          grep -Fq "if(path==='/crm/administracao'||path==='/crm/administracao/patrimonio-licencas')return crmArchitecturePlaceholderPage('','admin','Administração'" app.js
 
       - name: Verify Dashboard byte stability
         run: |
