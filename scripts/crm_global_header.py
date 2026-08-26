@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CSS_VERSION = "20260826-crm-global-header-v2"
+CSS_VERSION = "20260826-crm-global-header-v3"
 JS_START = "  // VALTREN CRM GLOBAL HEADER START\n"
 JS_END = "  // VALTREN CRM GLOBAL HEADER END\n"
 DASHBOARD_START = "  // VALTREN CRM DASHBOARD START\n"
@@ -17,10 +17,12 @@ CSS_MARKER = "/* VALTREN CRM GLOBAL HEADER */"
 HELPERS = r'''  // VALTREN CRM GLOBAL HEADER START
   function crmHeaderActions(context=''){
     const create = context === 'contacts'
-      ? `<button class="crm-header-create" type="button" data-action="crm-rel-create" data-kind="contacts">${icon('plus',15)}<span>Novo Contato</span></button>`
+      ? `<button class="crm-header-create crm-header-create-contact" type="button" data-action="crm-rel-create" data-kind="contacts">${icon('plus',15)}<span>Novo Contato</span></button>`
       : context === 'leads'
-        ? `<button class="crm-header-create" type="button" data-action="crm-rel-create" data-kind="leads">${icon('plus',15)}<span>Novo Lead</span></button>`
-        : '';
+        ? `<button class="crm-header-create crm-header-create-lead" type="button" data-action="crm-rel-create" data-kind="leads">${icon('plus',15)}<span>Novo Lead</span></button>`
+        : context === 'agenda'
+          ? `<button class="crm-header-create crm-header-create-agenda" type="button" data-action="crm-agenda-create">${icon('plus',15)}<span>Novo Evento</span></button>`
+          : '';
     return `<div class="crm-header-actions">${create}<details class="crm-account-menu"><summary aria-label="Menu da conta"><span class="crm-account-icon" aria-hidden="true">${icon('user',16)}</span><span class="crm-account-copy"><strong>Conta</strong><small>Autenticação desativada</small></span><span class="crm-account-chevron" aria-hidden="true">⌄</span></summary><div class="crm-account-popover"><strong>Sem sessão ativa</strong><p>Este ambiente não possui autenticação ou usuário conectado. Nenhuma identidade é simulada.</p><a href="#/crm/configuracoes">Configurações</a></div></details></div>`;
   }
 
@@ -116,8 +118,6 @@ def apply_crm_global_header() -> int:
     app = APP.read_text(encoding="utf-8")
     app = _materialize_helpers(app)
 
-    # Dashboard pertence exclusivamente a crm_dashboard_module.py. Este materializador
-    # apenas valida a presença da chamada de header já emitida pelo owner.
     if app.count("${crmHeaderActions('dashboard')}") != 1:
         raise RuntimeError("Dashboard não chegou com header canônico do próprio owner")
 
