@@ -289,7 +289,7 @@ CSS_PATCH = r'''
 .crm-nav-subgroup>summary>span{min-width:0;flex:1}
 .crm-nav-subgroup>summary:hover,.crm-nav-subgroup>summary:focus-visible,.crm-nav-subgroup[open]>summary{color:#FFFFFF;background:rgba(255,255,255,.055)}
 .crm-nav-subgroup>div{
-  width:100%;
+  width:auto;
   min-width:0;
   display:grid;
   gap:2px;
