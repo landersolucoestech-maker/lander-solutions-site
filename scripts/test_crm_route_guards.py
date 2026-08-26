@@ -18,6 +18,7 @@ def scan_materialized_admin_expectations() -> None:
     # sanctioned source/wrapper files below. They must never become an executable
     # final-materialized contract again.
     sanctioned = {
+        "test_crm_accounting.js",
         "test_crm_fiscal_documents.js",
         "test_crm_cost_allocations.js",
         "test_crm_legal_contracts.base.js",
@@ -44,6 +45,7 @@ def scan_materialized_admin_expectations() -> None:
 
     wrapper = (ROOT / "scripts" / "test_materialized_admin_compatibility.js").read_text(encoding="utf-8")
     for target in (
+        "test_crm_accounting.js",
         "test_crm_fiscal_documents.js",
         "test_crm_cost_allocations.js",
         "test_crm_payouts.js",
@@ -62,6 +64,7 @@ def scan_materialized_admin_expectations() -> None:
     workflow_text = "\n".join(path.read_text(encoding="utf-8") for path in sorted(WORKFLOWS.glob("*.yml")))
     workflow_text += "\n" + "\n".join(path.read_text(encoding="utf-8") for path in sorted(WORKFLOWS.glob("*.yaml")))
     for target in (
+        "test_crm_accounting.js",
         "test_crm_fiscal_documents.js",
         "test_crm_cost_allocations.js",
         "test_crm_payouts.js",
