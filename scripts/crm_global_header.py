@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CSS_VERSION = "20260826-crm-global-header-v3"
+CSS_VERSION = "20260826-crm-global-header-v4"
 JS_START = "  // VALTREN CRM GLOBAL HEADER START\n"
 JS_END = "  // VALTREN CRM GLOBAL HEADER END\n"
 DASHBOARD_START = "  // VALTREN CRM DASHBOARD START\n"
@@ -30,6 +30,16 @@ HELPERS = r'''  // VALTREN CRM GLOBAL HEADER START
   function crmHeaderCloseMenus(){
     document.querySelectorAll('.crm-account-menu[open]').forEach((menu)=>menu.removeAttribute('open'));
   }
+
+  if (!window.__valtrenCrmHeaderMenusBound) {
+    window.__valtrenCrmHeaderMenusBound = true;
+    document.addEventListener('keydown',(event)=>{
+      if(event.key==='Escape') crmHeaderCloseMenus();
+    });
+    document.addEventListener('click',(event)=>{
+      if(!event.target.closest?.('.crm-account-menu')) crmHeaderCloseMenus();
+    });
+  }
   // VALTREN CRM GLOBAL HEADER END
 '''
 
@@ -37,16 +47,17 @@ CSS_PATCH = r'''
 /* VALTREN CRM GLOBAL HEADER */
 .crm-app-shell .crm-topbar{position:relative;z-index:80;overflow:visible}
 .crm-header-actions{margin-left:auto;display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;flex:0 0 auto}
-.crm-header-create,.crm-mobile-nav-toggle{min-height:38px;border-radius:8px;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;gap:7px;font:inherit;font-weight:700;cursor:pointer;white-space:nowrap}
+.crm-header-create,.crm-mobile-nav-toggle{min-height:40px;border-radius:8px;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;gap:7px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
 .crm-header-create{border:0;background:#0B1D3A;color:#fff}
 .crm-mobile-nav-toggle{display:none;border:1px solid rgba(11,29,58,.14);background:#fff;color:#0B1D3A}
+.crm-header-create:focus-visible,.crm-mobile-nav-toggle:focus-visible,.crm-account-menu>summary:focus-visible,.crm-account-popover a:focus-visible{outline:2px solid #D4AF37;outline-offset:2px}
 .crm-account-menu{position:relative;min-width:0}
 .crm-account-menu>summary{list-style:none;min-height:44px;display:flex;align-items:center;gap:10px;padding:5px 10px;border:1px solid rgba(11,29,58,.12);border-radius:12px;background:#fff;cursor:pointer;box-sizing:border-box}
 .crm-account-menu>summary::-webkit-details-marker{display:none}
 .crm-account-icon{width:30px;height:30px;flex:0 0 30px;border-radius:50%;display:grid;place-items:center;background:#f8fafc;border:1px solid rgba(11,29,58,.12)}
-.crm-account-copy{display:flex;min-width:0;flex-direction:column;align-items:flex-start;line-height:1.15}.crm-account-copy strong{font-size:13px}.crm-account-copy small{font-size:10px;color:#687386;margin-top:3px;white-space:nowrap}
-.crm-account-chevron{color:#687386;flex:0 0 auto}
-.crm-account-popover{position:absolute;right:0;top:calc(100% + 8px);width:min(320px,calc(100vw - 28px));box-sizing:border-box;padding:16px;border:1px solid rgba(11,29,58,.12);border-radius:12px;background:#fff;box-shadow:0 16px 40px rgba(11,29,58,.16);z-index:800}.crm-account-popover p{font-size:12px;line-height:1.5;color:#687386;margin:7px 0 12px}.crm-account-popover a{color:#0B1D3A;font-weight:700;text-decoration:none}
+.crm-account-copy{display:flex;min-width:0;flex-direction:column;align-items:flex-start;line-height:1.15}.crm-account-copy strong{font-size:13px}.crm-account-copy small{font-size:11px;color:#687386;margin-top:3px;white-space:nowrap}
+.crm-account-chevron{color:#687386;flex:0 0 auto;transition:transform .18s ease}.crm-account-menu[open] .crm-account-chevron{transform:rotate(180deg)}
+.crm-account-popover{position:absolute;right:0;top:calc(100% + 8px);width:min(320px,calc(100vw - 28px));box-sizing:border-box;padding:16px;border:1px solid rgba(11,29,58,.12);border-radius:12px;background:#fff;box-shadow:0 16px 40px rgba(11,29,58,.16);z-index:800}.crm-account-popover p{font-size:12px;line-height:1.5;color:#687386;margin:7px 0 12px}.crm-account-popover a{display:inline-flex;min-height:36px;align-items:center;color:#0B1D3A;font-size:12px;font-weight:700;text-decoration:none}
 @media(max-width:980px){.crm-account-copy{display:none}.crm-account-menu>summary{gap:6px;padding:5px 8px}.crm-account-popover{max-width:calc(100vw - 24px)}}
 @media(max-width:760px){.crm-header-actions{width:100%;justify-content:flex-start;flex-wrap:wrap;margin-left:0}.crm-mobile-nav-toggle{display:inline-flex}.crm-account-menu{margin-left:auto}.crm-account-popover{position:fixed;right:12px;top:auto;max-width:calc(100vw - 24px)}}
 '''
@@ -147,7 +158,7 @@ def apply_crm_global_header() -> int:
         if updated != original:
             path.write_text(updated, encoding="utf-8")
 
-    print("Header compartilhado do Sistema Interno materializado sem assumir ownership do Dashboard e sem identidade/notificações fictícias.")
+    print("Header compartilhado do Sistema Interno materializado com Account Menu acessível, sem identidade/notificações fictícias e sem assumir ownership do Dashboard.")
     return 1
 
 
