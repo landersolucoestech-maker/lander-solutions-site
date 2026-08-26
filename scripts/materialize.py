@@ -62,7 +62,7 @@ def _apply_valtren_brand() -> bool:
         from crm_compliance import apply_crm_compliance
         from crm_intellectual_property import apply_crm_intellectual_property
         from crm_corporate_governance import apply_crm_corporate_governance
-        from crm_product_system_review import apply_crm_product_system_review
+        from crm_product_system_review_runner import apply_crm_product_system_review
 
         apply_branding()
         finalize_branding()
