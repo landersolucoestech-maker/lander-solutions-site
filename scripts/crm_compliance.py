@@ -6,13 +6,14 @@ ROOT = Path(__file__).resolve().parents[1]
 CORE = ROOT / "scripts" / "crm_compliance_core.js"
 BROWSER = ROOT / "scripts" / "crm_compliance_browser.js"
 MODULE_CSS = ROOT / "scripts" / "crm_compliance.css"
+CONSISTENCY_CSS = ROOT / "scripts" / "crm_compliance_consistency.css"
 JS_START = "  // VALTREN COMPLIANCE START\n"
 JS_END = "  // VALTREN COMPLIANCE END\n"
 OLD_ROUTE = "if(path==='/crm/juridico/compliance')return crmArchitecturePlaceholderPage('legal','compliance','Compliance e Políticas');"
 NEW_ROUTE = "if(path==='/crm/juridico/compliance')return crmCompliancePage();"
 
 def apply_crm_compliance() -> int:
-    for path in (APP, CSS, CORE, BROWSER, MODULE_CSS):
+    for path in (APP, CSS, CORE, BROWSER, MODULE_CSS, CONSISTENCY_CSS):
         if not path.exists(): raise FileNotFoundError(path)
     app = APP.read_text(encoding="utf-8"); core = CORE.read_text(encoding="utf-8").strip(); browser = BROWSER.read_text(encoding="utf-8").strip()
     if any(x in core for x in ["createTransaction(", "createFiscalDocument(", "AUTO_LEGAL_OBLIGATIONS", "seedBrazilianLaw"]): raise RuntimeError("Compliance contém automação/fonte indevida")
@@ -24,8 +25,9 @@ def apply_crm_compliance() -> int:
     if OLD_ROUTE in app or app.count(NEW_ROUTE) != 1: raise RuntimeError("Handler canônico de Compliance inválido")
     validate_previous_owners(app); validate_legal_sidebar(app)
     APP.write_text(app, encoding="utf-8")
-    CSS.write_text(replace_css(CSS.read_text(encoding="utf-8"), "VALTREN COMPLIANCE", MODULE_CSS.read_text(encoding="utf-8")), encoding="utf-8"); update_cache_version()
-    print("Jurídico → Compliance e Políticas materializado com obrigações, controles, ocorrências, políticas versionadas, evidências e revisões; sem obrigações fictícias.")
+    module_css = MODULE_CSS.read_text(encoding="utf-8").rstrip() + "\n" + CONSISTENCY_CSS.read_text(encoding="utf-8")
+    CSS.write_text(replace_css(CSS.read_text(encoding="utf-8"), "VALTREN COMPLIANCE", module_css), encoding="utf-8"); update_cache_version()
+    print("Jurídico → Compliance e Políticas materializado com obrigações, controles, ocorrências, políticas versionadas, evidências e revisões; escala visual normalizada; sem obrigações fictícias.")
     return 1
 
 if __name__ == "__main__": apply_crm_compliance()
