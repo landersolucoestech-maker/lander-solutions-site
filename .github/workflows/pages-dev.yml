@@ -128,12 +128,24 @@ jobs:
 
       - name: Verify Business materializer idempotence
         run: |
+          WORKSPACE_APP="$(sha256sum app.js | awk '{print $1}')"
+          WORKSPACE_CSS="$(sha256sum assets/valtren-brand.css | awk '{print $1}')"
+          WORKSPACE_INDEX="$(sha256sum index.html | awk '{print $1}')"
+          TMP_ROOT="$(mktemp -d)"
+          mkdir -p "$TMP_ROOT/repo"
+          rsync -a ./ "$TMP_ROOT/repo/" --exclude='.git' --exclude='_site'
+          pushd "$TMP_ROOT/repo" >/dev/null
           BEFORE="$(sha256sum app.js | awk '{print $1}')"
           python scripts/crm_business.py
           AFTER="$(sha256sum app.js | awk '{print $1}')"
           echo "Business idempotence SHA before: $BEFORE"
           echo "Business idempotence SHA after:  $AFTER"
           test "$BEFORE" = "$AFTER"
+          popd >/dev/null
+          rm -rf "$TMP_ROOT"
+          test "$(sha256sum app.js | awk '{print $1}')" = "$WORKSPACE_APP"
+          test "$(sha256sum assets/valtren-brand.css | awk '{print $1}')" = "$WORKSPACE_CSS"
+          test "$(sha256sum index.html | awk '{print $1}')" = "$WORKSPACE_INDEX"
 
       - name: Verify remaining Legal materializers idempotence
         run: |
