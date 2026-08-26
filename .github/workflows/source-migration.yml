@@ -1,4 +1,4 @@
-# final atomic source migration gate v6
+# final atomic source migration gate v7
 name: Apply sidebar source migration
 
 on:
@@ -44,12 +44,13 @@ jobs:
           node scripts/test_crm_sidebar_architecture.js
           git diff --check
 
-      - name: Commit consolidated source
+      - name: Commit consolidated source only
         run: |
+          rm -rf scripts/__pycache__
           rm -f scripts/source_migrate_bootstrap_fix.py scripts/source_migrate_part1.py scripts/source_migrate_part2.py scripts/source_migrate_part3.py scripts/source_migrate_part4.py scripts/source_migrate_part5.py
-          rm .github/workflows/source-migration.yml
+          git checkout HEAD -- .github/workflows/pages-dev.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git add -A scripts
           git commit -m "Consolidate sidebar architecture source"
           git push origin HEAD:dev
