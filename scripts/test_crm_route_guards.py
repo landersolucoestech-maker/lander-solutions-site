@@ -18,6 +18,7 @@ def scan_materialized_admin_expectations() -> None:
     # sanctioned source/wrapper files below. They must never become an executable
     # final-materialized contract again.
     sanctioned = {
+        "test_crm_accounting.base.js",
         "test_crm_accounting.js",
         "test_crm_fiscal_documents.js",
         "test_crm_cost_allocations.js",
@@ -45,7 +46,6 @@ def scan_materialized_admin_expectations() -> None:
 
     wrapper = (ROOT / "scripts" / "test_materialized_admin_compatibility.js").read_text(encoding="utf-8")
     for target in (
-        "test_crm_accounting.js",
         "test_crm_fiscal_documents.js",
         "test_crm_cost_allocations.js",
         "test_crm_payouts.js",
@@ -55,16 +55,17 @@ def scan_materialized_admin_expectations() -> None:
     require("Administração legacy preservada fora da Sidebar" in wrapper, "Wrapper comum não exige Administração fora da Sidebar")
     require("Áreaadministrativaaindanãoimplementadacomodomíniooperacional." in wrapper, "Wrapper comum não exige mensagem legacy honesta")
 
+    accounting_wrapper = (ROOT / "scripts" / "test_crm_accounting.js").read_text(encoding="utf-8")
     legal_wrapper = (ROOT / "scripts" / "test_crm_legal_contracts.js").read_text(encoding="utf-8")
     participation_wrapper = (ROOT / "scripts" / "test_crm_economic_participations.js").read_text(encoding="utf-8")
-    for label, text in (("Contratos", legal_wrapper), ("Participações", participation_wrapper)):
+    for label, text in (("Accounting", accounting_wrapper), ("Contratos", legal_wrapper), ("Participações", participation_wrapper)):
         require("Administração legacy preservada fora da Sidebar" in text, f"Wrapper de {label} não substitui a expectation histórica de Administração")
         require("Áreaadministrativaaindanãoimplementadacomodomíniooperacional." in text, f"Wrapper de {label} não exige compatibilidade honesta")
+    require("test_crm_accounting.base.js" in accounting_wrapper, "Accounting não preserva o teste canônico em base dedicada")
 
     workflow_text = "\n".join(path.read_text(encoding="utf-8") for path in sorted(WORKFLOWS.glob("*.yml")))
     workflow_text += "\n" + "\n".join(path.read_text(encoding="utf-8") for path in sorted(WORKFLOWS.glob("*.yaml")))
     for target in (
-        "test_crm_accounting.js",
         "test_crm_fiscal_documents.js",
         "test_crm_cost_allocations.js",
         "test_crm_payouts.js",
