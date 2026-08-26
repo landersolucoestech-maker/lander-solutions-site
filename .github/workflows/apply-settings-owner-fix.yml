@@ -1,0 +1,35 @@
+name: Apply Settings Owner Fix
+
+on:
+  push:
+    branches:
+      - dev
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout dev
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Apply owner fix
+        run: |
+          python scripts/apply_settings_owner_fix.py
+          python -m py_compile scripts/crm_definitive_architecture.py
+          grep -Fq 'window.__valtrenCanonicalSettingsTabsBound' scripts/crm_definitive_architecture.py
+      - name: Remove temporary files and commit
+        run: |
+          git rm scripts/apply_settings_owner_fix.py .github/workflows/apply-settings-owner-fix.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add scripts/crm_definitive_architecture.py
+          git diff --cached --check
+          git commit -m 'Move Settings tab navigation into canonical architecture owner'
+          git push origin HEAD:dev
