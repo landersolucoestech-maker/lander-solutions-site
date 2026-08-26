@@ -17,14 +17,15 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout dev
+      - name: Checkout exact dev candidate
         uses: actions/checkout@v4
         with:
-          ref: dev
+          ref: ${{ github.sha }}
 
       - name: Verify sidebar source ownership
         run: |
-          python -m py_compile scripts/crm_sidebar_architecture.py scripts/crm_global_header.py scripts/crm_product_system_review.py
+          python -m py_compile scripts/crm_sidebar_architecture.py scripts/crm_global_header.py scripts/crm_product_system_review.py scripts/crm_reference_modules.py scripts/test_sidebar_css_ownership.py
+          python scripts/test_sidebar_css_ownership.py
           node scripts/test_crm_sidebar_architecture.js
           node scripts/test_crm_product_system_review.js
 
@@ -35,7 +36,7 @@ jobs:
         run: |
           node --check app.js
           node scripts/test_crm_sidebar_architecture.js --materialized
-          test "$(grep -Ec 'function crmRelSidebar\(' app.js)" -eq 1
+          test "$(grep -Ec '^[[:space:]]*function crmRelSidebar\(' app.js)" -eq 1
           grep -Fq "if(path.startsWith('/crm/marketing'))return crmMarketingUnavailablePage();" app.js
           grep -Fq "if(path==='/crm/valtrenchat'||path==='/crm/musicchat')return crmLegacyRoute('#/crm/configuracoes?tab=integracoes',crmCanonicalSettingsPage);" app.js
           grep -Fq "if(path==='/crm/rh')return crmArchitecturePlaceholderPage('','hr','RH'" app.js
