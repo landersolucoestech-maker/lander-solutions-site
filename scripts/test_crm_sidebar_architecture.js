@@ -14,6 +14,9 @@ const rawReferenceCss=read('crm_reference_modules.css.part01')+read('crm_referen
 const materialize=read('materialize.py');
 const header=read('crm_global_header.py');
 const review=read('crm_product_system_review.py');
+const payouts=read('crm_payouts.py');
+const business=read('crm_business.py');
+const legalUtils=read('crm_legal_materializer_utils.py');
 const ownsSidebar=(source)=>/^[ \t]*function[ \t]+crmRelSidebar[ \t]*[(]/m.test(source);
 const ownerPayloadMatch=owner.match(/JS_BLOCK = r'''([^]*?)'''\n\nCSS_PATCH/);
 must(ownerPayloadMatch,'sidebar owner payload must be statically identifiable');
@@ -37,6 +40,12 @@ must(reference.includes('_strip_legacy_sidebar_css'),'reference modules must exp
 must(rawReferenceCss.includes('.crm-nav-group'),'expected audited legacy navigation CSS missing from reference source');
 must(materialize.includes('from crm_sidebar_architecture import apply_crm_sidebar_architecture'),'materialize missing sidebar owner import');
 must((materialize.match(/apply_crm_sidebar_architecture\(\)/g)||[]).length===1,'materialize must call sidebar owner exactly once');
+for(const [name,source] of [['Payouts',payouts],['Business',business],['Legal shared validator',legalUtils]]){
+  must(source.includes('VALTREN SIDEBAR ARCHITECTURE START'),`${name} must validate the canonical sidebar start marker`);
+  must(source.includes('VALTREN SIDEBAR ARCHITECTURE END'),`${name} must validate the canonical sidebar end marker`);
+  must(!source.includes('app.rfind("function crmRelSidebar")'),`${name} still depends on legacy crmRelSidebar boundary`);
+  must(!source.includes('app.find("function crmReferenceRoute", sidebar_start)'),`${name} still depends on legacy crmReferenceRoute boundary`);
+}
 must(ownerPayload.includes("nav('#/crm/marketing','Marketing'"),'Marketing must remain first-level');
 must(ownerPayload.includes("nav('#/crm/relatorios','Relatórios'"),'Reports must remain');
 ['ValtrenChat','MusicChat',"nav('#/crm/rh'",'Administração'].forEach((token)=>must(!ownerPayload.includes(token),`sidebar payload still contains removed module: ${token}`));
@@ -63,7 +72,7 @@ must(!review.includes('.crm-account-menu>summary'),'global review still styles A
   ['box-shadow:inset 3px 0 0 #D4AF37','sidebar active indicator missing'],
   ['.crm-nav-group>div{','sidebar submenu layout missing'],
   ['.crm-nav-subgroup>summary{','Contracts subgroup presentation missing'],
-  ['.crm-nav-subgroup>div{','Contracts nested submenu missing'],
+  ['.crm-nav-subgroup>div{\n  width:auto;','Contracts nested submenu must respect indented width without horizontal overflow'],
   ['outline:2px solid #D4AF37','sidebar focus-visible state missing'],
   ['padding-left:232px','tablet content offset missing'],
   ['.crm-sidebar{width:232px','tablet readable sidebar width missing'],
@@ -97,7 +106,7 @@ if(materialized){
  const cssStart=css.indexOf('/* VALTREN SIDEBAR ARCHITECTURE */');
  const cssNext=css.indexOf('\n/* ',cssStart+1);
  const sidebarCss=css.slice(cssStart,cssNext<0?css.length:cssNext);
- ['.crm-brand img{','.crm-nav{','.crm-nav>a.active{','.crm-nav-group>div{','.crm-nav-subgroup>div{','padding-left:232px','transform:translateX(-104%)'].forEach((token)=>must(sidebarCss.includes(token),`materialized sidebar CSS missing structural token: ${token}`));
+ ['.crm-brand img{','.crm-nav{','.crm-nav>a.active{','.crm-nav-group>div{','.crm-nav-subgroup>div{','width:auto;','padding-left:232px','transform:translateX(-104%)'].forEach((token)=>must(sidebarCss.includes(token),`materialized sidebar CSS missing structural token: ${token}`));
  const refStart=css.indexOf('/* VALTREN CRM REFERENCE MODULES */');
  must(refStart>=0,'materialized Reference Modules CSS marker missing');
  const refNext=css.indexOf('\n/* ',refStart+1);
