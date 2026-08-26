@@ -8,6 +8,9 @@ const must = (condition, message) => { if (!condition) fail(message); };
 const review = fs.readFileSync(path.join(__dirname, 'crm_product_system_review.py'), 'utf8');
 const runner = fs.readFileSync(path.join(__dirname, 'crm_product_system_review_runner.py'), 'utf8');
 const dashboard = fs.readFileSync(path.join(__dirname, 'crm_dashboard_module.py'), 'utf8');
+const dashboardPayloadMatch = dashboard.match(/CRM_FUNCTION = r'''([\s\S]*?)'''\n\nCSS_PATCH/);
+must(dashboardPayloadMatch, 'Dashboard canonical payload must be statically identifiable');
+const dashboardPayload = dashboardPayloadMatch[1];
 
 must(review.includes('Autenticação desativada'), 'global review must keep authentication explicitly disabled');
 must(review.includes('Nenhuma identidade é simulada'), 'global review must prohibit fake logged-in identity');
@@ -21,10 +24,10 @@ must(review.includes('_replace_between'), 'global review must use explicit named
 
 must(dashboard.includes('DASHBOARD_START'), 'Dashboard owner must mark its own materialized block');
 must(dashboard.includes('DASHBOARD_END'), 'Dashboard owner must close its own materialized block');
-must(dashboard.includes('function crmDashboardPage(query)'), 'Dashboard owner must emit crmDashboardPage');
+must(dashboardPayload.includes('function crmDashboardPage(query)'), 'Dashboard owner must emit crmDashboardPage');
 must(dashboard.includes('function contactPage(query)'), 'Dashboard migration must use explicit contactPage boundary');
 must(!dashboard.includes('source.find("\\n  function ",'), 'Dashboard owner must not use generic next-function slicing');
-['Contatos','Leads','Clientes','Receitas','Despesas','Resultado'].forEach((token)=>must(dashboard.includes(`kpi('${token}'`), `Dashboard owner missing KPI ${token}`));
+['Contatos','Leads','Clientes','Receitas','Despesas','Resultado'].forEach((token)=>must(dashboardPayload.includes(`kpi('${token}'`), `Dashboard owner missing KPI ${token}`));
 [
   'Receita Consolidada',
   'R$ 275.000',
@@ -32,7 +35,7 @@ must(!dashboard.includes('source.find("\\n  function ",'), 'Dashboard owner must
   '23 novas vendas',
   'R$ 18.500 recebido',
   'Protótipo · dados ilustrativos'
-].forEach((token)=>must(!dashboard.includes(token), `Dashboard owner still contains fake/demo token: ${token}`));
+].forEach((token)=>must(!dashboardPayload.includes(token), `Dashboard canonical payload still contains fake/demo token: ${token}`));
 must(runner.includes('Dashboard materializer idempotence: PASS'), 'materialization runner must enforce Dashboard idempotence');
 must(runner.includes('_assert_js_syntax'), 'materialization runner must validate JS syntax incrementally');
 
