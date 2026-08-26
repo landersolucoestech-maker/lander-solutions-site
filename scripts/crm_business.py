@@ -152,10 +152,12 @@ def apply_crm_business() -> int:
     if regressions:
         raise RuntimeError(f"Owner concluído sofreu regressão durante Negócios: {regressions}")
 
-    sidebar_start = app.rfind("function crmRelSidebar")
-    sidebar_end = app.find("function crmReferenceRoute", sidebar_start)
+    sidebar_start_marker = "// VALTREN SIDEBAR ARCHITECTURE START"
+    sidebar_end_marker = "// VALTREN SIDEBAR ARCHITECTURE END"
+    sidebar_start = app.find(sidebar_start_marker)
+    sidebar_end = app.find(sidebar_end_marker, sidebar_start + len(sidebar_start_marker)) if sidebar_start >= 0 else -1
     if sidebar_start < 0 or sidebar_end <= sidebar_start:
-        raise RuntimeError("Sidebar canônico não localizado")
+        raise RuntimeError("Markers canônicos da Sidebar não localizados")
     sidebar = app[sidebar_start:sidebar_end]
     business_at = sidebar.find("const business=[")
     business_end = sidebar.find("];", business_at)
