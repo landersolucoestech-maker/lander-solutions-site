@@ -9,13 +9,14 @@ CSS = ROOT / "assets" / "valtren-brand.css"
 DOMAIN = ROOT / "scripts" / "crm_financial_transactions_core.js"
 BROWSER = ROOT / "scripts" / "crm_financial_transactions_browser.js"
 MODULE_CSS = ROOT / "scripts" / "crm_financial_transactions.css"
-CACHE_VERSION = "20260825-financial-transactions-v2"
+CONSISTENCY_CSS = ROOT / "scripts" / "crm_financial_transactions_consistency.css"
+CACHE_VERSION = "20260826-financial-transactions-v3"
 JS_START = "  // VALTREN FINANCIAL TRANSACTIONS START\n"
 JS_END = "  // VALTREN FINANCIAL TRANSACTIONS END\n"
 
 
 def apply_crm_financial_transactions() -> int:
-    for path in (APP, CSS, DOMAIN, BROWSER, MODULE_CSS):
+    for path in (APP, CSS, DOMAIN, BROWSER, MODULE_CSS, CONSISTENCY_CSS):
         if not path.exists():
             raise FileNotFoundError(path)
 
@@ -80,7 +81,9 @@ def apply_crm_financial_transactions() -> int:
 
     css = CSS.read_text(encoding="utf-8")
     css = re.sub(r"\n?/\* VALTREN FINANCIAL TRANSACTIONS \*/.*?(?=\n/\*|\Z)", "", css, flags=re.S)
-    CSS.write_text(css.rstrip() + "\n\n" + MODULE_CSS.read_text(encoding="utf-8").strip() + "\n", encoding="utf-8")
+    module_css = MODULE_CSS.read_text(encoding="utf-8").strip()
+    consistency_css = CONSISTENCY_CSS.read_text(encoding="utf-8").strip()
+    CSS.write_text(css.rstrip() + "\n\n" + module_css + "\n" + consistency_css + "\n", encoding="utf-8")
 
     for path in ROOT.rglob("*.html"):
         rel = path.relative_to(ROOT)
@@ -91,7 +94,7 @@ def apply_crm_financial_transactions() -> int:
         text = re.sub(r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?", f"valtren-brand.css?v={CACHE_VERSION}", text)
         path.write_text(text, encoding="utf-8")
 
-    print("Financeiro → Transações materializado sobre fonte financeira canônica, sem alterar sidebar ou outros módulos.")
+    print("Financeiro → Transações materializado sobre fonte financeira canônica, com escala visual do domínio normalizada e sem alterar sidebar ou outros módulos.")
     return 1
 
 
