@@ -67,7 +67,7 @@ test('paginação está limitada a 50 no browser',()=>has(browser,"service.paged
 test('materializador substitui exatamente três placeholders',()=>assert.equal((materializer.match(/crmArchitecturePlaceholderPage\('business'/g)||[]).length,3));
 test('materializador valida os três handlers canônicos',()=>has(materializer,'crmBusinessProductsPage();','crmBusinessServicesPage();','crmBusinessUnitsPage();'));
 test('materializador preserva owners financeiros e jurídicos',()=>has(materializer,'crmTransactionsPage();','crmAccountingPage();','crmFiscalDocumentsPage();','crmEconomicParticipationsPage();','crmPayoutsPage();','crmLegalContractsPage();'));
-test('materializador valida sidebar sem reescrever',()=>has(materializer,'const business=[','Sidebar canônico não localizado'));
+test('materializador valida sidebar sem reescrever',()=>{has(materializer,'const business=[','VALTREN SIDEBAR ARCHITECTURE START','VALTREN SIDEBAR ARCHITECTURE END');assert(!materializer.includes('app.rfind("function crmRelSidebar")'));assert(!materializer.includes('app.find("function crmReferenceRoute", sidebar_start)'));});
 test('materializador proíbe novos submódulos indevidos',()=>has(materializer,'Projetos','Portfolio','Sistemas','Categorias','Planos'));
 test('materializador proíbe catálogos paralelos',()=>has(materializer,'state.financeProducts=','state.contractProducts=','state.payoutBusinessUnits='));
 test('materializador proíbe seeds de produtos reais',()=>has(materializer,'Music OS 360','Vivendo da Música','Dica de Cria','Visa Fácil'));
