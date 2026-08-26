@@ -89,6 +89,11 @@ def validate_previous_owners(app: str) -> None:
 def update_cache_version() -> None:
     if not INDEX.exists():
         raise FileNotFoundError(INDEX)
+    # A revisão global é o último owner da camada de apresentação. Quando ela já
+    # foi materializada, um rerun jurídico deve ser idempotente e não pode
+    # rebaixar o cache-buster final para uma versão intermediária do Jurídico.
+    if CSS.exists() and "/* VALTREN PRODUCT SYSTEM REVIEW */" in CSS.read_text(encoding="utf-8"):
+        return
     html = INDEX.read_text(encoding="utf-8")
     html, count = re.subn(r"assets/valtren-brand\.css\?v=[^\"']+", f"assets/valtren-brand.css?v={FINAL_CACHE_VERSION}", html)
     if count != 1:
