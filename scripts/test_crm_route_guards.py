@@ -6,6 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
+SCRIPTS = ROOT / "scripts"
 WORKFLOWS = ROOT / ".github" / "workflows"
 
 
@@ -20,15 +21,11 @@ def git_blob_sha(data: bytes) -> str:
 
 
 def workflow_text() -> str:
-    text = "\n".join(path.read_text(encoding="utf-8") for path in sorted(WORKFLOWS.glob("*.yml")))
-    text += "\n" + "\n".join(path.read_text(encoding="utf-8") for path in sorted(WORKFLOWS.glob("*.yaml")))
-    return text
+    files = [*sorted(WORKFLOWS.glob("*.yml")), *sorted(WORKFLOWS.glob("*.yaml"))]
+    return "\n".join(path.read_text(encoding="utf-8") for path in files)
 
 
 def scan_materialized_admin_expectations() -> None:
-    # Historical assertions are allowed only as exact replacement anchors in the
-    # sanctioned source/wrapper files below. They must never become an executable
-    # final-materialized contract again.
     sanctioned = {
         "test_crm_accounting.base.js",
         "test_crm_accounting.js",
@@ -53,7 +50,7 @@ def scan_materialized_admin_expectations() -> None:
         re.IGNORECASE,
     )
     unexpected: list[str] = []
-    for path in sorted((ROOT / "scripts").glob("test*.js*")):
+    for path in sorted(SCRIPTS.glob("test*.js*")):
         text = path.read_text(encoding="utf-8")
         if legacy_pattern.search(text) and path.name not in sanctioned:
             unexpected.append(path.name)
@@ -62,16 +59,16 @@ def scan_materialized_admin_expectations() -> None:
         f"Expectations materializadas históricas de Administração encontradas fora das âncoras sancionadas: {unexpected}",
     )
 
-    wrapper = (ROOT / "scripts" / "test_materialized_admin_compatibility.js").read_text(encoding="utf-8")
+    common = (SCRIPTS / "test_materialized_admin_compatibility.js").read_text(encoding="utf-8")
     for target in (
         "test_crm_fiscal_documents.js",
         "test_crm_cost_allocations.js",
         "test_crm_payouts.js",
         "test_crm_business.js",
     ):
-        require(target in wrapper, f"Wrapper comum não mapeia {target}")
-    require("Administração legacy preservada fora da Sidebar" in wrapper, "Wrapper comum não exige Administração fora da Sidebar")
-    require("Áreaadministrativaaindanãoimplementadacomodomíniooperacional." in wrapper, "Wrapper comum não exige mensagem legacy honesta")
+        require(target in common, f"Wrapper comum não mapeia {target}")
+    require("Administração legacy preservada fora da Sidebar" in common, "Wrapper comum não exige Administração fora da Sidebar")
+    require("Áreaadministrativaaindanãoimplementadacomodomíniooperacional." in common, "Wrapper comum não exige mensagem legacy honesta")
 
     dedicated_wrappers = {
         "Accounting": ("test_crm_accounting.js", "test_crm_accounting.base.js"),
@@ -82,7 +79,7 @@ def scan_materialized_admin_expectations() -> None:
         "Repasses UI": ("test_crm_payouts_ui.js", "test_crm_payouts_ui.base.js"),
     }
     for label, (filename, backing) in dedicated_wrappers.items():
-        text = (ROOT / "scripts" / filename).read_text(encoding="utf-8")
+        text = (SCRIPTS / filename).read_text(encoding="utf-8")
         require("Administração legacy preservada fora da Sidebar" in text, f"Wrapper de {label} não substitui a expectation histórica de Administração")
         require("Áreaadministrativaaindanãoimplementadacomodomíniooperacional." in text, f"Wrapper de {label} não exige compatibilidade honesta")
         require(backing in text, f"Wrapper de {label} não referencia sua base/parts canônica")
@@ -104,84 +101,130 @@ def scan_materialized_admin_expectations() -> None:
 
 
 def scan_rateios_ui_wrapper_contract() -> None:
-    scripts = ROOT / "scripts"
-    wrapper_path = scripts / "test_crm_cost_allocations_ui.js"
-    base_path = scripts / "test_crm_cost_allocations_ui.base.js"
+    wrapper_path = SCRIPTS / "test_crm_cost_allocations_ui.js"
+    base_path = SCRIPTS / "test_crm_cost_allocations_ui.base.js"
     require(wrapper_path.exists(), "Wrapper materializado de Rateios UI ausente")
     require(base_path.exists(), "Base canônica de Rateios UI ausente")
-
-    base_bytes = base_path.read_bytes()
     require(
-        git_blob_sha(base_bytes) == "098cf1ef08b22be9e30d2837d3b998d4fbfe2c4f",
+        git_blob_sha(base_path.read_bytes()) == "098cf1ef08b22be9e30d2837d3b998d4fbfe2c4f",
         "Base de Rateios UI divergiu do blob canônico 098cf1ef08b22be9e30d2837d3b998d4fbfe2c4f",
     )
     wrapper = wrapper_path.read_text(encoding="utf-8")
     require("test_crm_cost_allocations_ui.base.js" in wrapper, "Wrapper de Rateios UI não referencia a base canônica")
     require("process.argv.includes('--materialized')" in wrapper, "Wrapper de Rateios UI não separa source de materialized")
     require("oldSidebarOfficial" in wrapper and "oldSidebarBoundary" in wrapper, "Wrapper de Rateios UI não ancora testes 74 e 75")
-    require("VALTREN SIDEBAR ARCHITECTURE START" in wrapper, "Wrapper de Rateios UI não usa marker START")
-    require("VALTREN SIDEBAR ARCHITECTURE END" in wrapper, "Wrapper de Rateios UI não usa marker END")
+    require("VALTREN SIDEBAR ARCHITECTURE START" in wrapper and "VALTREN SIDEBAR ARCHITECTURE END" in wrapper, "Wrapper de Rateios UI não usa os markers canônicos")
     for token in ("Direcionadores", "Critérios de Rateio", "Alocações", "Memória de Cálculo"):
         require(token in wrapper, f"Wrapper de Rateios UI perdeu verificação do termo: {token}")
-    require("lastIndexOf('function crmRelSidebar')" in wrapper, "Âncora histórica exata do wrapper de Rateios UI não está presente")
-    require("indexOf('function crmReferenceRoute'" in wrapper, "Âncora histórica exata de crmReferenceRoute não está presente")
+    require("lastIndexOf('function crmRelSidebar')" in wrapper, "Âncora histórica de Rateios UI não está presente")
+    require("indexOf('function crmReferenceRoute'" in wrapper, "Âncora histórica crmReferenceRoute de Rateios UI não está presente")
 
     workflows = workflow_text()
     require("test_crm_cost_allocations_ui.base.js --materialized" not in workflows, "Workflow não pode executar a base de Rateios UI diretamente em --materialized")
-    require(
-        "scripts/test_crm_cost_allocations_ui.js --materialized" in workflows,
-        "Workflow não executa o wrapper de Rateios UI em --materialized",
-    )
+    require("scripts/test_crm_cost_allocations_ui.js --materialized" in workflows, "Workflow não executa o wrapper de Rateios UI em --materialized")
+
+
+def scan_new_wrapper_bases() -> None:
+    expected = {
+        "test_crm_complete.base.js": ("19f2832c02a3ea03c448407e90f6a9ca919b71a3", "test_crm_complete.js"),
+        "test_crm_complete_hardening.base.js": ("86579a695989fcf57d7757dd66d551a1fcff7d8d", "test_crm_complete_hardening.js"),
+        "test_crm_financial_transactions.base.js": ("7a9b24c8c093294b7989720755a678abbec31016", "test_crm_financial_transactions.js"),
+        "test_crm_fiscal_documents_ui.base.js": ("a397117f4ea459b47cb39b3a4b0d637700cb3457", "test_crm_fiscal_documents_ui.js"),
+        "test_crm_legal_matters_ui.base.js": ("737658eddd83195981a0dd41fe11152ce8f59586", "test_crm_legal_matters_ui.js"),
+    }
+    generic = (SCRIPTS / "test_materialized_sidebar_boundaries.js").read_text(encoding="utf-8")
+    require("module.exports={specs,transform,runBase}" in generic, "Wrapper genérico de boundary não exporta contrato reutilizável")
+    require("VALTREN SIDEBAR ARCHITECTURE START" in generic and "VALTREN SIDEBAR ARCHITECTURE END" in generic, "Wrapper genérico não usa markers canônicos")
+    workflows = workflow_text()
+    for base_name, (blob_sha, wrapper_name) in expected.items():
+        base_path = SCRIPTS / base_name
+        wrapper_path = SCRIPTS / wrapper_name
+        require(base_path.exists(), f"Base canônica ausente: {base_name}")
+        require(git_blob_sha(base_path.read_bytes()) == blob_sha, f"Base canônica divergiu do blob esperado: {base_name}")
+        wrapper = wrapper_path.read_text(encoding="utf-8")
+        require(base_name in wrapper, f"Wrapper {wrapper_name} não referencia {base_name}")
+        require("test_materialized_sidebar_boundaries.js" in wrapper, f"Wrapper {wrapper_name} não usa o helper canônico de boundary")
+        require(wrapper_name in generic, f"Helper genérico não mapeia {wrapper_name}")
+        require(f"scripts/{base_name} --materialized" not in workflows, f"Workflow executa base diretamente em materialized: {base_name}")
+        require(f"scripts/{wrapper_name} --materialized" in workflows, f"Workflow não executa wrapper em materialized: {wrapper_name}")
 
 
 def scan_fragile_sidebar_boundaries() -> None:
-    # Legacy boundaries are permitted only as exact, inert replacement anchors in
-    # the Rateios UI base/wrapper pair. Executable materialized checks must use the
-    # canonical START/END markers.
-    old_74 = "test('74 sidebar publicado continua oficial',()=>{const start=app.lastIndexOf('function crmRelSidebar'),end=app.indexOf('function crmReferenceRoute',start),sidebar=app.slice(start,end);['Transações','Contabilidade','Notas Fiscais','Rateios','Participações','Repasses'].forEach((x)=>assert(sidebar.includes(x)));});"
-    old_75 = "test('75 nenhum subitem de Rateios foi publicado no sidebar',()=>{const start=app.lastIndexOf('function crmRelSidebar'),end=app.indexOf('function crmReferenceRoute',start),sidebar=app.slice(start,end);['Direcionadores','Critérios de Rateio','Alocações','Memória de Cálculo'].forEach((x)=>assert(!sidebar.includes(x)));});"
-    allowed_exact = {
-        "test_crm_cost_allocations_ui.base.js": (old_74, old_75),
-        "test_crm_cost_allocations_ui.js": (old_74, old_75),
+    # Historical boundary text is allowed only in explicitly named source bases or
+    # wrappers that replace it at materialized runtime. No wildcard *.base.js rule.
+    historical_sources = {
+        "test_crm_accounting.base.js": 1,
+        "test_crm_complete.base.js": 2,
+        "test_crm_complete_hardening.base.js": 1,
+        "test_crm_financial_transactions.base.js": 2,
+        "test_crm_fiscal_documents.js": 1,
+        "test_crm_fiscal_documents_ui.base.js": 1,
+        "test_crm_cost_allocations.js": 2,
+        "test_crm_cost_allocations_ui.base.js": 2,
+        "test_crm_legal_contracts_ui.base.js": 3,
+        "test_crm_economic_participations_ui.js.part03": 2,
+        "test_crm_payouts.js": 1,
+        "test_crm_payouts_ui.base.js": 1,
+        "test_crm_legal_matters_ui.base.js": 1,
     }
-    fragile_tokens = (
-        "lastIndexOf('function crmRelSidebar')",
-        'lastIndexOf("function crmRelSidebar")',
-        "indexOf('function crmReferenceRoute'",
-        'indexOf("function crmReferenceRoute"',
-        "app.rfind(\"function crmRelSidebar\")",
-        "app.find(\"function crmReferenceRoute\"",
-    )
-    unexpected_boundaries: list[str] = []
-    positive_legacy_sidebar_expectations: list[str] = []
-    legacy_labels = ("ValtrenChat", "RH", "Administração", "Estrutura Organizacional", "Patrimônio e Licenças")
+    boundary_wrappers = {
+        "test_crm_accounting.js",
+        "test_materialized_admin_compatibility.js",
+        "test_crm_cost_allocations_ui.js",
+        "test_crm_legal_contracts_ui.js",
+        "test_crm_economic_participations_ui.js",
+        "test_crm_payouts_ui.js",
+        "test_materialized_sidebar_boundaries.js",
+    }
+    negative_validators = {
+        "test_crm_business_ui.js",
+        "test_crm_sidebar_architecture.js",
+    }
+    js_start = "lastIndexOf('function crmRelSidebar')"
+    js_end = "indexOf('function crmReferenceRoute'"
+    py_start = 'app.rfind("function crmRelSidebar")'
+    py_end = 'app.find("function crmReferenceRoute"'
+    fragile_tokens = (js_start, js_end, py_start, py_end)
 
-    for path in sorted((ROOT / "scripts").glob("test*.js*")):
+    for filename, expected_count in historical_sources.items():
+        text = (SCRIPTS / filename).read_text(encoding="utf-8")
+        require(text.count(js_start) == expected_count, f"Contagem de boundary START histórica inesperada em {filename}")
+        require(text.count(js_end) == expected_count, f"Contagem de boundary END histórica inesperada em {filename}")
+
+    for filename in boundary_wrappers:
+        text = (SCRIPTS / filename).read_text(encoding="utf-8")
+        require("VALTREN SIDEBAR ARCHITECTURE START" in text, f"Wrapper {filename} não aponta para marker START")
+        require("VALTREN SIDEBAR ARCHITECTURE END" in text, f"Wrapper {filename} não aponta para marker END")
+
+    for filename in negative_validators:
+        text = (SCRIPTS / filename).read_text(encoding="utf-8")
+        for line in text.splitlines():
+            if any(token in line for token in (py_start, py_end)):
+                require(("assert(!" in line or "must(!" in line) and "includes" in line, f"Boundary Python legado não está em assertion negativa em {filename}")
+
+    known = set(historical_sources) | boundary_wrappers | negative_validators
+    unexpected: list[str] = []
+    for path in sorted(SCRIPTS.glob("test*.js*")):
+        if path.name in known:
+            continue
         text = path.read_text(encoding="utf-8")
-        scrubbed = text
-        for anchor in allowed_exact.get(path.name, ()):
-            count = scrubbed.count(anchor)
-            require(count == 1, f"Âncora histórica de boundary esperada exatamente 1 vez em {path.name}; encontrada {count}")
-            scrubbed = scrubbed.replace(anchor, "", 1)
-        if any(token in scrubbed for token in fragile_tokens):
-            unexpected_boundaries.append(path.name)
+        if any(token in text for token in fragile_tokens):
+            unexpected.append(path.name)
+    require(not unexpected, f"Boundary frágil de Sidebar encontrado fora dos harnesses explicitamente tratados: {unexpected}")
 
-        for line_no, line in enumerate(text.splitlines(), start=1):
-            if "sidebar.includes" not in line or "assert(" not in line:
+    # Final legacy-navigation expectation sweep. Negative absence assertions remain
+    # legitimate; positive materialized expectations for legacy sidebar items do not.
+    legacy_labels = ("ValtrenChat", "RH", "Administração", "Estrutura Organizacional", "Patrimônio e Licenças")
+    positive: list[str] = []
+    for path in sorted(SCRIPTS.glob("test*.js*")):
+        for line_no, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+            if not any(label in line for label in legacy_labels):
                 continue
-            if "!sidebar.includes" in line:
-                continue
-            if any(label in line for label in legacy_labels):
-                positive_legacy_sidebar_expectations.append(f"{path.name}:{line_no}")
-
-    require(
-        not unexpected_boundaries,
-        f"Boundaries frágeis de Sidebar encontrados fora das âncoras exatas sancionadas: {unexpected_boundaries}",
-    )
-    require(
-        not positive_legacy_sidebar_expectations,
-        "Expectations positivas de item legacy na Sidebar encontradas em: " + ", ".join(positive_legacy_sidebar_expectations),
-    )
+            if "sidebar.includes" in line and "!sidebar.includes" not in line:
+                positive.append(f"{path.name}:{line_no}")
+            if "hasAll(sidebar" in line and any(label in line for label in legacy_labels):
+                positive.append(f"{path.name}:{line_no}")
+    require(not positive, "Expectations positivas de item legacy na Sidebar encontradas em: " + ", ".join(sorted(set(positive))))
 
 
 def main() -> int:
@@ -217,14 +260,10 @@ def main() -> int:
     missing = [label for label, token in expected.items() if token not in compact]
     require(not missing, f"Rotas canônicas/compatíveis ausentes ou divergentes: {missing}")
 
-    # Compatibility routes are certified by observable contract, not by forcing a
-    # particular placeholder implementation. This prevents the guard from becoming
-    # an owner of RH/Administração while still requiring honest behavior.
     require("path==='/crm/rh'" in compact, "Rota legacy de RH ausente")
     require("DomíniodeRHaindanãoimplementado." in compact, "RH legacy não informa honestamente que não está implementado")
     require("path==='/crm/administracao'||path==='/crm/administracao/patrimonio-licencas'" in compact, "Rotas legacy de Administração ausentes")
     require("Áreaadministrativaaindanãoimplementadacomodomíniooperacional." in compact, "Administração legacy não informa honestamente que não está implementada")
-
     require("Não configurado" in app, "Semântica canônica de integração 'Não configurado' ausente")
 
     forbidden_routes = {
@@ -256,6 +295,7 @@ def main() -> int:
 
     scan_materialized_admin_expectations()
     scan_rateios_ui_wrapper_contract()
+    scan_new_wrapper_bases()
     scan_fragile_sidebar_boundaries()
     print(f"route-guards: PASS ({len(expected) + 6} contratos verificados; crmRelSidebar=1; admin-expectations=clean; boundaries=clean)")
     return 0
