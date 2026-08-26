@@ -20,12 +20,17 @@ const ownerPayload=ownerPayloadMatch[1];
 must(owner.includes('VALTREN SIDEBAR ARCHITECTURE START'),'sidebar owner start marker missing');
 must(owner.includes('VALTREN SIDEBAR ARCHITECTURE END'),'sidebar owner end marker missing');
 must(owner.includes("function crmRelSidebar(active='relationships',sub='')"),'sidebar owner declaration missing');
+must(owner.includes('if start_count==1 and end_count==1'),'sidebar owner must update existing marker block in-place');
+must(owner.includes('app_changed=updated_app!=app'),'sidebar owner must detect no-op app reruns');
+must(owner.includes('css_changed=updated_css!=css'),'sidebar owner must detect no-op CSS reruns');
+must(owner.includes('if app_changed or css_changed:'),'sidebar owner must not rewrite cache-busters on no-op reruns');
 must(!ownsSidebar(relationships),'relationships still owns sidebar');
 must(!ownsSidebar(fidelity),'fidelity still owns sidebar');
 must(!ownsSidebar(definitive),'definitive architecture still owns sidebar');
 must(!reference.includes('crm_reference_sidebar.txt'),'reference modules still rewrites sidebar');
+must(!fs.existsSync(path.join(__dirname,'crm_reference_sidebar.txt')),'dead crm_reference_sidebar.txt must be removed');
 must(materialize.includes('from crm_sidebar_architecture import apply_crm_sidebar_architecture'),'materialize missing sidebar owner import');
-must(materialize.includes('apply_crm_sidebar_architecture()'),'materialize missing sidebar owner call');
+must((materialize.match(/apply_crm_sidebar_architecture\(\)/g)||[]).length===1,'materialize must call sidebar owner exactly once');
 must(ownerPayload.includes("nav('#/crm/marketing','Marketing'"),'Marketing must remain first-level');
 must(ownerPayload.includes("nav('#/crm/relatorios','Relatórios'"),'Reports must remain');
 ['ValtrenChat','MusicChat',"nav('#/crm/rh'",'Administração'].forEach((token)=>must(!ownerPayload.includes(token),`sidebar payload still contains removed module: ${token}`));
@@ -49,9 +54,23 @@ if(materialized){
  must(app.includes("if(path==='/crm/rh')return crmArchitecturePlaceholderPage('','hr','RH'"),'RH compatibility route missing honest placeholder');
  must(app.includes("if(path.startsWith('/crm/marketing'))return crmMarketingUnavailablePage();"),'Marketing route must use unavailable/non-simulated workspace');
  must(app.includes("if(path==='/crm/administracao'||path==='/crm/administracao/patrimonio-licencas')return crmArchitecturePlaceholderPage('','admin','Administração'"),'Administration compatibility route missing honest placeholder');
+ must(!/function\s+crmRefValtrenChatPage\s*\(/.test(app),'dead ValtrenChat page declaration survived');
+ must(!/function\s+crmRefMusicChatPage\s*\(/.test(app),'dead MusicChat alias survived');
+ ['crmRefCampaignsPage','crmRefCalendarPage','crmRefMetricsPage','crmRefBriefingsPage','crmRefTasksPage'].forEach((fn)=>must(!new RegExp(`function\\s+${fn}\\s*\\(`).test(app),`dead Marketing operational function survived: ${fn}`));
  must(css.includes('/* VALTREN SIDEBAR ARCHITECTURE */'),'sidebar CSS owner missing');
  must(css.includes('transform:translateX(-104%)'),'mobile drawer closed state missing');
  must(css.includes('.crm-sidebar.is-open{transform:translateX(0)}'),'mobile drawer open state missing');
  must(css.includes('html.crm-sidebar-lock,body.crm-sidebar-lock{overflow:hidden}'),'mobile body lock missing');
+ const critical=['crmRelSidebar','crmHeaderActions','crmDashboardPage','crmReferenceRoute'];
+ const conflicts=[];
+ for(const fn of critical){
+   const count=(app.match(new RegExp(`\\bfunction\\s+${fn}\\s*\\(`,'g'))||[]).length;
+   if(count!==1)conflicts.push(`${fn}:${count}`);
+ }
+ must(conflicts.length===0,`critical global ownership duplicates: ${conflicts.join(', ')}`);
+ const declarations=[...app.matchAll(/\bfunction\s+(crm[A-Za-z0-9_$]+)\s*\(/g)].map((match)=>match[1]);
+ const counts=declarations.reduce((acc,name)=>(acc[name]=(acc[name]||0)+1,acc),{});
+ const duplicates=Object.entries(counts).filter(([,count])=>count>1).sort((a,b)=>b[1]-a[1]);
+ console.log('crm global duplicate declaration sweep:',duplicates.length?duplicates.map(([name,count])=>`${name}:${count}`).join(', '):'none');
 }
 console.log(`sidebar-architecture: PASS${materialized?' (materialized)':''}`);
