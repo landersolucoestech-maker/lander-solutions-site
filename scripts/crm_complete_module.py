@@ -25,6 +25,11 @@ def apply_crm_complete_module() -> int:
     browser = BROWSER_JS.read_text(encoding="utf-8").strip()
     hardening = HARDENING_JS.read_text(encoding="utf-8").strip()
 
+    # app.js materializa os módulos dentro do shell indentado. Normalizar somente
+    # declarações top-level do browser evita limites ambíguos entre materializadores
+    # posteriores sem alterar o arquivo-fonte do domínio nem sua semântica.
+    browser = re.sub(r"(?m)^function ", "  function ", browser)
+
     # Keep stable internal enums while presenting Portuguese labels in the UI.
     browser = browser.replace("${esc(context.status||'Ativo')}", "${esc(crmFullStatusLabel(context.status||'active'))}")
     browser = browser.replace("${esc(lead.priority||'-')}", "${esc(crmFullPriorityLabel(lead.priority))}")
