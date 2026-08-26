@@ -134,7 +134,7 @@ jobs:
 
       - name: Test Sidebar Architecture source ownership
         run: |
-          python -m py_compile scripts/crm_sidebar_architecture.py scripts/crm_global_header.py
+          python -m py_compile scripts/crm_sidebar_architecture.py scripts/crm_global_header.py scripts/test_crm_route_guards.py
           node scripts/test_crm_sidebar_architecture.js
 
       - name: Materialize site
@@ -208,36 +208,7 @@ jobs:
           test "$INDEX_BEFORE" = "$INDEX_AFTER"
 
       - name: Verify canonical routes and compatibility guards
-        run: |
-          grep -Fq "if(path==='/crm/dashboard')" app.js
-          grep -Fq "if(path==='/crm/relationships')" app.js
-          grep -Fq "if(path==='/crm/agenda')" app.js
-          grep -Fq "if(path==='/crm/financeiro')return crmTransactionsPage();" app.js
-          grep -Fq "if(path==='/crm/negocios')return crmBusinessProductsPage();" app.js
-          grep -Fq "if(path==='/crm/negocios/servicos')return crmBusinessServicesPage();" app.js
-          grep -Fq "if(path==='/crm/negocios/unidades')return crmBusinessUnitsPage();" app.js
-          grep -Fq "if(path==='/crm/juridico')return crmLegalMattersPage();" app.js
-          grep -Fq "if(path==='/crm/juridico/contratos')return crmLegalContractsPage();" app.js
-          grep -Fq "if(path==='/crm/juridico/contratos/templates')return crmLegalTemplatesPage();" app.js
-          grep -Fq "if(path==='/crm/juridico/contratos/variaveis')return crmLegalVariablesPage();" app.js
-          grep -Fq "if(path==='/crm/juridico/compliance')return crmCompliancePage();" app.js
-          grep -Fq "if(path==='/crm/juridico/propriedade-intelectual')return crmIntellectualPropertyPage();" app.js
-          grep -Fq "if(path==='/crm/juridico/societario')return crmCorporateGovernancePage();" app.js
-          grep -Fq "if(path==='/crm/financeiro/participacoes')return crmEconomicParticipationsPage();" app.js
-          grep -Fq "if(path==='/crm/financeiro/repasses')return crmPayoutsPage();" app.js
-          grep -Fq "if(path.startsWith('/crm/marketing'))return crmMarketingUnavailablePage();" app.js
-          grep -Fq "if(path==='/crm/valtrenchat'||path==='/crm/musicchat')return crmLegacyRoute('#/crm/configuracoes?tab=integracoes',crmCanonicalSettingsPage);" app.js
-          grep -Fq "if(path==='/crm/rh')return crmArchitecturePlaceholderPage('','hr','RH'" app.js
-          grep -Fq "if(path==='/crm/administracao'||path==='/crm/administracao/patrimonio-licencas')return crmArchitecturePlaceholderPage('','admin','Administração'" app.js
-          grep -Fq "if(path==='/crm/relatorios')" app.js
-          grep -Fq "if(path==='/crm/configuracoes')return crmCanonicalSettingsPage();" app.js
-          for route in \
-            "if(path==='/crm/juridico')return crmArchitecturePlaceholderPage('legal','matters'" \
-            "if(path==='/crm/juridico/compliance')return crmArchitecturePlaceholderPage" \
-            "if(path==='/crm/juridico/propriedade-intelectual')return crmArchitecturePlaceholderPage" \
-            "if(path==='/crm/juridico/societario')return crmArchitecturePlaceholderPage"; do
-            if grep -Fq "$route" app.js; then echo "Placeholder jurídico sobreviveu: $route" >&2; exit 1; fi
-          done
+        run: python scripts/test_crm_route_guards.py
 
       - name: Validate materialized app
         run: |
@@ -285,6 +256,7 @@ jobs:
           readonly_suite scripts/test_crm_corporate_governance_ui.js --materialized
           readonly_suite scripts/test_crm_product_system_review.js --materialized
           node scripts/test_crm_sidebar_architecture.js --materialized
+          python scripts/test_crm_route_guards.py
           test "$(grep -Ec '^[[:space:]]*function crmRelSidebar\(' app.js)" -eq 1
           test "$APP_SHA" = "$(sha256sum app.js | awk '{print $1}')"
           test "$CSS_SHA" = "$(sha256sum assets/valtren-brand.css | awk '{print $1}')"
