@@ -107,10 +107,12 @@ def apply_crm_payouts() -> int:
     if leaked:
         raise RuntimeError(f"Repasses contém responsabilidade proibida/concorrente: {leaked}")
 
-    sidebar_start = app.rfind("function crmRelSidebar")
-    sidebar_end = app.find("function crmReferenceRoute", sidebar_start)
+    sidebar_start_marker = "// VALTREN SIDEBAR ARCHITECTURE START"
+    sidebar_end_marker = "// VALTREN SIDEBAR ARCHITECTURE END"
+    sidebar_start = app.find(sidebar_start_marker)
+    sidebar_end = app.find(sidebar_end_marker, sidebar_start + len(sidebar_start_marker)) if sidebar_start >= 0 else -1
     if sidebar_start < 0 or sidebar_end <= sidebar_start:
-        raise RuntimeError("Sidebar canônico não pôde ser localizado")
+        raise RuntimeError("Markers canônicos da Sidebar não puderam ser localizados")
     sidebar = app[sidebar_start:sidebar_end]
     expected_finance = ["Transações", "Contabilidade", "Notas Fiscais", "Rateios", "Participações", "Repasses"]
     missing_sidebar = [label for label in expected_finance if label not in sidebar]
