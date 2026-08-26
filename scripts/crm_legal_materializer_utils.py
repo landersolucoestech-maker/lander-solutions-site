@@ -36,6 +36,10 @@ def replace_marked_block(text: str, start: str, end: str, body: str, anchor: str
     if start_count == 1 and end_count == 1:
         a = text.index(start)
         b = text.index(end, a) + len(end)
+        current = text[a:b]
+        # Preserve byte identity when the domain block is already materialized.
+        if current == block:
+            return text
         return text[:a] + block + text[b:]
     if start_count or end_count:
         raise RuntimeError(f"Marcadores divergentes: {start.strip()} ({start_count}/{end_count})")
@@ -58,7 +62,12 @@ def replace_css(css: str, marker: str, body: str) -> str:
     matches = list(re.finditer(pattern, css, flags=re.S))
     block = body.strip()
     if len(matches) == 1:
-        return re.sub(pattern, block, css, count=1, flags=re.S)
+        current = matches[0].group(0)
+        # The final presentation layer can add separator whitespace after the last
+        # domain block. A no-op domain rerun must not normalize that whitespace.
+        if current.strip() == block:
+            return css
+        return css[:matches[0].start()] + block + css[matches[0].end():]
     if len(matches) > 1:
         raise RuntimeError(f"CSS {marker} duplicado: {len(matches)}")
     return css.rstrip() + "\n" + block
@@ -72,7 +81,6 @@ def validate_legal_sidebar(app: str) -> None:
     missing = [x for x in LEGAL_SIDEBAR_REQUIRED if x not in sidebar]
     if missing:
         raise RuntimeError(f"Sidebar Jurídico incompleto: {missing}")
-    # Forbidden labels are allowed inside page content, never as Legal sidebar anchors.
     for label in LEGAL_SIDEBAR_FORBIDDEN_LINK_LABELS:
         if re.search(rf">\s*{re.escape(label)}\s*</a>", sidebar):
             raise RuntimeError(f"Subitem jurídico indevido no sidebar: {label}")
