@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CACHE_VERSION = "20260826-product-system-review-v3"
+CACHE_VERSION = "20260826-product-system-review-v4"
 HEADER_START = "  // VALTREN CRM GLOBAL HEADER START\n"
 HEADER_END = "  // VALTREN CRM GLOBAL HEADER END\n"
 CSS_MARKER = "/* VALTREN PRODUCT SYSTEM REVIEW */"
@@ -14,13 +14,17 @@ CSS_MARKER = "/* VALTREN PRODUCT SYSTEM REVIEW */"
 
 def _replace_between(source: str, start_anchor: str, end_anchor: str, replacement: str, label: str) -> str:
     start_count = source.count(start_anchor)
-    end_count = source.count(end_anchor)
-    if start_count != 1 or end_count != 1:
-        raise RuntimeError(f"Âncoras de {label} divergentes: início={start_count}, fim={end_count}")
+    if start_count != 1:
+        raise RuntimeError(f"Âncora inicial de {label} divergente: {start_count}")
     start = source.index(start_anchor)
-    end = source.index(end_anchor, start)
+    search_from = start + len(start_anchor)
+    end = source.find(end_anchor, search_from)
+    if end < 0:
+        raise RuntimeError(f"Âncora final nominal de {label} ausente após o início")
     if end <= start:
         raise RuntimeError(f"Ordem de âncoras inválida em {label}")
+    # O limite é contextual: usamos a primeira ocorrência da âncora NOMINAL
+    # declarada depois do início único. Não existe fallback para "próxima função".
     desired = replacement.rstrip() + "\n\n"
     current = source[start:end]
     return source if current == desired else source[:start] + desired + source[end:]
@@ -45,10 +49,12 @@ HEADER_HELPERS = r'''  // VALTREN CRM GLOBAL HEADER START
 
   function crmHeaderActions(context=''){
     const create = context === 'contacts'
-      ? `<button class="crm-header-create" type="button" data-action="crm-rel-create" data-kind="contacts">${icon('plus',15)}<span>Novo Contato</span></button>`
+      ? `<button class="crm-header-create crm-header-create-contact" type="button" data-action="crm-rel-create" data-kind="contacts">${icon('plus',15)}<span>Novo Contato</span></button>`
       : context === 'leads'
-        ? `<button class="crm-header-create" type="button" data-action="crm-rel-create" data-kind="leads">${icon('plus',15)}<span>Novo Lead</span></button>`
-        : '';
+        ? `<button class="crm-header-create crm-header-create-lead" type="button" data-action="crm-rel-create" data-kind="leads">${icon('plus',15)}<span>Novo Lead</span></button>`
+        : context === 'agenda'
+          ? `<button class="crm-header-create crm-header-create-agenda" type="button" data-action="crm-agenda-create">${icon('plus',15)}<span>Novo Evento</span></button>`
+          : '';
     return `<div class="crm-header-actions">${create}<details class="crm-account-menu"><summary aria-label="Menu da conta"><span class="crm-account-icon" aria-hidden="true">${icon('user',16)}</span><span class="crm-account-copy"><strong>Conta</strong><small>Autenticação desativada</small></span><span class="crm-account-chevron" aria-hidden="true">⌄</span></summary><div class="crm-account-popover"><strong>Sem sessão ativa</strong><p>Este ambiente não possui autenticação ou usuário conectado. Nenhuma identidade é simulada.</p><a href="#/crm/configuracoes">Configurações</a></div></details></div>`;
   }
 
