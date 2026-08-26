@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import re
 from pathlib import Path
 
@@ -11,6 +12,17 @@ WORKFLOWS = ROOT / ".github" / "workflows"
 def require(condition: bool, message: str) -> None:
     if not condition:
         raise AssertionError(message)
+
+
+def git_blob_sha(data: bytes) -> str:
+    header = f"blob {len(data)}\0".encode("utf-8")
+    return hashlib.sha1(header + data).hexdigest()
+
+
+def workflow_text() -> str:
+    text = "\n".join(path.read_text(encoding="utf-8") for path in sorted(WORKFLOWS.glob("*.yml")))
+    text += "\n" + "\n".join(path.read_text(encoding="utf-8") for path in sorted(WORKFLOWS.glob("*.yaml")))
+    return text
 
 
 def scan_materialized_admin_expectations() -> None:
@@ -75,8 +87,7 @@ def scan_materialized_admin_expectations() -> None:
         require("Áreaadministrativaaindanãoimplementadacomodomíniooperacional." in text, f"Wrapper de {label} não exige compatibilidade honesta")
         require(backing in text, f"Wrapper de {label} não referencia sua base/parts canônica")
 
-    workflow_text = "\n".join(path.read_text(encoding="utf-8") for path in sorted(WORKFLOWS.glob("*.yml")))
-    workflow_text += "\n" + "\n".join(path.read_text(encoding="utf-8") for path in sorted(WORKFLOWS.glob("*.yaml")))
+    workflows = workflow_text()
     for target in (
         "test_crm_fiscal_documents.js",
         "test_crm_cost_allocations.js",
@@ -87,9 +98,90 @@ def scan_materialized_admin_expectations() -> None:
             f"readonly_suite scripts/{target} --materialized",
             f"node scripts/{target} --materialized",
         )
-        require(not any(pattern in workflow_text for pattern in direct_patterns), f"Workflow voltou a executar {target} diretamente em --materialized")
+        require(not any(pattern in workflows for pattern in direct_patterns), f"Workflow voltou a executar {target} diretamente em --materialized")
         required = f"test_materialized_admin_compatibility.js scripts/{target} --materialized"
-        require(required in workflow_text, f"Workflow não usa wrapper materializado para {target}")
+        require(required in workflows, f"Workflow não usa wrapper materializado para {target}")
+
+
+def scan_rateios_ui_wrapper_contract() -> None:
+    scripts = ROOT / "scripts"
+    wrapper_path = scripts / "test_crm_cost_allocations_ui.js"
+    base_path = scripts / "test_crm_cost_allocations_ui.base.js"
+    require(wrapper_path.exists(), "Wrapper materializado de Rateios UI ausente")
+    require(base_path.exists(), "Base canônica de Rateios UI ausente")
+
+    base_bytes = base_path.read_bytes()
+    require(
+        git_blob_sha(base_bytes) == "098cf1ef08b22be9e30d2837d3b998d4fbfe2c4f",
+        "Base de Rateios UI divergiu do blob canônico 098cf1ef08b22be9e30d2837d3b998d4fbfe2c4f",
+    )
+    wrapper = wrapper_path.read_text(encoding="utf-8")
+    require("test_crm_cost_allocations_ui.base.js" in wrapper, "Wrapper de Rateios UI não referencia a base canônica")
+    require("process.argv.includes('--materialized')" in wrapper, "Wrapper de Rateios UI não separa source de materialized")
+    require("oldSidebarOfficial" in wrapper and "oldSidebarBoundary" in wrapper, "Wrapper de Rateios UI não ancora testes 74 e 75")
+    require("VALTREN SIDEBAR ARCHITECTURE START" in wrapper, "Wrapper de Rateios UI não usa marker START")
+    require("VALTREN SIDEBAR ARCHITECTURE END" in wrapper, "Wrapper de Rateios UI não usa marker END")
+    for token in ("Direcionadores", "Critérios de Rateio", "Alocações", "Memória de Cálculo"):
+        require(token in wrapper, f"Wrapper de Rateios UI perdeu verificação do termo: {token}")
+    require("lastIndexOf('function crmRelSidebar')" in wrapper, "Âncora histórica exata do wrapper de Rateios UI não está presente")
+    require("indexOf('function crmReferenceRoute'" in wrapper, "Âncora histórica exata de crmReferenceRoute não está presente")
+
+    workflows = workflow_text()
+    require("test_crm_cost_allocations_ui.base.js --materialized" not in workflows, "Workflow não pode executar a base de Rateios UI diretamente em --materialized")
+    require(
+        "scripts/test_crm_cost_allocations_ui.js --materialized" in workflows,
+        "Workflow não executa o wrapper de Rateios UI em --materialized",
+    )
+
+
+def scan_fragile_sidebar_boundaries() -> None:
+    # Legacy boundaries are permitted only as exact, inert replacement anchors in
+    # the Rateios UI base/wrapper pair. Executable materialized checks must use the
+    # canonical START/END markers.
+    old_74 = "test('74 sidebar publicado continua oficial',()=>{const start=app.lastIndexOf('function crmRelSidebar'),end=app.indexOf('function crmReferenceRoute',start),sidebar=app.slice(start,end);['Transações','Contabilidade','Notas Fiscais','Rateios','Participações','Repasses'].forEach((x)=>assert(sidebar.includes(x)));});"
+    old_75 = "test('75 nenhum subitem de Rateios foi publicado no sidebar',()=>{const start=app.lastIndexOf('function crmRelSidebar'),end=app.indexOf('function crmReferenceRoute',start),sidebar=app.slice(start,end);['Direcionadores','Critérios de Rateio','Alocações','Memória de Cálculo'].forEach((x)=>assert(!sidebar.includes(x)));});"
+    allowed_exact = {
+        "test_crm_cost_allocations_ui.base.js": (old_74, old_75),
+        "test_crm_cost_allocations_ui.js": (old_74, old_75),
+    }
+    fragile_tokens = (
+        "lastIndexOf('function crmRelSidebar')",
+        'lastIndexOf("function crmRelSidebar")',
+        "indexOf('function crmReferenceRoute'",
+        'indexOf("function crmReferenceRoute"',
+        "app.rfind(\"function crmRelSidebar\")",
+        "app.find(\"function crmReferenceRoute\"",
+    )
+    unexpected_boundaries: list[str] = []
+    positive_legacy_sidebar_expectations: list[str] = []
+    legacy_labels = ("ValtrenChat", "RH", "Administração", "Estrutura Organizacional", "Patrimônio e Licenças")
+
+    for path in sorted((ROOT / "scripts").glob("test*.js*")):
+        text = path.read_text(encoding="utf-8")
+        scrubbed = text
+        for anchor in allowed_exact.get(path.name, ()):
+            count = scrubbed.count(anchor)
+            require(count == 1, f"Âncora histórica de boundary esperada exatamente 1 vez em {path.name}; encontrada {count}")
+            scrubbed = scrubbed.replace(anchor, "", 1)
+        if any(token in scrubbed for token in fragile_tokens):
+            unexpected_boundaries.append(path.name)
+
+        for line_no, line in enumerate(text.splitlines(), start=1):
+            if "sidebar.includes" not in line or "assert(" not in line:
+                continue
+            if "!sidebar.includes" in line:
+                continue
+            if any(label in line for label in legacy_labels):
+                positive_legacy_sidebar_expectations.append(f"{path.name}:{line_no}")
+
+    require(
+        not unexpected_boundaries,
+        f"Boundaries frágeis de Sidebar encontrados fora das âncoras exatas sancionadas: {unexpected_boundaries}",
+    )
+    require(
+        not positive_legacy_sidebar_expectations,
+        "Expectations positivas de item legacy na Sidebar encontradas em: " + ", ".join(positive_legacy_sidebar_expectations),
+    )
 
 
 def main() -> int:
@@ -154,6 +246,8 @@ def main() -> int:
     sidebar_end = app.find("// VALTREN SIDEBAR ARCHITECTURE END", sidebar_start)
     require(sidebar_start >= 0 and sidebar_end > sidebar_start, "Bloco canônico da Sidebar ausente")
     sidebar = app[sidebar_start:sidebar_end]
+    for required_label in ("Dashboard", "CRM", "Agenda", "Financeiro", "Jurídico", "Marketing", "Negócios", "Relatórios", "Configurações"):
+        require(required_label in sidebar, f"Item canônico ausente da Sidebar: {required_label}")
     for forbidden_label in ("ValtrenChat", "RH", "Administração"):
         require(forbidden_label not in sidebar, f"Item legacy indevido reapareceu na Sidebar: {forbidden_label}")
 
@@ -161,7 +255,9 @@ def main() -> int:
     require(len(declarations) == 1, f"crmRelSidebar declarations != 1: {len(declarations)}")
 
     scan_materialized_admin_expectations()
-    print(f"route-guards: PASS ({len(expected) + 6} contratos verificados; crmRelSidebar=1; admin-expectations=clean)")
+    scan_rateios_ui_wrapper_contract()
+    scan_fragile_sidebar_boundaries()
+    print(f"route-guards: PASS ({len(expected) + 6} contratos verificados; crmRelSidebar=1; admin-expectations=clean; boundaries=clean)")
     return 0
 
 
