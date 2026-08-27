@@ -23,6 +23,30 @@ SEMANTIC_CSS = r'''
   --crm-bg:var(--crm-surface-app);
   --crm-surface:var(--crm-surface-card);
   --crm-surface-soft:var(--crm-surface-subtle);
+  min-height:100dvh;
+}
+
+/* O conteúdo ocupa 100% da área útil; nenhum workspace fica limitado por max-width. */
+.crm-app-shell .crm-main{
+  width:100%!important;
+  max-width:none!important;
+  min-width:0!important;
+  min-height:100dvh;
+  margin:0!important;
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+}
+.crm-app-shell .crm-workspace,
+.crm-app-shell .crm-ref-workspace,
+.crm-app-shell .crm-agenda-workspace{
+  width:100%!important;
+  max-width:none!important;
+  min-width:0!important;
+  margin:0!important;
+  flex:1 1 auto;
+  align-self:stretch;
+  box-sizing:border-box;
 }
 
 /* A moldura global é a única surface navy estrutural do Sistema Interno. */
@@ -386,7 +410,7 @@ def apply_crm_dark_surface_system() -> int:
     css = _append_as_final_owner(css)
     assert_dark_surface_ownership(css)
     CSS.write_text(css, encoding="utf-8")
-    print("Dark shell/light workspace aplicado como owner CSS final: navy estrutural restrito ao Header global e Sidebar.")
+    print("Dark shell/light workspace aplicado como owner CSS final: navy estrutural restrito ao Header global e Sidebar; conteúdo ocupa 100% da área útil.")
     return 1
 
 
