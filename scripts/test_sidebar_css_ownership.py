@@ -13,15 +13,13 @@ STRUCTURAL = (
     "crm-brand",
     "crm-nav",
     "crm-nav-group",
-    "crm-nav-subgroup",
     "crm-sidebar-overlay",
 )
 
 # Detect only actual CSS selector preludes. Runtime querySelector/XPath strings,
 # guard/error messages and DOM class references are consumers, not CSS owners.
-# A structural selector must begin a selector group (line/start, after `}` or
-# after a selector-list comma) and reach a CSS opening brace without crossing
-# another declaration block or statement terminator.
+# crm-nav-subgroup remains detectable as a conflict even though the obsolete
+# Contracts nested subgroup is no longer part of the canonical Sidebar.
 SELECTOR_RE = re.compile(
     r"(?m)(?:^|[},])\s*\.((?:crm-sidebar-head|crm-sidebar-overlay|crm-sidebar|crm-brand|crm-nav-subgroup|crm-nav-group|crm-nav))(?![-\w])[^{};\n]*\{"
 )
@@ -46,6 +44,8 @@ def main() -> int:
     missing = [name for name in STRUCTURAL if name not in owner_selectors]
     if missing:
         raise SystemExit(f"FAIL owner Sidebar incompleto; seletores ausentes: {', '.join(missing)}")
+    if "crm-nav-subgroup" in owner_selectors:
+        raise SystemExit("FAIL owner Sidebar ainda contém o subgrupo contratual obsoleto crm-nav-subgroup")
 
     css_conflicts: list[str] = []
     declaration_conflicts: list[str] = []
@@ -71,6 +71,7 @@ def main() -> int:
     print(f"owner: {OWNER.name}")
     print(f"crmRelSidebar declarations in owner: {owner_declarations}")
     print("structural selectors owned exclusively: " + ", ".join(STRUCTURAL))
+    print("obsolete selector absent: crm-nav-subgroup")
     return 0
 
 
