@@ -17,6 +17,10 @@ def browser_errors(driver):
  logs=driver.get_log('browser')
  return logs,[x for x in logs if x.get('level')=='SEVERE']
 
+def js_safe(driver,script):
+ try:return driver.execute_script(script)
+ except Exception as e:return {'diagnosticError':f'{type(e).__name__}: {e}'}
+
 def main():
  p=argparse.ArgumentParser();p.add_argument('--base-url',required=True);p.add_argument('--output-dir',required=True);a=p.parse_args()
  out=Path(a.output_dir);out.mkdir(parents=True,exist_ok=True)
@@ -26,8 +30,10 @@ def main():
   d.set_window_size(1440,1200);d.get(a.base_url.rstrip('/')+'/?mock=1#/crm/dashboard')
   try:WebDriverWait(d,20).until(lambda x:x.execute_script('return !!window.__VALTREN_MOCK_MODE__'))
   except TimeoutException:
-   logs,errors=browser_errors(d);evidence['console']=logs;evidence['consoleSevere']=errors;evidence['readyState']=d.execute_script('return document.readyState');evidence['url']=d.current_url;evidence['bodyText']=d.find_element('tag name','body').text[:4000];failures.append('BOOTSTRAP_TIMEOUT');
-   if errors: failures.append('Console SEVERE: '+json.dumps(errors,ensure_ascii=False)[:5000])
+   logs,errors=browser_errors(d);evidence['console']=logs;evidence['consoleSevere']=errors;evidence['readyState']=d.execute_script('return document.readyState');evidence['url']=d.current_url;evidence['bodyText']=d.find_element('tag name','body').text[:4000]
+   evidence['accountingDiagnostic']=js_safe(d,"""return (()=>{const acct=typeof crmAccountingService==='function'?crmAccountingService():null, fin=typeof crmFinanceService==='function'?crmFinanceService():null, legal=typeof crmLegalContractService==='function'?crmLegalContractService():null;return {accountingStateSame:!!acct&&acct.data===state.crmAccounting,financeStateSame:!!fin&&fin.data===state.crmFinancialTransactions,globalDre:acct?.buildDre({basis:'accrual'})?.summary||null,productDre:acct?.buildDre({basis:'accrual',from:'2026-08-01',to:'2026-08-31',productId:'mock_product_alpha'})?.summary||null,productRows:acct?.buildDre({basis:'accrual',from:'2026-08-01',to:'2026-08-31',productId:'mock_product_alpha'})?.rows?.map(r=>({id:r.transaction?.id,date:r.date,amount:r.amount,contribution:r.contribution,section:r.classification?.section,productId:r.transaction?.productId,allocations:r.transaction?.allocations}))||[],transactionMeta:acct?.data?.transactionMeta||[],rules:legal?.economicRulesFeed({from:'2026-08-01',to:'2026-08-31',includeHistorical:true})||[],rawRules:legal?.data?.economicRules||[],transactions:fin?.data?.transactions?.map(x=>({id:x.id,status:x.status,amount:x.amount,categoryId:x.categoryId,businessDimension:x.businessDimension,productId:x.productId,allocations:x.allocations,transactionDate:x.transactionDate,metadata:x.metadata}))||[]};})()""")
+   failures.append('BOOTSTRAP_TIMEOUT')
+   if errors:failures.append('Console SEVERE: '+json.dumps(errors,ensure_ascii=False)[:5000])
    d.save_screenshot(str(out/'dashboard-mock-bootstrap-failure.png'));raise RuntimeError('mock bootstrap flag ausente')
   time.sleep(1)
   k=d.execute_script('return window.__VALTREN_MOCK_MODE__.kpis()') or {};evidence['kpis']=k
