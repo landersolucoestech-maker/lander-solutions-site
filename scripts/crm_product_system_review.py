@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CACHE_VERSION = "20260826-product-system-review-v4"
+CACHE_VERSION = "20260827-product-system-review-v5"
 CSS_MARKER = "/* VALTREN PRODUCT SYSTEM REVIEW */"
 
 
@@ -21,8 +21,6 @@ def _replace_between(source: str, start_anchor: str, end_anchor: str, replacemen
         raise RuntimeError(f"Âncora final nominal de {label} ausente após o início")
     if end <= start:
         raise RuntimeError(f"Ordem de âncoras inválida em {label}")
-    # O limite é contextual: usamos a primeira ocorrência da âncora NOMINAL
-    # declarada depois do início único. Não existe fallback para "próxima função".
     desired = replacement.rstrip() + "\n\n"
     current = source[start:end]
     return source if current == desired else source[:start] + desired + source[end:]
@@ -56,7 +54,7 @@ SETTINGS_SECURITY = r'''  function crmSettingsSecurityBody(){
 '''
 
 SETTINGS_INTEGRATIONS = r'''  function crmSettingsIntegrationsBody(){
-    const integrations=['WhatsApp','Resend','Autentique','NFS-e / Nota Fiscal','Instagram','Facebook','YouTube','TikTok','Google Ads','Soundcharts'];
+    const integrations=['WhatsApp','Resend','Autentique','NFS-e / Nota Fiscal','Instagram','Facebook','YouTube','TikTok','Google Ads'];
     const cards=integrations.map((name)=>`<article><strong>${name}</strong><span class="crm-ref-badge">Não configurado</span><small>Sem credenciais ou conexão ativa</small><span class="crm-integration-note">Credenciais devem ser configuradas fora do frontend, em infraestrutura segura.</span></article>`).join('');
     return crmFidelityPanel('Integrações','Conexões externas previstas para configuração futura.',`<div class="crm-ref-integration-grid crm-integration-grid-readonly">${cards}</div>`);
   }
@@ -81,16 +79,104 @@ PROFILE = r'''  function crmCanonicalProfilePage(){
 
 CSS_PATCH = r'''
 /* VALTREN PRODUCT SYSTEM REVIEW */
-:root{--crm-bg:#f4f6f8;--crm-surface:#fff;--crm-surface-soft:#f8fafc;--crm-text:#0b1d3a;--crm-muted:#687386;--crm-border:rgba(11,29,58,.12);--crm-accent:#d4af37;--crm-danger:#a72828;--crm-radius-sm:8px;--crm-radius-md:12px;--crm-radius-lg:16px;--crm-shadow-sm:0 1px 2px rgba(11,29,58,.05);--crm-space-1:6px;--crm-space-2:10px;--crm-space-3:14px;--crm-space-4:18px;--crm-space-5:24px;--crm-space-6:30px}
-.crm-app-shell{display:block;grid-template-columns:none;min-height:100vh;background:var(--crm-bg);color:var(--crm-text)}.crm-main{width:100%;min-width:0;margin:0}.crm-app-shell .crm-topbar{min-height:88px;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;gap:24px;background:var(--crm-surface);border-bottom:1px solid var(--crm-border);box-sizing:border-box}.crm-app-shell .crm-topbar>div:first-child{min-width:0}.crm-app-shell .crm-topbar h1{margin:2px 0 4px;line-height:1.15}.crm-app-shell .crm-topbar p{margin:0;color:var(--crm-muted);max-width:760px}.crm-workspace{width:min(100%,1500px);margin:0 auto;padding:var(--crm-space-6);box-sizing:border-box}.crm-page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:var(--crm-space-5)}.crm-page-header h2{margin:0 0 6px;font-size:24px;line-height:1.2}.crm-page-header p{margin:0;color:var(--crm-muted)}
-.crm-kpi-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}.crm-kpi{min-width:0;background:var(--crm-surface);border:1px solid var(--crm-border);border-radius:var(--crm-radius-md);padding:18px;box-shadow:var(--crm-shadow-sm)}.crm-kpi>span{display:block;color:var(--crm-muted);font-size:12px;font-weight:700}.crm-kpi>strong{display:block;margin-top:9px;font-size:22px;line-height:1.15;overflow-wrap:anywhere}.crm-kpi>small{display:block;margin-top:7px;color:var(--crm-muted);font-size:10px;line-height:1.35}.crm-panel{background:var(--crm-surface);border:1px solid var(--crm-border);border-radius:var(--crm-radius-md);box-shadow:var(--crm-shadow-sm);padding:20px}.crm-panel-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}.crm-panel-heading span{color:var(--crm-muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}.crm-panel-heading h2{font-size:18px;margin:4px 0 0}
-.crm-empty-state{min-height:130px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;border:1px dashed var(--crm-border);border-radius:var(--crm-radius-md);background:var(--crm-surface-soft)}.crm-empty-state strong{font-size:15px}.crm-empty-state p{max-width:620px;margin:8px auto 0;color:var(--crm-muted);font-size:13px;line-height:1.55}.crm-empty-action{margin-top:14px;color:var(--crm-text);font-weight:700;text-decoration:none}.crm-auth-disabled-state{min-height:180px}.crm-settings-readonly-brand{display:flex;align-items:center;gap:14px}.crm-settings-readonly-brand img{width:46px;height:46px;object-fit:contain}.crm-settings-readonly-brand div{display:flex;flex-direction:column;gap:4px}.crm-settings-readonly-brand span{color:var(--crm-muted);font-size:12px}.crm-integration-grid-readonly article{min-height:150px}.crm-integration-note{display:block;color:var(--crm-muted);font-size:10px;line-height:1.45;margin-top:8px}
-.crm-table-wrap,.crm-rel-table-wrap,.crm-fidelity-table-wrap{max-width:100%;overflow:auto}.crm-table th,.crm-table td,.crm-rel-table th,.crm-rel-table td,.crm-fidelity-table th,.crm-fidelity-table td{vertical-align:middle}.crm-table th,.crm-rel-table th,.crm-fidelity-table th{white-space:nowrap}.crm-rel-table td,.crm-table td,.crm-fidelity-table td{padding-top:12px;padding-bottom:12px}.crm-ref-form-grid input,.crm-ref-form-grid select,.crm-ref-form-grid textarea,.crm-rel-field input,.crm-rel-field select,.crm-rel-field textarea{min-height:42px;border-radius:var(--crm-radius-sm);border-color:var(--crm-border);box-sizing:border-box}.crm-modal,.crm-drawer,.crm-rel-modal{max-width:calc(100vw - 28px)}
-.crm-global-loading{position:fixed;inset:0;z-index:2000;display:grid;place-items:center;background:var(--crm-bg)}.crm-global-loading-inner{width:min(300px,70vw);display:grid;justify-items:center;gap:20px}.crm-global-loading-inner img{width:90px;max-height:80px;object-fit:contain}.crm-global-loading-bar{width:100%;height:4px;border-radius:999px;overflow:hidden;background:rgba(11,29,58,.12)}.crm-global-loading-bar::after{content:"";display:block;width:38%;height:100%;border-radius:inherit;background:var(--crm-accent);animation:crm-loading-slide 1.2s ease-in-out infinite}@keyframes crm-loading-slide{0%{transform:translateX(-120%)}100%{transform:translateX(320%)}}
+:root{
+  --crm-bg:#F4F6F8;
+  --crm-surface:#FFFFFF;
+  --crm-surface-soft:#F8FAFC;
+  --crm-surface-muted:#EEF2F6;
+  --crm-text:#0B1D3A;
+  --crm-muted:#5F6F82;
+  --crm-subtle:#7E8B9C;
+  --crm-border:#D9E1E9;
+  --crm-border-strong:#C8D2DD;
+  --crm-accent:#D4AF37;
+  --crm-accent-soft:#FFF7D6;
+  --crm-danger:#A72828;
+  --crm-radius-sm:7px;
+  --crm-radius-md:10px;
+  --crm-radius-lg:12px;
+  --crm-shadow-sm:0 1px 2px rgba(11,29,58,.045);
+  --crm-shadow-md:0 8px 24px rgba(11,29,58,.08);
+  --crm-space-1:4px;
+  --crm-space-2:8px;
+  --crm-space-3:12px;
+  --crm-space-4:16px;
+  --crm-space-5:20px;
+  --crm-space-6:24px;
+  --crm-space-7:32px;
+  --crm-font-xs:11px;
+  --crm-font-sm:12px;
+  --crm-font-md:13px;
+  --crm-font-base:14px;
+  --crm-font-lg:16px;
+  --crm-font-xl:20px;
+  --crm-font-title:24px;
+}
+html,body{background:var(--crm-bg)}
+.crm-app-shell{display:block;grid-template-columns:none;min-height:100vh;background:var(--crm-bg);color:var(--crm-text);font-family:Montserrat,Arial,sans-serif;font-size:var(--crm-font-base);line-height:1.45}
+.crm-app-shell *{box-sizing:border-box}
+.crm-main{width:100%;min-width:0;margin:0;background:var(--crm-bg)}
+.crm-app-shell h1,.crm-app-shell h2,.crm-app-shell h3,.crm-app-shell h4{font-family:Raleway,Arial,sans-serif;color:var(--crm-text)}
+.crm-app-shell .crm-topbar{min-height:76px;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:20px;background:var(--crm-surface);border-bottom:1px solid var(--crm-border);box-sizing:border-box}
+.crm-app-shell .crm-topbar>div:first-child{min-width:0}
+.crm-app-shell .crm-topbar h1{margin:0 0 3px;font-size:22px;line-height:1.2;font-weight:800;letter-spacing:-.01em}
+.crm-app-shell .crm-topbar p{margin:0;color:var(--crm-muted);font-size:12px;line-height:1.4;max-width:760px}
+.crm-workspace,.crm-ref-workspace,.crm-agenda-workspace{width:min(100%,1440px);margin:0 auto;padding:var(--crm-space-6);box-sizing:border-box;color:var(--crm-text);color-scheme:light}
+.crm-page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:var(--crm-space-5)}
+.crm-page-header>div:first-child{min-width:0}
+.crm-page-header h1,.crm-page-header h2{margin:0 0 4px;font-size:var(--crm-font-title);line-height:1.2;font-weight:800;letter-spacing:-.015em}
+.crm-page-header p{margin:0;color:var(--crm-muted);font-size:var(--crm-font-md);line-height:1.45;max-width:780px}
+.crm-page-header-actions,.crm-ref-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.crm-app-shell button,.crm-app-shell .crm-empty-action,.crm-app-shell a.crm-empty-action{font-family:Raleway,Arial,sans-serif;font-size:var(--crm-font-sm);font-weight:700}
+.crm-app-shell button{min-height:36px;padding:8px 12px;border-radius:var(--crm-radius-sm)}
+.crm-kpi-grid,.crm-ref-kpis,.crm-rel-kpis{gap:12px}
+.crm-kpi,.crm-ref-kpi,.crm-rel-kpi{min-width:0;background:var(--crm-surface);border:1px solid var(--crm-border);border-radius:var(--crm-radius-md);padding:15px 16px;box-shadow:var(--crm-shadow-sm);color:var(--crm-text)}
+.crm-kpi>span,.crm-ref-kpi>span,.crm-rel-kpi>span{display:block;color:var(--crm-muted);font-size:var(--crm-font-sm);font-weight:700;line-height:1.35}
+.crm-kpi>strong,.crm-ref-kpi>strong,.crm-rel-kpi>strong{display:block;margin-top:7px;font-size:20px;line-height:1.15;overflow-wrap:anywhere;color:var(--crm-text)}
+.crm-kpi>small,.crm-ref-kpi>small,.crm-rel-kpi>small{display:block;margin-top:5px;color:var(--crm-muted);font-size:var(--crm-font-xs);line-height:1.4}
+.crm-panel,.crm-ref-panel,.crm-rel-list-panel,.crm-ref-table-card,.crm-legal-table-card{background:var(--crm-surface);border:1px solid var(--crm-border);border-radius:var(--crm-radius-md);box-shadow:var(--crm-shadow-sm);color:var(--crm-text)}
+.crm-panel{padding:16px}
+.crm-panel-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.crm-panel-heading span{color:var(--crm-muted);font-size:var(--crm-font-xs);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.crm-panel-heading h2{font-size:var(--crm-font-lg);line-height:1.3;margin:3px 0 0}
+.crm-empty-state{min-height:116px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;border:1px dashed var(--crm-border-strong);border-radius:var(--crm-radius-md);background:var(--crm-surface-soft);color:var(--crm-text)}
+.crm-empty-state strong{font-size:14px;color:var(--crm-text)}
+.crm-empty-state p{max-width:620px;margin:6px auto 0;color:var(--crm-muted);font-size:12px;line-height:1.5}
+.crm-empty-action{margin-top:12px;color:var(--crm-text);text-decoration:none}
+.crm-auth-disabled-state{min-height:156px}
+.crm-settings-readonly-brand{display:flex;align-items:center;gap:12px}
+.crm-settings-readonly-brand img{width:42px;height:42px;object-fit:contain}
+.crm-settings-readonly-brand div{display:flex;flex-direction:column;gap:3px}
+.crm-settings-readonly-brand span{color:var(--crm-muted);font-size:var(--crm-font-sm)}
+.crm-integration-grid-readonly{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.crm-integration-grid-readonly article{min-height:126px;padding:14px;background:var(--crm-surface);border:1px solid var(--crm-border);border-radius:var(--crm-radius-md);color:var(--crm-text)}
+.crm-integration-grid-readonly article strong{font-size:13px;color:var(--crm-text)}
+.crm-integration-grid-readonly article small,.crm-integration-note{display:block;color:var(--crm-muted);font-size:var(--crm-font-xs);line-height:1.45}
+.crm-integration-note{margin-top:6px}
+.crm-table-wrap,.crm-rel-table-wrap,.crm-fidelity-table-wrap,.crm-ref-table-wrap,.crm-legal-table-wrap{max-width:100%;overflow:auto}
+.crm-table,.crm-rel-table,.crm-fidelity-table,.crm-ref-table-wrap table,.crm-legal-table-wrap table{font-size:12px;color:var(--crm-text)}
+.crm-table th,.crm-rel-table th,.crm-fidelity-table th,.crm-ref-table-wrap th,.crm-legal-table-wrap th{white-space:nowrap;color:var(--crm-muted);font-size:11px;font-weight:800;line-height:1.3;background:var(--crm-surface-soft)}
+.crm-table td,.crm-rel-table td,.crm-fidelity-table td,.crm-ref-table-wrap td,.crm-legal-table-wrap td{vertical-align:middle;color:var(--crm-text);font-size:12px;line-height:1.4}
+.crm-rel-table td,.crm-table td,.crm-fidelity-table td{padding-top:10px;padding-bottom:10px}
+.crm-ref-form-grid input,.crm-ref-form-grid select,.crm-ref-form-grid textarea,.crm-rel-field input,.crm-rel-field select,.crm-rel-field textarea,.crm-legal-toolbar input,.crm-legal-toolbar select{min-height:38px;border-radius:var(--crm-radius-sm);border-color:var(--crm-border-strong);background:#FFFFFF;color:var(--crm-text);font-size:12px;box-sizing:border-box;color-scheme:light}
+.crm-ref-form-grid textarea,.crm-rel-field textarea{min-height:88px}
+.crm-app-shell input::placeholder,.crm-app-shell textarea::placeholder{color:#8795A6;opacity:1}
+.crm-modal,.crm-drawer,.crm-rel-modal,.crm-agenda-modal,.crm-ref-modal{max-width:calc(100vw - 28px);background:#FFFFFF;color:var(--crm-text);border-color:var(--crm-border);border-radius:var(--crm-radius-lg);box-shadow:var(--crm-shadow-md);color-scheme:light}
+#crm-rel-modal-root,#crm-agenda-modal-root,#crm-ref-modal-root,#crm-legal-overlay-root{--crm-text:#0B1D3A;--crm-muted:#5F6F82;--crm-border:#D9E1E9;color-scheme:light}
+#crm-rel-modal-root .crm-rel-modal,#crm-rel-modal-root .crm-rel-modal-header,#crm-rel-modal-root .crm-rel-modal-body,#crm-rel-modal-root .crm-rel-modal-footer,#crm-agenda-modal-root .crm-agenda-modal,#crm-agenda-modal-root .crm-agenda-modal>header,#crm-agenda-modal-root .crm-agenda-modal-body,#crm-agenda-modal-root .crm-agenda-modal footer,#crm-ref-modal-root .crm-ref-modal,#crm-ref-modal-root .crm-ref-modal>header,#crm-ref-modal-root .crm-ref-modal-body,#crm-ref-modal-root .crm-ref-modal footer,#crm-legal-overlay-root .crm-legal-overlay,#crm-legal-overlay-root .crm-legal-modal,#crm-legal-overlay-root .crm-legal-drawer{background:#FFFFFF!important;color:#0B1D3A!important;border-color:#D9E1E9!important;color-scheme:light!important}
+#crm-rel-modal-root h1,#crm-rel-modal-root h2,#crm-rel-modal-root h3,#crm-agenda-modal-root h1,#crm-agenda-modal-root h2,#crm-agenda-modal-root h3,#crm-ref-modal-root h1,#crm-ref-modal-root h2,#crm-ref-modal-root h3,#crm-legal-overlay-root h1,#crm-legal-overlay-root h2,#crm-legal-overlay-root h3{color:#0B1D3A!important}
+#crm-rel-modal-root p,#crm-agenda-modal-root p,#crm-ref-modal-root p,#crm-legal-overlay-root p{color:#5F6F82}
+#crm-rel-modal-root input,#crm-rel-modal-root select,#crm-rel-modal-root textarea,#crm-agenda-modal-root input,#crm-agenda-modal-root select,#crm-agenda-modal-root textarea,#crm-ref-modal-root input,#crm-ref-modal-root select,#crm-ref-modal-root textarea,#crm-legal-overlay-root input,#crm-legal-overlay-root select,#crm-legal-overlay-root textarea{background:#FFFFFF!important;color:#0B1D3A!important;-webkit-text-fill-color:#0B1D3A!important;border-color:#C8D2DD!important;color-scheme:light!important}
+.crm-global-loading{position:fixed;inset:0;z-index:2000;display:grid;place-items:center;background:var(--crm-bg)}
+.crm-global-loading-inner{width:min(280px,70vw);display:grid;justify-items:center;gap:16px}
+.crm-global-loading-inner img{width:78px;max-height:70px;object-fit:contain}
+.crm-global-loading-bar{width:100%;height:4px;border-radius:999px;overflow:hidden;background:rgba(11,29,58,.12)}
+.crm-global-loading-bar::after{content:"";display:block;width:38%;height:100%;border-radius:inherit;background:var(--crm-accent);animation:crm-loading-slide 1.2s ease-in-out infinite}
+@keyframes crm-loading-slide{0%{transform:translateX(-120%)}100%{transform:translateX(320%)}}
 @media(max-width:1200px){.crm-kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:980px) and (min-width:761px){.crm-workspace{padding:24px}.crm-app-shell .crm-topbar{padding-inline:24px}}
-@media(max-width:760px){.crm-app-shell .crm-topbar{min-height:auto;padding:18px;align-items:flex-start;flex-direction:column}.crm-workspace{padding:18px}.crm-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.crm-page-header{flex-direction:column}.crm-panel{padding:16px}}
-@media(max-width:480px){.crm-kpi-grid{grid-template-columns:1fr}.crm-workspace{padding:14px}.crm-panel{border-radius:10px}}
+@media(max-width:980px) and (min-width:761px){.crm-workspace,.crm-ref-workspace,.crm-agenda-workspace{padding:20px}.crm-app-shell .crm-topbar{padding-inline:20px}}
+@media(max-width:760px){.crm-app-shell .crm-topbar{min-height:auto;padding:14px 16px;align-items:flex-start;flex-direction:column}.crm-workspace,.crm-ref-workspace,.crm-agenda-workspace{padding:16px}.crm-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.crm-page-header{flex-direction:column;margin-bottom:16px}.crm-page-header h1,.crm-page-header h2{font-size:21px}.crm-panel{padding:14px}}
+@media(max-width:480px){.crm-kpi-grid{grid-template-columns:1fr}.crm-workspace,.crm-ref-workspace,.crm-agenda-workspace{padding:12px}.crm-panel{border-radius:8px}.crm-page-header-actions,.crm-ref-actions{width:100%;justify-content:flex-start}}
 '''
 
 REPLACEMENTS = [
@@ -138,6 +224,8 @@ def apply_crm_product_system_review() -> int:
         ("state.crmUserInitials||'AD'", "state.crmUserInitials||''"),
     ]:
         app = app.replace(old, new)
+    if 'Soundcharts' in app:
+        raise RuntimeError('Soundcharts não pertence ao projeto e sobreviveu à revisão global')
     APP.write_text(app, encoding="utf-8")
 
     css = CSS.read_text(encoding="utf-8")
@@ -153,7 +241,7 @@ def apply_crm_product_system_review() -> int:
         updated = re.sub(r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?", f"valtren-brand.css?v={CACHE_VERSION}", original)
         if updated != original:
             path.write_text(updated, encoding="utf-8")
-    print("Revisão global transversal materializada: Account Menu, auth desativada, estados vazios, settings transparentes e design system consolidados.")
+    print("Revisão global transversal materializada: escala visual, contraste, estados vazios, settings transparentes e design system consolidados; Soundcharts ausente.")
     return 1
 
 
