@@ -16,7 +16,7 @@ DASHBOARD_START = "  // VALTREN CRM DASHBOARD START\n"
 DASHBOARD_END = "  // VALTREN CRM DASHBOARD END\n"
 CSS_MARKER = "/* VALTREN EXECUTIVE DASHBOARD */"
 LEGACY_CSS_MARKER = "/* VALTREN CRM INTEGRATED */"
-CACHE_VERSION = "20260827-executive-dashboard-v4"
+CACHE_VERSION = "20260827-executive-dashboard-v5"
 
 LEGACY_DASHBOARD_TOKENS = [
     "kpi('Contatos'",
@@ -26,6 +26,14 @@ LEGACY_DASHBOARD_TOKENS = [
     "O que precisa de atenção",
     "Revisar pipeline comercial",
     "Acessos principais",
+]
+
+DASHBOARD_HEADER_EYEBROW = "<span>Sistema Interno</span>"
+DASHBOARD_INTRO_BLOCK = '<div class="crm-page-header"><div><h2>Visão Econômica Consolidada</h2><p>Empresa: Valtren Solutions · Produtos, SaaS, Serviços e Unidades de Negócio são dimensões gerenciais internas.</p></div></div>'
+REMOVED_DASHBOARD_COPY = [
+    "Sistema Interno",
+    "Visão Econômica Consolidada",
+    "Empresa: Valtren Solutions · Produtos, SaaS, Serviços e Unidades de Negócio são dimensões gerenciais internas.",
 ]
 
 REQUIRED_BROWSER_COMPONENTS = [
@@ -77,10 +85,23 @@ def _assert_js_syntax(source: str, stage: str) -> None:
         temp_path.unlink(missing_ok=True)
 
 
+def _dashboard_browser_source() -> str:
+    browser = BROWSER.read_text(encoding="utf-8").strip()
+    eyebrow_count = browser.count(DASHBOARD_HEADER_EYEBROW)
+    intro_count = browser.count(DASHBOARD_INTRO_BLOCK)
+    if eyebrow_count != 1 or intro_count != 1:
+        raise RuntimeError(
+            f"Hierarquia canônica do Dashboard divergente: eyebrow={eyebrow_count}, intro={intro_count}"
+        )
+    browser = browser.replace(DASHBOARD_HEADER_EYEBROW, "", 1)
+    browser = browser.replace(DASHBOARD_INTRO_BLOCK, "", 1)
+    return browser
+
+
 def _source_block() -> str:
     core = CORE.read_text(encoding="utf-8").strip()
     participation_core = PARTICIPATION_CORE.read_text(encoding="utf-8").strip()
-    browser = BROWSER.read_text(encoding="utf-8").strip()
+    browser = _dashboard_browser_source()
     return DASHBOARD_START + core + "\n\n" + participation_core + "\n\n" + browser + "\n" + DASHBOARD_END
 
 
@@ -151,17 +172,21 @@ def _validate_sources() -> None:
     core = CORE.read_text(encoding="utf-8")
     participation_core = PARTICIPATION_CORE.read_text(encoding="utf-8")
     browser = BROWSER.read_text(encoding="utf-8")
+    rendered_browser = _dashboard_browser_source()
     _assert_js_syntax(core, "crm_dashboard_core.js")
     _assert_js_syntax(participation_core, "crm_dashboard_participation_core.js")
-    _assert_js_syntax(browser, "crm_dashboard_browser.js")
+    _assert_js_syntax(rendered_browser, "crm_dashboard_browser.js normalizado")
     missing_core = [name for name in REQUIRED_CORE_FUNCTIONS if name not in core]
     missing_participation = [name for name in REQUIRED_PARTICIPATION_CORE_FUNCTIONS if name not in participation_core]
-    missing_browser = [name for name in REQUIRED_BROWSER_COMPONENTS if name not in browser]
+    missing_browser = [name for name in REQUIRED_BROWSER_COMPONENTS if name not in rendered_browser]
     if missing_core or missing_participation or missing_browser:
         raise RuntimeError(f"Arquitetura do Dashboard incompleta: core={missing_core}, participation={missing_participation}, browser={missing_browser}")
     for token in LEGACY_DASHBOARD_TOKENS:
-        if token in browser:
+        if token in rendered_browser:
             raise RuntimeError(f"Dashboard legado sobreviveu no browser owner: {token}")
+    for token in REMOVED_DASHBOARD_COPY:
+        if token in rendered_browser:
+            raise RuntimeError(f"Dashboard voltou a emitir copy estrutural removida: {token}")
     forbidden_company_models = ["Empresa: Visa Fácil", "Empresa: Music OS 360", "Empresa: Vivendo da Música", "Empresa: Dica de Cria"]
     for token in forbidden_company_models:
         if token in browser or token in core or token in participation_core:
@@ -198,9 +223,13 @@ def apply_crm_dashboard() -> int:
         raise RuntimeError("Dashboard executivo não ficou materializado exatamente uma vez")
     if app.count("ValtrenDashboardParticipationCore") < 1 or app.count("__participationIntegrityWrapped") < 1:
         raise RuntimeError("Núcleo de integridade das Participações não foi materializado")
+    dashboard_block = app[app.index(DASHBOARD_START):app.index(DASHBOARD_END)]
     for token in LEGACY_DASHBOARD_TOKENS:
-        if token in app[app.index(DASHBOARD_START):app.index(DASHBOARD_END)]:
+        if token in dashboard_block:
             raise RuntimeError(f"Dashboard materializado contém estrutura CRM descartada: {token}")
+    for token in REMOVED_DASHBOARD_COPY:
+        if token in dashboard_block:
+            raise RuntimeError(f"Dashboard materializado voltou a emitir copy estrutural removida: {token}")
     _assert_js_syntax(app, "bundle materializado")
     app_changed = app != original_app
     if app_changed:
@@ -217,7 +246,7 @@ def apply_crm_dashboard() -> int:
     if app_changed or css_changed:
         _update_cache_busters()
 
-    print("Dashboard executivo materializado: Valtren consolidada, performance por unidades internas, Participações/Repasses sem dupla contagem, faturado x recebido e arquitetura financeira sem dados fictícios.")
+    print("Dashboard executivo materializado com hierarquia simplificada: header sem eyebrow redundante, KPIs no início do workspace e arquitetura financeira preservada sem dados fictícios.")
     return 1
 
 
