@@ -106,6 +106,8 @@ def apply_crm_product_system_review() -> int:
         ("state.crmUserInitials||'AD'", "state.crmUserInitials||''"),
     ]:
         app = app.replace(old, new)
+    if 'Soundcharts' in app:
+        raise RuntimeError("Soundcharts não pertence ao projeto e sobreviveu à materialização final")
     _assert_js_syntax(app, "normalização textual final")
     review.APP.write_text(app, encoding="utf-8")
 
@@ -123,7 +125,7 @@ def apply_crm_product_system_review() -> int:
         if updated != original:
             path.write_text(updated, encoding="utf-8")
 
-    print("Revisão global materializada com validação sintática incremental e Dashboard sob owner canônico.")
+    print("Revisão global materializada com validação sintática incremental, Dashboard sob owner canônico e Soundcharts ausente.")
     return 1
 
 
