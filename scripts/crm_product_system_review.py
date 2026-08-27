@@ -8,6 +8,7 @@ APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
 CACHE_VERSION = "20260827-product-system-review-v6"
 CSS_MARKER = "/* VALTREN PRODUCT SYSTEM REVIEW */"
+LIGHT_WORKSPACE_MARKER = "/* VALTREN CRM DARK-SHELL LIGHT-WORKSPACE */"
 
 
 def _replace_between(source: str, start_anchor: str, end_anchor: str, replacement: str, label: str) -> str:
@@ -212,12 +213,24 @@ REPLACEMENTS = [
 def _replace_css(css: str) -> str:
     desired = CSS_PATCH.strip()
     marker_at = css.find(CSS_MARKER)
+    light_at = css.find(LIGHT_WORKSPACE_MARKER)
     if marker_at < 0:
+        if light_at >= 0:
+            prefix = css[:light_at].rstrip()
+            suffix = css[light_at:].lstrip()
+            return prefix + "\n\n" + desired + "\n\n" + suffix
         return css.rstrip() + "\n\n" + desired + "\n"
-    current = css[marker_at:].strip()
+    end_at = css.find(LIGHT_WORKSPACE_MARKER, marker_at + len(CSS_MARKER))
+    if end_at < 0:
+        end_at = len(css)
+    current = css[marker_at:end_at].strip()
     if current == desired:
         return css
-    return css[:marker_at].rstrip() + "\n\n" + desired + "\n"
+    prefix = css[:marker_at].rstrip()
+    suffix = css[end_at:].lstrip() if end_at < len(css) else ""
+    if suffix:
+        return prefix + "\n\n" + desired + "\n\n" + suffix
+    return prefix + "\n\n" + desired + "\n"
 
 
 def apply_crm_product_system_review() -> int:
