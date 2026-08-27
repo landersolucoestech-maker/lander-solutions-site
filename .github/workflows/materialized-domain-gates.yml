@@ -1,0 +1,125 @@
+name: Materialized Domain Gates
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: materialized-domain-gates
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact dev candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Materialize exact candidate
+        run: python scripts/materialize.py
+
+      - name: Capture immutable bundle hashes
+        run: |
+          echo "MATERIALIZED_APP_SHA=$(sha256sum app.js | awk '{print $1}')" >> "$GITHUB_ENV"
+          echo "MATERIALIZED_CSS_SHA=$(sha256sum assets/valtren-brand.css | awk '{print $1}')" >> "$GITHUB_ENV"
+          node --check app.js
+
+      - name: Gate Dashboard executive architecture
+        run: |
+          node scripts/test_crm_dashboard_ui.js --materialized
+          node scripts/test_crm_dashboard_core.js
+
+      - name: Gate Canonical Parties
+        run: node scripts/test_crm_canonical_parties.js --materialized
+
+      - name: Gate Complete CRM
+        run: node scripts/test_crm_complete.js --materialized
+
+      - name: Gate Complete CRM hardening
+        run: node scripts/test_crm_complete_hardening.js --materialized
+
+      - name: Gate Financial Transactions
+        run: |
+          node scripts/test_crm_financial_transactions.js --materialized
+          node scripts/test_crm_financial_transactions_ui.js --materialized
+
+      - name: Gate Accounting
+        run: |
+          node scripts/test_crm_accounting.js --materialized
+          node scripts/test_crm_accounting_ui.js --materialized
+
+      - name: Gate Fiscal Documents
+        run: |
+          node scripts/test_materialized_admin_compatibility.js scripts/test_crm_fiscal_documents.js --materialized
+          node scripts/test_crm_fiscal_documents_ui.js --materialized
+
+      - name: Gate Cost Allocations
+        run: |
+          node scripts/test_materialized_admin_compatibility.js scripts/test_crm_cost_allocations.js --materialized
+          node scripts/test_crm_cost_allocations_ui.js --materialized
+
+      - name: Gate Legal Contracts
+        run: |
+          node scripts/test_crm_legal_contracts.js --materialized
+          node scripts/test_crm_legal_contracts_ui.js --materialized
+
+      - name: Gate Economic Participations
+        run: |
+          node scripts/test_crm_economic_participations.js --materialized
+          node scripts/test_crm_economic_participations_ui.js --materialized
+
+      - name: Gate Payouts
+        run: |
+          node scripts/test_materialized_admin_compatibility.js scripts/test_crm_payouts.js --materialized
+          node scripts/test_crm_payouts_ui.js --materialized
+
+      - name: Gate Business Catalog
+        run: |
+          node scripts/test_materialized_admin_compatibility.js scripts/test_crm_business.js --materialized
+          node scripts/test_crm_business_ui.js --materialized
+
+      - name: Gate Marketing
+        run: node scripts/test_crm_marketing_module.js --materialized
+
+      - name: Gate Legal Matters
+        run: |
+          node scripts/test_crm_legal_matters.js --materialized
+          node scripts/test_crm_legal_matters_ui.js --materialized
+
+      - name: Gate Compliance
+        run: |
+          node scripts/test_crm_compliance.js --materialized
+          node scripts/test_crm_compliance_ui.js --materialized
+
+      - name: Gate Intellectual Property
+        run: |
+          node scripts/test_crm_intellectual_property.js --materialized
+          node scripts/test_crm_intellectual_property_ui.js --materialized
+
+      - name: Gate Corporate Governance
+        run: |
+          node scripts/test_crm_corporate_governance.js --materialized
+          node scripts/test_crm_corporate_governance_ui.js --materialized
+
+      - name: Gate Product System Review
+        run: node scripts/test_crm_product_system_review.js --materialized
+
+      - name: Gate Sidebar Architecture
+        run: node scripts/test_crm_sidebar_architecture.js --materialized
+
+      - name: Gate canonical routes
+        run: python scripts/test_crm_route_guards.py
+
+      - name: Gate materialized bundle immutability
+        run: |
+          test "$MATERIALIZED_APP_SHA" = "$(sha256sum app.js | awk '{print $1}')"
+          test "$MATERIALIZED_CSS_SHA" = "$(sha256sum assets/valtren-brand.css | awk '{print $1}')"
+          test "$(grep -Ec '^[[:space:]]*function crmRelSidebar\(' app.js)" -eq 1
+          test "$(grep -Ec '^[[:space:]]*function crmDashboardPage\(' app.js)" -eq 1
