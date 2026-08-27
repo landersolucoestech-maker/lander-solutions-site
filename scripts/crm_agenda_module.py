@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 HERE = Path(__file__).resolve().parent
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CACHE_VERSION = "20260826-crm-agenda-events-v3"
+CACHE_VERSION = "20260827-crm-agenda-events-v4"
 
 
 def _parts(prefix: str) -> str:
@@ -55,16 +55,18 @@ def apply_crm_agenda_module() -> int:
         raise RuntimeError("Header compartilhado não oferece o contexto Agenda")
 
     anchor = "  function contactPage(query)"
-    if anchor not in app:
-        raise RuntimeError("Âncora de funções para Agenda não encontrada")
+    if app.count(anchor) != 1:
+        raise RuntimeError(f"Âncora de funções para Agenda divergente: {app.count(anchor)}")
     app = app.replace(anchor, js_block + "\n" + anchor, 1)
 
     route_anchor = "    else if (path === '/crm/relationships') app.innerHTML = crmRelationshipsPage(query);"
     agenda_route = "    else if (path === '/crm/agenda') app.innerHTML = crmAgendaPage(query);"
     if agenda_route not in app:
         count = app.count(route_anchor)
-        if count < 2:
-            raise RuntimeError(f"Rotas do CRM não encontradas nas duas renderizações: {count}")
+        if count < 1:
+            raise RuntimeError("Rota canônica de CRM Relacionamentos não encontrada para registrar Agenda")
+        # O bootstrap atual possui um único renderer canônico. Não duplicamos rotas
+        # artificialmente apenas para satisfazer a arquitetura histórica de dois renderers.
         app = app.replace(route_anchor, route_anchor + "\n" + agenda_route)
 
     APP.write_text(app, encoding="utf-8")
@@ -73,7 +75,7 @@ def apply_crm_agenda_module() -> int:
     css = re.sub(r"\n?/\* VALTREN CRM AGENDA EVENTS \*/.*\Z", "", css, flags=re.S)
     CSS.write_text(css.rstrip() + "\n\n" + css_patch.strip() + "\n", encoding="utf-8")
     _write_cache_version()
-    print("Módulo Agenda & Eventos materializado como consumidor de Header e Sidebar canônicos.")
+    print("Módulo Agenda & Eventos materializado como consumidor de Header e Sidebar canônicos, sem suposição de renderer duplicado.")
     return 1
 
 
