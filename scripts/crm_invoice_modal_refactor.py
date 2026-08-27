@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CACHE_VERSION = "20260825-crm-invoice-modal-refactor-v1"
+CACHE_VERSION = "20260827-crm-invoice-modal-refactor-v2"
 
 INVOICES_PAGE = r'''  function crmRefInvoicesPage(){crmRefEnsureState();const rows=state.crmRefInvoices||[];const actions=`<button type="button" class="primary" data-action="crm-ref-open" data-kind="invoice">${crmRefIcon('plus')} Criar Nota</button>`;const k=`<div class="crm-ref-kpis six">${crmRefKpi('Total',rows.length)}${crmRefKpi('Saídas',0,'','success')}${crmRefKpi('Entradas',0,'','warning')}${crmRefKpi('Valor Saídas',crmRefMoney(0),'','success')}${crmRefKpi('Valor Entradas',crmRefMoney(0),'','warning')}${crmRefKpi('Saldo',crmRefMoney(0))}</div>`;const filters=crmRefToolbar(`<input type="date" placeholder="Data início"><input type="date" placeholder="Data fim"><label class="crm-ref-search">${icon('search',14)}<input placeholder="Buscar por número, cliente ou fornecedor…"></label><select><option>Tipo</option><option>Todas</option><option>Saída</option><option>Entrada</option></select><select><option>Status</option><option>Todos</option><option>Emitida</option><option>Pendente</option><option>Paga</option><option>Cancelada</option></select>`);const table=crmFidelityTable('Lista de Notas Fiscais','Registro de notas de entrada e saída',['','Número','Tipo','Cliente / Fornecedor','Valor','Data Emissão','Status','PDF','Ações'],'Nenhuma nota fiscal cadastrada');return crmFidelityPage('accounting','invoices','Notas Fiscais','Registro e controle de notas fiscais de entrada e saída',actions,`${k}${filters}${table}`);}
 '''
@@ -18,18 +18,18 @@ CSS_PATCH = r'''
 /* VALTREN CRM INVOICE MODAL REFACTOR */
 #crm-ref-invoice-form .crm-ref-modal-body{gap:18px!important}
 #crm-ref-invoice-form .crm-ref-form-section{padding:0!important;background:#fff!important}
-#crm-ref-invoice-form .crm-ref-form-section>h3{font-size:10px!important;color:#0B1D3A!important;letter-spacing:.05em!important}
-#crm-ref-invoice-form .crm-ref-invoice-section-help{margin:0 0 10px;color:#64748B;font-size:9px;line-height:1.45}
+#crm-ref-invoice-form .crm-ref-form-section>h3{font-size:12px!important;color:#0B1D3A!important;letter-spacing:.04em!important}
+#crm-ref-invoice-form .crm-ref-invoice-section-help{margin:0 0 10px;color:#526174;font-size:11px;font-weight:500;line-height:1.45}
 #crm-ref-invoice-form .crm-ref-invoice-operation .crm-ref-choice-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 #crm-ref-invoice-form .crm-ref-invoice-operation .crm-ref-choice-row label{min-height:58px;padding:10px 12px;border:1px solid #D9E0E8;border-radius:9px;background:#fff;display:flex;align-items:center;gap:10px;cursor:pointer;color:#0B1D3A}
 #crm-ref-invoice-form .crm-ref-invoice-operation .crm-ref-choice-row label:has(input:checked){border-color:#D4AF37;box-shadow:0 0 0 2px rgba(212,175,55,.12);background:#FFFDF5}
 #crm-ref-invoice-form .crm-ref-invoice-operation .crm-ref-choice-row label>span{display:grid;gap:3px}
-#crm-ref-invoice-form .crm-ref-invoice-operation .crm-ref-choice-row strong{font-size:10px;color:#0B1D3A}
-#crm-ref-invoice-form .crm-ref-invoice-operation .crm-ref-choice-row small{font-size:8px;color:#64748B}
+#crm-ref-invoice-form .crm-ref-invoice-operation .crm-ref-choice-row strong{font-size:11px;color:#0B1D3A}
+#crm-ref-invoice-form .crm-ref-invoice-operation .crm-ref-choice-row small{font-size:11px;font-weight:500;color:#526174}
 #crm-ref-invoice-form .crm-ref-invoice-tax-block{margin-top:12px;padding:12px;border:1px solid #E2E8F0;border-radius:9px;background:#F8FAFC}
 #crm-ref-invoice-form .crm-ref-invoice-tax-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
-#crm-ref-invoice-form .crm-ref-invoice-tax-title strong{font-size:9px;color:#0B1D3A}
-#crm-ref-invoice-form .crm-ref-invoice-tax-title span{font-size:8px;color:#64748B}
+#crm-ref-invoice-form .crm-ref-invoice-tax-title strong{font-size:11px;color:#0B1D3A}
+#crm-ref-invoice-form .crm-ref-invoice-tax-title span{font-size:11px;font-weight:500;color:#526174}
 #crm-ref-invoice-form .crm-ref-tax-summary{margin-top:12px;border:1px solid #E2E8F0!important;background:#fff!important}
 #crm-ref-invoice-form .crm-ref-tax-summary strong{color:#0B1D3A!important}
 @media(max-width:700px){#crm-ref-invoice-form .crm-ref-invoice-operation .crm-ref-choice-row{grid-template-columns:1fr}}
@@ -72,7 +72,7 @@ def apply_crm_invoice_modal_refactor() -> int:
         text = re.sub(r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?", f"valtren-brand.css?v={CACHE_VERSION}", text)
         path.write_text(text, encoding="utf-8")
 
-    print("Notas Fiscais: criação direta no modal, dropdown removido e modal refatorado.")
+    print("Notas Fiscais: criação direta no modal, dropdown removido e modal refatorado com hierarquia de texto legível.")
     return 1
 
 
