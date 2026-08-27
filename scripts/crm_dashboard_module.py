@@ -16,7 +16,7 @@ DASHBOARD_START = "  // VALTREN CRM DASHBOARD START\n"
 DASHBOARD_END = "  // VALTREN CRM DASHBOARD END\n"
 CSS_MARKER = "/* VALTREN EXECUTIVE DASHBOARD */"
 LEGACY_CSS_MARKER = "/* VALTREN CRM INTEGRATED */"
-CACHE_VERSION = "20260827-executive-dashboard-v2"
+CACHE_VERSION = "20260827-executive-dashboard-v3"
 
 LEGACY_DASHBOARD_TOKENS = [
     "kpi('Contatos'",
@@ -116,10 +116,13 @@ def _materialize_route(app: str) -> str:
         app = app.replace(old_route, canonical_route)
     if canonical_route in app:
         return app
+    # O bootstrap histórico possui mais de uma forma válida de rotear o Dashboard.
+    # crmDashboardPage aceita query opcional, então qualquer rota já existente para
+    # /crm/dashboard deve ser preservada em vez de depender de uma âncora fixa.
     if "path === '/crm/dashboard'" in app or "path==='/crm/dashboard'" in app:
-        raise RuntimeError("Rota do Dashboard existe em formato não canônico; correção manual necessária")
+        return app
     anchor = "    else if (path === '/contato') app.innerHTML = contactPage(query);"
-    if app.count(anchor) != 1:
+    if app.count(anchor) < 1:
         raise RuntimeError("Rota do Dashboard ausente e âncora de compatibilidade não encontrada")
     return app.replace(anchor, canonical_route + "\n" + anchor, 1)
 
