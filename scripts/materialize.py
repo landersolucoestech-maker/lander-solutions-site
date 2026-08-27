@@ -78,9 +78,11 @@ def _apply_valtren_brand() -> bool:
         sweep_identity()
         apply_logo_site_fix()
         refactor_site_architecture()
-        apply_site_storage_runtime()
         center_header_menu()
         apply_services_and_logo_refactor()
+        # Base site persistence is owned after all legacy site refactors have consumed
+        # their historical anchors, so no later site owner can reintroduce direct parsing.
+        apply_site_storage_runtime()
         apply_crm_dashboard()
         apply_crm_relationships()
         apply_crm_header_modal_fix()
