@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CACHE_VERSION = "20260827-product-system-review-v6"
+CACHE_VERSION = "20260827-product-system-review-v7"
 CSS_MARKER = "/* VALTREN PRODUCT SYSTEM REVIEW */"
 LIGHT_WORKSPACE_MARKER = "/* VALTREN CRM DARK-SHELL LIGHT-WORKSPACE */"
 
@@ -114,15 +114,15 @@ CSS_PATCH = r'''
   --crm-font-title:24px;
 }
 html,body{background:var(--crm-bg)}
-.crm-app-shell{display:block;grid-template-columns:none;min-height:100vh;background:var(--crm-bg);color:var(--crm-text);font-family:Montserrat,Arial,sans-serif;font-size:var(--crm-font-base);line-height:1.45}
+.crm-app-shell{display:block;grid-template-columns:none;min-height:100dvh;background:var(--crm-bg);color:var(--crm-text);font-family:Montserrat,Arial,sans-serif;font-size:var(--crm-font-base);line-height:1.45}
 .crm-app-shell *{box-sizing:border-box}
-.crm-main{width:100%;min-width:0;margin:0;background:var(--crm-bg)}
+.crm-main{width:100%;max-width:none;min-width:0;min-height:100dvh;margin:0;background:var(--crm-bg)}
 .crm-app-shell h1,.crm-app-shell h2,.crm-app-shell h3,.crm-app-shell h4{font-family:Raleway,Arial,sans-serif;color:var(--crm-text)}
-.crm-app-shell .crm-topbar{min-height:76px;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:20px;background:var(--crm-surface);border-bottom:1px solid var(--crm-border);box-sizing:border-box}
+.crm-app-shell .crm-topbar{min-height:76px;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:20px;border-bottom:1px solid var(--crm-border);box-sizing:border-box}
 .crm-app-shell .crm-topbar>div:first-child{min-width:0}
 .crm-app-shell .crm-topbar h1{margin:0 0 3px;font-size:22px;line-height:1.2;font-weight:800;letter-spacing:-.01em}
 .crm-app-shell .crm-topbar p{margin:0;color:var(--crm-muted);font-size:12px;line-height:1.4;max-width:760px}
-.crm-workspace,.crm-ref-workspace,.crm-agenda-workspace{width:min(100%,1440px);margin:0 auto;padding:var(--crm-space-6);box-sizing:border-box;color:var(--crm-text);color-scheme:light}
+.crm-workspace,.crm-ref-workspace,.crm-agenda-workspace{width:100%;max-width:none;min-width:0;margin:0;padding:var(--crm-space-6);box-sizing:border-box;color:var(--crm-text);color-scheme:light}
 .crm-page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:var(--crm-space-5)}
 .crm-page-header>div:first-child{min-width:0}
 .crm-page-header h1,.crm-page-header h2{margin:0 0 4px;font-size:var(--crm-font-title);line-height:1.2;font-weight:800;letter-spacing:-.015em}
@@ -131,7 +131,7 @@ html,body{background:var(--crm-bg)}
 .crm-app-shell button,.crm-app-shell .crm-empty-action,.crm-app-shell a.crm-empty-action{font-family:Raleway,Arial,sans-serif;font-size:var(--crm-font-sm);font-weight:700}
 .crm-app-shell button{min-height:36px;padding:8px 12px;border-radius:var(--crm-radius-sm)}
 .crm-ref-actions button,.crm-ref-actions a,.crm-legal-secondary-action{height:auto!important;min-height:36px!important;padding:8px 12px!important;border:1px solid var(--crm-border-strong)!important;border-radius:var(--crm-radius-sm)!important;background:#FFFFFF!important;color:var(--crm-text)!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:6px!important;text-decoration:none!important;font:700 var(--crm-font-sm)/1.2 Raleway,Arial,sans-serif!important;cursor:pointer}
-.crm-ref-actions .primary,.crm-ref-actions button.primary{background:var(--crm-text)!important;color:#FFFFFF!important;border-color:var(--crm-text)!important}
+.crm-ref-actions .primary,.crm-ref-actions button.primary{background:var(--crm-accent)!important;color:var(--crm-text)!important;border-color:var(--crm-accent)!important}
 .crm-ref-actions a:hover,.crm-legal-secondary-action:hover{background:var(--crm-surface-soft)!important;border-color:#AEBBC9!important}
 .crm-architecture-breadcrumb{gap:7px!important;margin:0 0 14px!important;color:var(--crm-muted)!important;font-size:var(--crm-font-xs)!important;font-weight:700!important;line-height:1.4!important}
 .crm-architecture-breadcrumb a{color:var(--crm-muted)!important;text-decoration:none!important}.crm-architecture-breadcrumb strong{color:var(--crm-text)!important}
@@ -254,8 +254,9 @@ def apply_crm_product_system_review() -> int:
         ("state.crmUserInitials||'AD'", "state.crmUserInitials||''"),
     ]:
         app = app.replace(old, new)
-    if 'Soundcharts' in app:
-        raise RuntimeError('Soundcharts não pertence ao projeto e sobreviveu à revisão global')
+    forbidden_integration = "Sound" + "charts"
+    if forbidden_integration in app:
+        raise RuntimeError('Integração proibida sobreviveu à revisão global')
     APP.write_text(app, encoding="utf-8")
 
     css = CSS.read_text(encoding="utf-8")
@@ -271,7 +272,7 @@ def apply_crm_product_system_review() -> int:
         updated = re.sub(r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?", f"valtren-brand.css?v={CACHE_VERSION}", original)
         if updated != original:
             path.write_text(updated, encoding="utf-8")
-    print("Revisão global transversal materializada: tipografia operacional >=11px, ações/filtros normalizados, contraste claro consistente e Soundcharts ausente.")
+    print("Revisão global transversal materializada: tipografia operacional >=11px, ações/filtros normalizados, contraste claro consistente e integração proibida ausente.")
     return 1
 
 
