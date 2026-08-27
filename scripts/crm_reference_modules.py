@@ -7,7 +7,7 @@ HERE=Path(__file__).resolve().parent
 APP=ROOT/'app.js'
 CSS=ROOT/'assets'/'valtren-brand.css'
 CONSISTENCY_CSS=HERE/'crm_reference_modules_consistency.css'
-CACHE_VERSION='20260826-crm-reference-modules-v5'
+CACHE_VERSION='20260827-crm-reference-modules-v6'
 CSS_MARKER='/* VALTREN CRM REFERENCE MODULES */'
 
 
@@ -85,15 +85,19 @@ def apply_crm_reference_modules()->int:
         raise RuntimeError('Dashboard não consome crmRelSidebar compartilhado')
 
     anchor='  function contactPage(query)'
-    if anchor not in app:
-        raise RuntimeError('âncora contactPage ausente')
+    if app.count(anchor)!=1:
+        raise RuntimeError(f'âncora contactPage divergente: {app.count(anchor)}')
     app=app.replace(anchor,js_block+'\n'+anchor,1)
 
     route_anchor="    else if (path === '/crm/agenda') app.innerHTML = crmAgendaPage(query);"
     route_line="    else if (path.startsWith('/crm/financeiro') || path.startsWith('/crm/marketing') || path === '/crm/musicchat' || path === '/crm/relatorios' || path.startsWith('/crm/configuracoes')) app.innerHTML = crmReferenceRoute(path);"
-    if app.count(route_anchor)<2:
-        raise RuntimeError('rotas base do CRM incompletas')
-    app=app.replace(route_anchor,route_anchor+'\n'+route_line)
+    if route_line not in app:
+        count=app.count(route_anchor)
+        if count<1:
+            raise RuntimeError('rota canônica da Agenda ausente para registrar Reference Modules')
+        # O runtime atual possui um renderer canônico. Não exigir ou recriar a
+        # topologia histórica de duas renderizações apenas para registrar rotas.
+        app=app.replace(route_anchor,route_anchor+'\n'+route_line)
     APP.write_text(app,encoding='utf-8')
 
     css=CSS.read_text(encoding='utf-8')
@@ -110,7 +114,7 @@ def apply_crm_reference_modules()->int:
         t=re.sub(r'valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?',f'valtren-brand.css?v={CACHE_VERSION}',t)
         p.write_text(t,encoding='utf-8')
 
-    print('Módulos de referência materializados como consumers da navegação canônica; primitives visuais normalizados e CSS estrutural da sidebar ausente neste owner.')
+    print('Módulos de referência materializados como consumers da navegação canônica e do renderer único; primitives visuais normalizados e CSS estrutural da sidebar ausente neste owner.')
     return 1
 
 
