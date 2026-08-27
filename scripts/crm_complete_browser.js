@@ -9,6 +9,11 @@ function crmFullStoredObject(key,label){
   try{const parsed=JSON.parse(saved);if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw new TypeError(`${label} deve possuir raiz Object`);return parsed;}
   catch(error){console.warn(`CRM: ${label} local não pôde ser restaurado.`,error);return null;}
 }
+function crmFullStoredObject(key,label){
+  const saved=localStorage.getItem(key);if(!saved)return null;
+  try{const parsed=JSON.parse(saved);if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw new TypeError(`${label} deve possuir raiz Object`);return parsed;}
+  catch(error){console.warn(`CRM: ${label} local não pôde ser restaurado.`,error);return null;}
+}
 function crmFullRestorePersistence(){
   if(state.__crmFullPersistenceRestored)return;
   state.__crmFullPersistenceRestored=true;
