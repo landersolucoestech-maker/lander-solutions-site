@@ -113,6 +113,9 @@ def _account_contract(base_url: str, output_dir: Path) -> tuple[list[dict], list
             base.set_viewport(driver, width)
             driver.get(base.normalize_url(base_url, "#/crm/dashboard"))
             base.wait_ready(driver)
+            # Reusing the exact same hash URL can preserve the current <details>
+            # state between viewport iterations. The contract always starts closed.
+            driver.execute_script("document.querySelector('.crm-account-menu')?.removeAttribute('open')")
             closed = driver.execute_script(r"""
               const menu=document.querySelector('.crm-account-menu');
               const summary=menu?.querySelector(':scope>summary');
