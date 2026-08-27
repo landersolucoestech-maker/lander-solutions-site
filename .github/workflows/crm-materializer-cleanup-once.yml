@@ -1,4 +1,5 @@
 name: CRM Materializer Cleanup Once
+# trigger
 
 on:
   push:
@@ -22,16 +23,8 @@ jobs:
           from pathlib import Path
           p=Path('scripts/crm_complete_module.py')
           s=p.read_text(encoding='utf-8')
-          old='''    # Authentication is intentionally disabled. Do not manufacture a current user
-              # for responsible/owner selectors; only real locally registered users are valid.
-              fake_current_user = "add(state.crmUserId||state.crmUserName||'current',state.crmUserName||'Administrador');"
-              real_current_user = "if(state.crmUserId&&state.crmUserName)add(state.crmUserId,state.crmUserName);"
-              if fake_current_user not in browser:
-                  raise RuntimeError("CRM completo: fallback fictício de usuário não encontrado no owner de origem")
-              browser = browser.replace(fake_current_user, real_current_user, 1)
-          '''
-          # YAML block indentation leaves exactly four Python spaces before source comments.
-          old=old.replace('              ','    ')
+          start=s.index('    # Authentication is intentionally disabled. Do not manufacture a current user')
+          end=s.index('    # CRM route composition is owned here:',start)
           new='''    # Authentication is intentionally disabled. The source owner must already avoid
               # manufacturing an identity; materialization verifies that contract instead of patching it.
               fake_current_user = "add(state.crmUserId||state.crmUserName||'current',state.crmUserName||'Administrador');"
@@ -40,10 +33,9 @@ jobs:
                   raise RuntimeError("CRM completo: owner de origem ainda fabrica usuário atual")
               if real_current_user not in browser:
                   raise RuntimeError("CRM completo: owner de origem não possui seleção de identidade real")
-          '''.replace('              ','    ')
-          if old not in s:
-              raise SystemExit('materializer fake-user block not found')
-          s=s.replace(old,new,1)
+
+'''.replace('              ','    ')
+          s=s[:start]+new+s[end:]
           p.write_text(s,encoding='utf-8')
           PY
       - name: Assert source-owned identity contract
