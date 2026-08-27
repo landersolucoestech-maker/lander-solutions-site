@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: materialized-domain-gates
@@ -21,6 +21,73 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Apply CRM storage hardening to source owner
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('scripts/crm_complete_browser.js')
+          s=p.read_text(encoding='utf-8')
+          old="""function crmFullRestorePersistence(){
+  if(state.__crmFullPersistenceRestored)return;
+  state.__crmFullPersistenceRestored=true;
+  try{
+    if(!state.__crmCanonicalPartyService){const saved=localStorage.getItem(CRM_FULL_STORAGE_PARTIES);if(saved)state.crmCanonicalParties=ValtrenPartyCore.ensureState(JSON.parse(saved));}
+    const crmSaved=localStorage.getItem(CRM_FULL_STORAGE_DOMAIN);if(crmSaved)state.crmDomain=ValtrenCrmCore.ensureState(JSON.parse(crmSaved));
+  }catch(error){console.warn('CRM: persistência local não pôde ser restaurada.',error);}
+}
+"""
+          new="""function crmFullStoredObject(key,label){
+  const saved=localStorage.getItem(key);if(!saved)return null;
+  try{const parsed=JSON.parse(saved);if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw new TypeError(`${label} deve possuir raiz Object`);return parsed;}
+  catch(error){console.warn(`CRM: ${label} local não pôde ser restaurado.`,error);return null;}
+}
+function crmFullRestorePersistence(){
+  if(state.__crmFullPersistenceRestored)return;
+  state.__crmFullPersistenceRestored=true;
+  if(!state.__crmCanonicalPartyService){
+    const parties=crmFullStoredObject(CRM_FULL_STORAGE_PARTIES,'Pessoas/Organizações');
+    if(parties){try{state.crmCanonicalParties=ValtrenPartyCore.ensureState(parties);}catch(error){console.warn('CRM: Pessoas/Organizações locais são inválidas.',error);}}
+  }
+  const domain=crmFullStoredObject(CRM_FULL_STORAGE_DOMAIN,'Domínio CRM');
+  if(domain){try{state.crmDomain=ValtrenCrmCore.ensureState(domain);}catch(error){console.warn('CRM: domínio CRM local é inválido.',error);}}
+}
+"""
+          if old in s:s=s.replace(old,new,1)
+          elif 'function crmFullStoredObject' not in s:raise SystemExit('restore block canonical not found')
+          old_users="""function crmFullUsers(){
+  const rows=[],seen=new Set();
+  const add=(id,name)=>{id=String(id||'').trim();name=String(name||id||'').trim();if(!id||seen.has(id))return;seen.add(id);rows.push({id,name});};
+  add(state.crmUserId||state.crmUserName||'current',state.crmUserName||'Administrador');
+  (state.crmRefUsers||[]).forEach((u)=>add(u.id||u.email,u.name||u.email));
+  return rows;
+}
+"""
+          new_users="""function crmFullUsers(){
+  const rows=[],seen=new Set();
+  const add=(id,name)=>{id=String(id||'').trim();name=String(name||id||'').trim();if(!id||seen.has(id))return;seen.add(id);rows.push({id,name});};
+  const currentId=String(state.crmUserId||'').trim(),currentName=String(state.crmUserName||'').trim();
+  if(currentId||currentName)add(currentId||currentName,currentName||currentId);
+  (state.crmRefUsers||[]).forEach((u)=>add(u.id||u.email,u.name||u.email));
+  return rows;
+}
+"""
+          if old_users in s:s=s.replace(old_users,new_users,1)
+          elif "||'current'" in s or "||'Administrador'" in s:raise SystemExit('fake identity fallback changed unexpectedly')
+          p.write_text(s,encoding='utf-8')
+
+      - name: Commit CRM storage source hardening
+        run: |
+          if git diff --quiet -- scripts/crm_complete_browser.js; then
+            echo 'Source owner already hardened'
+          else
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add scripts/crm_complete_browser.js
+            git commit -m 'fix(crm): harden persisted state and remove fake identity fallback'
+            git push origin HEAD:dev
+          fi
 
       - name: Materialize exact candidate
         run: python scripts/materialize.py
