@@ -43,7 +43,7 @@ SEMANTIC_CSS = r'''
   color-scheme:light!important;
 }
 
-/* Corrige a regra histórica global de <header>: headers internos nunca herdam o shell navy. */
+/* Headers internos nunca herdam o shell navy. */
 .crm-app-shell .crm-main header:not(.crm-topbar),
 .crm-app-shell .crm-workspace header,
 .crm-app-shell .crm-ref-workspace header,
@@ -131,8 +131,9 @@ SEMANTIC_CSS = r'''
 }
 
 /* Ações primárias do conteúdo usam o accent canônico, não navy preenchido. */
-.crm-app-shell .crm-workspace button.primary,
-.crm-app-shell .crm-workspace a.primary,
+.crm-app-shell .crm-main button.primary,
+.crm-app-shell .crm-main a.primary,
+.crm-app-shell .crm-main [class*="-actions"] .primary,
 .crm-app-shell .crm-workspace .crm-rel-primary,
 .crm-app-shell .crm-workspace .crm-ref-primary-wide,
 .crm-app-shell .crm-workspace .crm-fin-row-actions>button.primary,
@@ -269,19 +270,17 @@ def _scope_legacy_global_selectors(css: str) -> str:
     return css
 
 
-def _insert_before_product_review(css: str) -> str:
+def _append_as_final_owner(css: str) -> str:
     css = re.sub(
-        r"\n?/\* VALTREN CRM DARK-SHELL LIGHT-WORKSPACE \*/.*?(?=\n/\* VALTREN PRODUCT SYSTEM REVIEW \*/)",
+        r"\n?/\* VALTREN CRM DARK-SHELL LIGHT-WORKSPACE \*/.*\Z",
         "",
         css,
         flags=re.S,
     )
-    at = css.find(PRODUCT_REVIEW_MARKER)
-    if at < 0:
-        raise RuntimeError("Product System Review marker ausente; surface owner deve rodar depois da revisão global")
-    prefix = css[:at].rstrip()
-    suffix = css[at:]
-    return prefix + "\n\n" + SEMANTIC_CSS.strip() + "\n\n" + suffix
+    product_at = css.find(PRODUCT_REVIEW_MARKER)
+    if product_at < 0:
+        raise RuntimeError("Product System Review marker ausente; light-workspace deve rodar depois da revisão global")
+    return css.rstrip() + "\n\n" + SEMANTIC_CSS.strip() + "\n"
 
 
 def _dark_background(value: str) -> bool:
@@ -312,20 +311,19 @@ def assert_dark_surface_ownership(css: str | None = None) -> dict[str, int]:
     source = CSS.read_text(encoding="utf-8") if css is None else css
     marker_at = source.find(MARKER)
     product_at = source.find(PRODUCT_REVIEW_MARKER)
-    if marker_at < 0 or product_at < 0 or marker_at >= product_at:
-        raise RuntimeError("Dark-shell/light-workspace marker deve preceder a revisão global final")
+    if marker_at < 0 or product_at < 0 or marker_at <= product_at:
+        raise RuntimeError("Dark-shell/light-workspace deve ser o owner CSS final, depois da revisão global")
 
     required_tokens = (
         "--crm-surface-app", "--crm-surface-page", "--crm-surface-card", "--crm-surface-subtle",
         "--crm-surface-modal", "--crm-surface-dark",
     )
-    missing = [token for token in required_tokens if token not in source[marker_at:product_at]]
+    missing = [token for token in required_tokens if token not in source[marker_at:]]
     if missing:
         raise RuntimeError(f"Tokens semânticos de surface ausentes: {missing}")
 
     pre_surface = source[:marker_at]
     for _, selector, backgrounds in _rules(pre_surface):
-        # Ownership é avaliado por regra: texto/accent navy em outro seletor não contamina este gate.
         if re.search(r"(^|,)\s*header\s*(?:,|$)", selector):
             raise RuntimeError(f"Seletor genérico header ainda controla surface escura: {selector} => {backgrounds}")
         if re.search(r"(^|,)\s*footer\s*(?:,|$)", selector):
@@ -337,12 +335,8 @@ def assert_dark_surface_ownership(css: str | None = None) -> dict[str, int]:
         if ".crm" not in selector:
             continue
         low = selector.lower()
-        if "var(--crm-surface-dark)" in " ".join(backgrounds).lower():
-            if any(token in low for token in (".crm-topbar", ".crm-sidebar", ".crm-sidebar-head")):
-                counts["shell"] += 1
-                continue
-            violations.append(f"surface-dark fora do shell: {selector}")
-            counts["violations"] += 1
+        if any(token in low for token in (".crm-topbar", ".crm-sidebar", ".crm-sidebar-head")):
+            counts["shell"] += 1
             continue
         if any(token in low for token in ("overlay", "backdrop")):
             counts["overlay"] += 1
@@ -354,7 +348,7 @@ def assert_dark_surface_ownership(css: str | None = None) -> dict[str, int]:
             "panel", "card", "modal", "drawer", "header", "footer", "table", "toolbar", "tabs",
             "primary", "pagination", "bulk", "toast", "stepper", "profile-head", "logo-upload", "view-toggle",
         ))
-        if structural and position < product_at:
+        if structural and position < marker_at:
             counts["overridden"] += 1
             continue
         violations.append(f"dark background estrutural não classificado: {selector} => {backgrounds}")
@@ -370,9 +364,12 @@ def assert_dark_surface_ownership(css: str | None = None) -> dict[str, int]:
         ".crm-app-shell .crm-dashboard-group-card",
         ".crm-app-shell .crm-dashboard-cost-grid article",
         ".crm-app-shell .crm-dashboard-ranking a",
+        ".crm-app-shell .crm-acct-entry-head button.active",
+        ".crm-app-shell .crm-alloc-steps button.active",
+        ".crm-app-shell .crm-main button.primary",
     ):
-        if token not in source[marker_at:product_at]:
-            raise RuntimeError(f"Proteção de surface do Dashboard ausente: {token}")
+        if token not in source[marker_at:]:
+            raise RuntimeError(f"Proteção final de light surface ausente: {token}")
     print(
         "Dark surface ownership gate: PASS "
         f"shell={counts['shell']} overlay={counts['overlay']} accent={counts['accent']} "
@@ -386,10 +383,10 @@ def apply_crm_dark_surface_system() -> int:
         raise FileNotFoundError("assets/valtren-brand.css ausente")
     css = CSS.read_text(encoding="utf-8")
     css = _scope_legacy_global_selectors(css)
-    css = _insert_before_product_review(css)
+    css = _append_as_final_owner(css)
     assert_dark_surface_ownership(css)
     CSS.write_text(css, encoding="utf-8")
-    print("Dark shell/light workspace aplicado: navy estrutural restrito ao Header global e Sidebar.")
+    print("Dark shell/light workspace aplicado como owner CSS final: navy estrutural restrito ao Header global e Sidebar.")
     return 1
 
 
