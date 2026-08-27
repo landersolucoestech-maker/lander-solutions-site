@@ -9,6 +9,7 @@ from pathlib import Path
 import crm_dashboard_module as dashboard
 import crm_product_system_review as review
 import crm_sidebar_architecture as sidebar
+from crm_dark_surface_system import apply_crm_dark_surface_system
 
 
 def _assert_js_syntax(source: str, stage: str) -> None:
@@ -140,7 +141,9 @@ def apply_crm_product_system_review() -> int:
         if updated != original:
             path.write_text(updated, encoding="utf-8")
 
-    print("Revisão global materializada com validação sintática incremental, Dashboard sob owner canônico e Soundcharts ausente.")
+    apply_crm_dark_surface_system()
+
+    print("Revisão global materializada com validação sintática incremental, Dashboard sob owner canônico, Soundcharts ausente e dark shell restrito ao Header/Sidebar.")
     return 1
 
 
