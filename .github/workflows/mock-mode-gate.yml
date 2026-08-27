@@ -1,0 +1,42 @@
+name: Mock Mode Gate
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mock-mode:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact dev SHA
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Materialize exact candidate
+        run: python scripts/materialize.py
+
+      - name: Install browser dependency
+        run: python -m pip install --disable-pip-version-check selenium
+
+      - name: Serve exact materialization
+        run: |
+          python -m http.server 4173 >mock-server.log 2>&1 &
+          echo $! > /tmp/mock-server.pid
+
+      - name: Certify Mock Mode bootstrap and reconciliation
+        run: python scripts/certify_mock_mode.py --base-url http://127.0.0.1:4173 --output-dir mock-certification
+
+      - name: Upload Mock Mode evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mock-mode-certification-${{ github.sha }}
+          path: |
+            mock-certification
+            mock-server.log
+          if-no-files-found: warn
