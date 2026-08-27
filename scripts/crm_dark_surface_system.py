@@ -67,20 +67,25 @@ SEMANTIC_CSS = r'''
   color-scheme:light!important;
 }
 
-/* Account Menu pertence ao shell escuro: sem card branco no trigger fechado. */
+/* Triggers do Header pertencem ao shell escuro; seus popovers continuam claros. */
 .crm-app-shell .crm-topbar .crm-account-menu,
-.crm-app-shell .crm-topbar .crm-account-menu>summary{
+.crm-app-shell .crm-topbar .crm-account-menu>summary,
+.crm-app-shell .crm-topbar .crm-notification-menu,
+.crm-app-shell .crm-topbar .crm-notification-menu>summary{
   background:transparent!important;
   background-color:transparent!important;
   color:#FFFFFF!important;
   color-scheme:dark!important;
 }
-.crm-app-shell .crm-topbar .crm-account-menu>summary{
+.crm-app-shell .crm-topbar .crm-account-menu>summary,
+.crm-app-shell .crm-topbar .crm-notification-menu>summary{
   border-color:rgba(212,175,55,.62)!important;
   box-shadow:none!important;
 }
 .crm-app-shell .crm-topbar .crm-account-menu>summary:hover,
-.crm-app-shell .crm-topbar .crm-account-menu[open]>summary{
+.crm-app-shell .crm-topbar .crm-account-menu[open]>summary,
+.crm-app-shell .crm-topbar .crm-notification-menu>summary:hover,
+.crm-app-shell .crm-topbar .crm-notification-menu[open]>summary{
   background:rgba(212,175,55,.10)!important;
   background-color:rgba(212,175,55,.10)!important;
   border-color:#D4AF37!important;
@@ -88,7 +93,8 @@ SEMANTIC_CSS = r'''
 .crm-app-shell .crm-topbar .crm-account-copy strong{color:#FFFFFF!important;}
 .crm-app-shell .crm-topbar .crm-account-copy small,
 .crm-app-shell .crm-topbar .crm-account-chevron,
-.crm-app-shell .crm-topbar .crm-account-icon{color:#D4AF37!important;}
+.crm-app-shell .crm-topbar .crm-account-icon,
+.crm-app-shell .crm-topbar .crm-notification-icon{color:#D4AF37!important;}
 
 /* Headers internos nunca herdam o shell navy. */
 .crm-app-shell .crm-main header:not(.crm-topbar),
@@ -209,14 +215,14 @@ SEMANTIC_CSS = r'''
   border-color:#D9E1E9!important;
 }
 
-/* Controles e menus dentro do workspace ficam claros. Account Menu (trigger e popover) pertence exclusivamente ao owner do Header. */
+/* Controles e menus do workspace ficam claros. Triggers do Header são explicitamente excluídos deste owner transversal. */
 .crm-app-shell .crm-main input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 .crm-app-shell .crm-main select,
 .crm-app-shell .crm-main textarea,
 .crm-app-shell .crm-main [class*="popover"]:not(.crm-account-popover),
 .crm-app-shell .crm-main [class*="dropdown"]:not(.crm-nav-dropdown),
 .crm-app-shell .crm-main [class$="-more"]>div,
-.crm-app-shell .crm-main [class$="-menu"]:not(.crm-nav):not(.crm-sidebar):not(.crm-account-menu){
+.crm-app-shell .crm-main [class$="-menu"]:not(.crm-nav):not(.crm-sidebar):not(.crm-account-menu):not(.crm-notification-menu){
   background-color:#FFFFFF!important;
   color:#0B1D3A!important;
   border-color:#D9E1E9!important;
@@ -415,6 +421,8 @@ def assert_dark_surface_ownership(css: str | None = None) -> dict[str, int]:
         ".crm-app-shell .crm-alloc-steps button.active",
         ".crm-app-shell .crm-main button.primary",
         ".crm-app-shell .crm-main [class*=\"popover\"]:not(.crm-account-popover)",
+        ".crm-app-shell .crm-main [class$=\"-menu\"]:not(.crm-nav):not(.crm-sidebar):not(.crm-account-menu):not(.crm-notification-menu)",
+        ".crm-app-shell .crm-topbar .crm-notification-menu>summary",
     ):
         if token not in source[marker_at:]:
             raise RuntimeError(f"Proteção final de light surface ausente: {token}")
@@ -434,7 +442,7 @@ def apply_crm_dark_surface_system() -> int:
     css = _append_as_final_owner(css)
     assert_dark_surface_ownership(css)
     CSS.write_text(css, encoding="utf-8")
-    print("Dark shell/light workspace aplicado como owner CSS final: navy estrutural restrito ao Header global e Sidebar; Account Menu isolado do owner de workspace; conteúdo ocupa 100% da área útil.")
+    print("Dark shell/light workspace aplicado como owner CSS final: navy estrutural restrito ao Header global e Sidebar; Account Menu e trigger de Notificações isolados do owner transversal de workspace; conteúdo ocupa 100% da área útil.")
     return 1
 
 
