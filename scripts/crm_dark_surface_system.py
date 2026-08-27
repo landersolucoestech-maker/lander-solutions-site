@@ -109,7 +109,7 @@ SEMANTIC_CSS = r'''
 .crm-app-shell .crm-main header:not(.crm-topbar) p,
 .crm-app-shell .crm-main header:not(.crm-topbar) small,
 .crm-app-shell .crm-main header:not(.crm-topbar) span:not(.crm-ref-badge):not([class*="status"]){
-  color:#5F6F82!important;
+  color:var(--crm-muted,#475569)!important;
 }
 
 /* Cards, painéis, KPIs e containers analíticos permanecem claros. */
@@ -148,7 +148,7 @@ SEMANTIC_CSS = r'''
 .crm-app-shell .crm-main thead th{
   background:var(--crm-surface-subtle)!important;
   background-color:var(--crm-surface-subtle)!important;
-  color:#5F6F82!important;
+  color:var(--crm-muted,#475569)!important;
   border-color:#E2E8F0!important;
 }
 .crm-app-shell .crm-main tbody tr:hover td{
