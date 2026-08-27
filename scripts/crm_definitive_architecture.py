@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CACHE_VERSION = "20260825-crm-definitive-architecture-v5"
+CACHE_VERSION = "20260827-crm-definitive-architecture-v6"
 
 JS_BLOCK = r'''  // VALTREN CRM DEFINITIVE ARCHITECTURE START
   function crmArchitecturePlaceholderPage(active,sub,title,description='Estrutura do módulo preparada para a próxima etapa de implementação.'){
@@ -43,7 +43,7 @@ JS_BLOCK = r'''  // VALTREN CRM DEFINITIVE ARCHITECTURE START
   }
 
   function crmSettingsIntegrationsBody(){
-    const integrations=['Soundcharts','Meta','Google Ads','TikTok Ads','YouTube Ads','Spotify Ads'];
+    const integrations=['Meta','Google Ads','TikTok Ads','YouTube Ads','Spotify Ads'];
     const cards=integrations.map(x=>`<article><strong>${x}</strong><span class="crm-ref-badge">Não conectado</span><small>Conexão ainda não validada</small><button>Configurar</button></article>`).join('');
     return `${crmFidelityPanel('Integrações','Conecte e configure integrações externas do Sistema Interno.',`<div class="crm-ref-integration-grid">${cards}</div>`)}${crmFidelityPanel('Distribuidoras','Conecte contas de distribuidoras quando aplicável.',crmRefEmpty('Nenhuma distribuidora conectada'))}`;
   }
@@ -255,6 +255,8 @@ def apply_crm_definitive_architecture() -> int:
 
     if "function crmRelSidebar" in JS_BLOCK:
         raise RuntimeError("Arquitetura definitiva não pode emitir crmRelSidebar; o owner é crm_sidebar_architecture.py")
+    if "Soundcharts" in JS_BLOCK:
+        raise RuntimeError("Soundcharts não pertence à arquitetura do projeto")
 
     settings_source = JS_BLOCK.split("  function crmCanonicalSettingsPage", 1)[1].split("  function crmCanonicalProfilePage", 1)[0]
     expected_tabs = ["['empresa','Empresa']", "['notificacoes','Notificações']", "['seguranca','Segurança']", "['integracoes','Integrações']", "['auditoria','Auditoria']", "['usuarios','Usuários']"]
@@ -301,7 +303,7 @@ def apply_crm_definitive_architecture() -> int:
         text = re.sub(r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?", f"valtren-brand.css?v={CACHE_VERSION}", text)
         path.write_text(text, encoding="utf-8")
 
-    print("Arquitetura de rotas e Configurações materializada sem ownership de Sidebar; Meu Perfil preservado no menu da conta.")
+    print("Arquitetura de rotas e Configurações materializada sem ownership de Sidebar; Soundcharts removido; Meu Perfil preservado no menu da conta.")
     return 1
 
 
