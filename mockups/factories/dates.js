@@ -1,0 +1,1 @@
+function crmMockDates(base=CRM_MOCK_BASE_DATE){const origin=new Date(`${base}T12:00:00.000Z`);let tick=0;const iso=(days=0,hours=0)=>{const d=new Date(origin);d.setUTCDate(d.getUTCDate()+days);d.setUTCHours(d.getUTCHours()+hours);return d.toISOString();};return {date:(days=0)=>iso(days).slice(0,10),time:(days=0,hours=0)=>iso(days,hours),now:()=>iso(0,tick++/60)};}
