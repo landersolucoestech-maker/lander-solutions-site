@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CSS_VERSION = "20260827-crm-global-header-v8"
+CSS_VERSION = "20260827-crm-global-header-v9"
 JS_START = "  // VALTREN CRM GLOBAL HEADER START\n"
 JS_END = "  // VALTREN CRM GLOBAL HEADER END\n"
 DASHBOARD_START = "  // VALTREN CRM DASHBOARD START\n"
@@ -17,6 +17,10 @@ CSS_MARKER = "/* VALTREN CRM GLOBAL HEADER */"
 HELPERS = r'''  // VALTREN CRM GLOBAL HEADER START
   function crmHeaderNotificationItems(){
     return Array.isArray(state.crmNotifications) ? state.crmNotifications : [];
+  }
+
+  function crmHeaderBellIcon(){
+    return `<svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg>`;
   }
 
   function crmHeaderNotificationHref(item){
@@ -41,7 +45,7 @@ HELPERS = r'''  // VALTREN CRM GLOBAL HEADER START
       ? `<div class="crm-notification-list">${items.map(crmHeaderNotificationItem).join('')}</div>`
       : `<div class="crm-notification-empty"><strong>Nenhuma notificação</strong><p>Novos avisos locais aparecerão aqui quando houver uma fonte configurada.</p></div>`;
     return `<details class="crm-notification-menu">
-      <summary aria-label="Notificações" aria-haspopup="menu" aria-expanded="false"><span class="crm-notification-icon" aria-hidden="true">${icon('bell',17)}</span>${unread?`<span class="crm-notification-badge" aria-label="${unread} notificação${unread===1?'':'ões'} não lida${unread===1?'':'s'}">${unread>99?'99+':unread}</span>`:''}</summary>
+      <summary aria-label="Notificações" aria-haspopup="menu" aria-expanded="false"><span class="crm-notification-icon" aria-hidden="true">${crmHeaderBellIcon()}</span>${unread?`<span class="crm-notification-badge" aria-label="${unread} notificação${unread===1?'':'ões'} não lida${unread===1?'':'s'}">${unread>99?'99+':unread}</span>`:''}</summary>
       <div class="crm-notification-popover" role="menu" aria-label="Notificações recentes"><header><strong>Notificações</strong>${unread?`<button type="button" data-action="crm-notification-mark-all-read">Marcar todas como lidas</button>`:''}</header>${body}</div>
     </details>`;
   }
@@ -49,7 +53,7 @@ HELPERS = r'''  // VALTREN CRM GLOBAL HEADER START
   function crmHeaderCreateAction(context=''){
     if(context==='contacts')return `<button class="crm-header-create crm-header-create-contact" type="button" aria-label="Novo Contato" data-action="crm-full-create" data-kind="contact">${icon('plus',15)}<span>Novo Contato</span></button>`;
     if(context==='leads')return `<button class="crm-header-create crm-header-create-lead" type="button" aria-label="Novo Lead" data-action="crm-full-create" data-kind="lead">${icon('plus',15)}<span>Novo Lead</span></button>`;
-    if(context==='agenda')return `<button class="crm-header-create crm-header-create-agenda" type="button" aria-label="Novo Evento" data-action="crm-agenda-create">${icon('plus',15)}<span>Novo Evento</span></button>`;
+    if(context === 'agenda')return `<button class="crm-header-create crm-header-create-agenda" type="button" aria-label="Novo Evento" data-action="crm-agenda-create">${icon('plus',15)}<span>Novo Evento</span></button>`;
     return '';
   }
 
@@ -129,6 +133,7 @@ CSS_PATCH = r'''
 .crm-mobile-nav-toggle{display:none;border:1px solid rgba(255,255,255,.24);background:transparent;color:#fff}
 .crm-header-create:focus-visible,.crm-mobile-nav-toggle:focus-visible,.crm-notification-menu>summary:focus-visible,.crm-notification-popover button:focus-visible,.crm-notification-popover a:focus-visible,.crm-account-menu>summary:focus-visible,.crm-account-popover a:focus-visible{outline:2px solid #D4AF37;outline-offset:2px}
 .crm-notification-menu,.crm-account-menu{position:relative;min-width:0}
+.crm-app-shell .crm-main .crm-topbar .crm-header-actions .crm-notification-menu{background:transparent!important;background-color:transparent!important;color:#FFFFFF!important;color-scheme:dark!important;border-color:transparent!important;box-shadow:none!important}
 .crm-notification-menu>summary,.crm-account-menu>summary{list-style:none;min-height:44px;display:flex;align-items:center;justify-content:center;gap:10px;border:1px solid rgba(212,175,55,.62);border-radius:12px;background:transparent;color:#FFFFFF;cursor:pointer;box-sizing:border-box;box-shadow:none;transition:background .16s ease,border-color .16s ease}
 .crm-notification-menu>summary{position:relative;width:44px;padding:5px}
 .crm-account-menu>summary{padding:5px 10px}
@@ -239,6 +244,7 @@ def apply_crm_global_header() -> int:
     required = [
         'aria-label="Notificações"',
         'function crmHeaderNotifications()',
+        'function crmHeaderBellIcon()',
         'data-action="crm-notification-toggle-read"',
         'data-action="crm-notification-mark-all-read"',
         'data-action="crm-full-create" data-kind="contact"',
@@ -264,7 +270,7 @@ def apply_crm_global_header() -> int:
         if updated != original:
             path.write_text(updated, encoding="utf-8")
 
-    print("Header compartilhado materializado com ações contextuais, Notifications independente e Account Menu preservado.")
+    print("Header compartilhado materializado com ações contextuais, sino de Notificações independente e Account Menu preservado.")
     return 1
 
 
