@@ -5,7 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CSS = ROOT / "assets" / "valtren-brand.css"
-CACHE_VERSION = "20260825-crm-header-text-visibility-v2"
+CACHE_VERSION = "20260827-crm-header-text-visibility-v3"
 
 CSS_PATCH = r'''
 /* VALTREN CRM HEADER TEXT VISIBILITY FIX */
@@ -25,9 +25,11 @@ CSS_PATCH = r'''
 }
 
 .crm-app-shell .crm-topbar .crm-header-create-lead,
-.crm-app-shell .crm-topbar .crm-header-create-lead span{
-  color:#FFFFFF!important;
-  -webkit-text-fill-color:#FFFFFF!important;
+.crm-app-shell .crm-topbar .crm-header-create-lead span,
+.crm-app-shell .crm-topbar .crm-header-create-lead svg{
+  color:#0B1D3A!important;
+  -webkit-text-fill-color:#0B1D3A!important;
+  stroke:currentColor!important;
 }
 
 /* Cabeçalhos dos módulos de referência: botões secundários claros precisam de texto navy. */
