@@ -10,16 +10,25 @@ DOMAIN_JS = ROOT / "scripts" / "crm_complete_domain.js"
 BROWSER_JS = ROOT / "scripts" / "crm_complete_browser.js"
 HARDENING_JS = ROOT / "scripts" / "crm_complete_hardening.js"
 MODULE_CSS = ROOT / "scripts" / "crm_complete_module.css"
-CACHE_VERSION = "20260827-crm-complete-v4"
+CACHE_VERSION = "20260827-crm-complete-v5"
 JS_START = "  // VALTREN CRM COMPLETE START\n"
 JS_END = "  // VALTREN CRM COMPLETE END\n"
 CONTACTS_CSS_MARKER = "/* VALTREN CRM CONTACTS WORKSPACE */"
 CONTACTS_CSS = r'''
 /* VALTREN CRM CONTACTS WORKSPACE */
 .crm-full-workspace{max-width:none;margin:0;width:100%}
-.crm-full-workspace>.crm-full-tabs{margin-top:0}
-.crm-relationships-topbar{justify-content:flex-end}
-@media(max-width:760px){.crm-relationships-topbar{padding-left:12px!important;padding-right:12px!important}.crm-relationships-topbar .crm-header-actions{width:100%}}
+.crm-full-workspace>.crm-full-tabs{margin:14px 0 0}
+.crm-relationships-topbar{justify-content:space-between}
+.crm-relationships-heading{min-width:0}
+.crm-relationships-heading h1{margin:0 0 3px;color:#FFFFFF!important}
+.crm-relationships-heading p{margin:0;color:rgba(255,255,255,.78)!important;font-size:12px;font-weight:500;line-height:1.45;max-width:760px}
+.crm-app-shell .crm-workspace.crm-full-workspace .crm-full-tabs a{background:transparent!important;background-color:transparent!important;border-color:transparent!important;box-shadow:none!important;color:#475569!important}
+.crm-app-shell .crm-workspace.crm-full-workspace .crm-full-tabs a:hover{background:#F8FAFC!important;background-color:#F8FAFC!important;color:#0B1D3A!important}
+.crm-app-shell .crm-workspace.crm-full-workspace .crm-full-tabs a.active{background:transparent!important;background-color:transparent!important;color:#0B1D3A!important;border-color:transparent!important;box-shadow:none!important;font-weight:800}
+.crm-app-shell .crm-workspace.crm-full-workspace .crm-full-tabs a.active:after{background:#D4AF37!important;height:2px}
+.crm-app-shell .crm-workspace.crm-full-workspace .crm-full-tabs a:focus-visible{outline:2px solid #D4AF37;outline-offset:3px;border-radius:4px}
+.crm-full-workspace .crm-rel-table-card{box-shadow:none!important}
+@media(max-width:760px){.crm-relationships-topbar{padding-left:12px!important;padding-right:12px!important}.crm-relationships-topbar .crm-header-actions{width:auto;min-width:0}.crm-relationships-heading{width:100%}}
 '''
 
 CRM_VISIBLE_TABS_OLD = "const CRM_FULL_TABS=[['contacts','Contatos'],['companies','Empresas'],['customers','Clientes'],['leads','Leads'],['interactions','Interações']];"
@@ -35,11 +44,29 @@ CRM_PAGE_OLD = '''function crmRelationshipsPage(query){
   return `<div class="crm-app-shell crm-full-shell">${crmRelSidebar('relationships')}<main class="crm-main"><header class="crm-topbar"><div><h1>CRM</h1><p>Relacionamentos comerciais sobre Pessoas e Organizações canônicas</p></div>${crmHeaderActions('')}</header><section class="crm-workspace crm-rel-workspace crm-full-workspace" aria-label="CRM">${crmFullBreadcrumb(tab)}${crmFullHeader(tab)}${crmFullTabs(tab)}${content}</section></main></div>`;
 }
 '''
-CRM_PAGE_NEW = '''function crmRelationshipsPage(query){
+CRM_PAGE_PREVIOUS = '''function crmRelationshipsPage(query){
   crmFullService();const tab=crmFullCurrentTab(query),content=(tab==='leads'?crmFullLeadsView:crmFullContactsView)();
   return `<div class="crm-app-shell crm-full-shell">${crmRelSidebar('relationships')}<main class="crm-main"><header class="crm-topbar crm-relationships-topbar">${crmHeaderActions(tab)}</header><section class="crm-workspace crm-rel-workspace crm-full-workspace" aria-label="${tab==='leads'?'Leads':'Contatos'}">${crmFullTabs(tab)}${content}</section></main></div>`;
 }
 '''
+CRM_PAGE_NEW = '''function crmRelationshipsPage(query){
+  crmFullService();const tab=crmFullCurrentTab(query),content=(tab==='leads'?crmFullLeadsView:crmFullContactsView)();
+  return `<div class="crm-app-shell crm-full-shell">${crmRelSidebar('relationships')}<main class="crm-main"><header class="crm-topbar crm-relationships-topbar"><div class="crm-relationships-heading"><h1>CRM</h1><p>Gerencie contatos, leads e relacionamentos comerciais.</p></div>${crmHeaderActions(tab)}</header><section class="crm-workspace crm-rel-workspace crm-full-workspace" aria-label="${tab==='leads'?'Leads':'Contatos'}">${content}</section></main></div>`;
+}
+'''
+CONTACTS_ORDER_OLD = "${crmFullKpis([['Total de Contatos',real.length],['Com empresa',withCompany],['Clientes PF',customerPF]])}${crmFullSearchFilters(filters)}"
+CONTACTS_ORDER_NEW = "${crmFullKpis([['Total de Contatos',real.length],['Com empresa',withCompany],['Clientes PF',customerPF]])}${crmFullTabs('contacts')}${crmFullSearchFilters(filters)}"
+LEADS_ORDER_OLD = "${crmFullKpis([['Leads',real.length],['Qualificados',qualified],['Convertidos',converted]])}${pipeline}${crmFullSearchFilters(filters)}"
+LEADS_ORDER_NEW = "${crmFullKpis([['Leads',real.length],['Qualificados',qualified],['Convertidos',converted]])}${crmFullTabs('leads')}${pipeline}${crmFullSearchFilters(filters)}"
+
+
+def _replace_once_or_accept(source: str, old: str, new: str, label: str) -> str:
+    if new in source:
+        return source
+    count = source.count(old)
+    if count != 1:
+        raise RuntimeError(f"CRM completo: âncora de {label} divergente: {count}")
+    return source.replace(old, new, 1)
 
 
 def _apply_crm_view_contract(browser: str) -> str:
@@ -54,9 +81,15 @@ def _apply_crm_view_contract(browser: str) -> str:
         raise RuntimeError("CRM completo: bloco de identificação superior divergente")
 
     if CRM_PAGE_NEW not in browser:
-        if browser.count(CRM_PAGE_OLD) != 1:
-            raise RuntimeError(f"CRM completo: composição da página divergente: {browser.count(CRM_PAGE_OLD)}")
-        browser = browser.replace(CRM_PAGE_OLD, CRM_PAGE_NEW, 1)
+        if CRM_PAGE_PREVIOUS in browser:
+            browser = browser.replace(CRM_PAGE_PREVIOUS, CRM_PAGE_NEW, 1)
+        elif browser.count(CRM_PAGE_OLD) == 1:
+            browser = browser.replace(CRM_PAGE_OLD, CRM_PAGE_NEW, 1)
+        else:
+            raise RuntimeError("CRM completo: composição da página divergente")
+
+    browser = _replace_once_or_accept(browser, CONTACTS_ORDER_OLD, CONTACTS_ORDER_NEW, "ordem KPIs/abas de Contatos")
+    browser = _replace_once_or_accept(browser, LEADS_ORDER_OLD, LEADS_ORDER_NEW, "ordem KPIs/abas de Leads")
 
     forbidden = [
         "Pessoas relacionadas comercial ou institucionalmente à Valtren.",
@@ -65,14 +98,18 @@ def _apply_crm_view_contract(browser: str) -> str:
         "['companies','Empresas']",
         "['customers','Clientes']",
         "['interactions','Interações']",
+        "${crmFullTabs(tab)}${content}",
     ]
     leaked = [token for token in forbidden if token in browser]
     if leaked:
         raise RuntimeError(f"CRM completo: UI removida ainda emitida pelo owner: {leaked}")
     required = [
         CRM_VISIBLE_TABS_NEW,
-        'class="crm-topbar crm-relationships-topbar">${crmHeaderActions(tab)}',
-        "${crmFullTabs(tab)}${content}",
+        '<div class="crm-relationships-heading"><h1>CRM</h1><p>Gerencie contatos, leads e relacionamentos comerciais.</p></div>${crmHeaderActions(tab)}',
+        CONTACTS_ORDER_NEW,
+        LEADS_ORDER_NEW,
+        '<section class="crm-workspace crm-rel-workspace crm-full-workspace"',
+        '>${content}</section>',
     ]
     missing = [token for token in required if token not in browser]
     if missing:
@@ -100,7 +137,7 @@ def apply_crm_complete_module() -> int:
 
     # CRM route composition is owned here: the domain may still expose Organizations,
     # Customers and Interactions, but the visual CRM navigation contains only Contacts
-    # and Leads. The redundant breadcrumb/title/description block is not emitted.
+    # and Leads. The module header is stable while the tab controls internal context.
     browser = _apply_crm_view_contract(browser)
 
     # app.js materializa os módulos dentro do shell indentado. Normalizar somente
@@ -141,6 +178,9 @@ def apply_crm_complete_module() -> int:
         "{legacy:true}",
         real_current_user,
         "crmHeaderActions(tab)",
+        "Gerencie contatos, leads e relacionamentos comerciais.",
+        CONTACTS_ORDER_NEW,
+        LEADS_ORDER_NEW,
     ]
     missing = [item for item in required if item not in app]
     if missing:
@@ -180,7 +220,7 @@ def apply_crm_complete_module() -> int:
         text = re.sub(r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?", f"valtren-brand.css?v={CACHE_VERSION}", text)
         path.write_text(text, encoding="utf-8")
 
-    print("CRM completo aplicado com navegação Contatos/Leads, cabeçalho simplificado e domínios internos preservados.")
+    print("CRM completo aplicado com cabeçalho modular, KPIs acima das abas Contatos/Leads e TableView flat.")
     return 1
 
 
