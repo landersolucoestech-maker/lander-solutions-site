@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CACHE_VERSION = "20260827-crm-definitive-architecture-v6"
+CACHE_VERSION = "20260827-crm-definitive-architecture-v7"
 
 JS_BLOCK = r'''  // VALTREN CRM DEFINITIVE ARCHITECTURE START
   function crmArchitecturePlaceholderPage(active,sub,title,description='Estrutura do módulo preparada para a próxima etapa de implementação.'){
@@ -28,30 +28,28 @@ JS_BLOCK = r'''  // VALTREN CRM DEFINITIVE ARCHITECTURE START
   }
 
   function crmSettingsCompanyBody(){
-    const identity=crmFidelityPanel('Identidade Visual','Identidade institucional utilizada nas áreas internas',`<div class="crm-ref-logo-upload"><img src="assets/valtren-logo.svg" alt="Valtren"><h2>VALTREN SOLUTIONS</h2><button>Alterar logo</button></div>`);
+    const identity=crmFidelityPanel('Identidade Visual','Identidade institucional utilizada nas áreas internas',`<div class="crm-ref-logo-upload"><img src="assets/valtren-logo.svg" alt="Valtren"><h2>VALTREN SOLUTIONS</h2><span class="crm-ref-badge">Edição não configurada</span></div>`);
     const company=crmFidelityPanel('Empresa','Dados institucionais e cadastrais',`<div class="crm-ref-form-grid">${crmRefField('Razão Social','legalName')}${crmRefField('Nome Fantasia','tradeName','text','VALTREN SOLUTIONS')}${crmRefField('CNPJ','cnpj')}${crmRefField('Inscrição Estadual','stateRegistration')}${crmRefField('Inscrição Municipal','municipalRegistration')}${crmRefField('Endereço Completo','address')}${crmRefField('Telefone','phone')}${crmRefField('E-mail','companyEmail','email')}${crmRefField('Site','website','url')}${crmRefField('Responsável','responsible')}</div>`);
     const institutional=crmFidelityPanel('Parâmetros Institucionais','Idioma, moeda, fuso horário e formatos globais da empresa',`<div class="crm-ref-form-grid">${crmRefSelect('Idioma','language',[['pt-BR','Português (Brasil)']])}${crmRefSelect('Moeda','currency',[['BRL','Real brasileiro (BRL)']])}${crmRefSelect('Fuso horário','timezone',[['America/Sao_Paulo','America/Sao_Paulo']])}${crmRefSelect('Formato de data','dateFormat',[['dd/mm/yyyy','DD/MM/AAAA']])}</div>`);
     return `<div class="crm-ref-grid settings-company-grid">${identity}${company}</div>${institutional}`;
   }
 
   function crmSettingsNotificationsBody(){
-    return crmFidelityPanel('Notificações','Preferências globais de canais, frequência, horários, eventos e alertas',`<div class="crm-ref-settings-blocks"><article><h4>Canais</h4><label><input type="checkbox" checked> Notificações no sistema</label><label><input type="checkbox"> E-mail</label></article><article><h4>Frequência e Horários</h4><label>Frequência de envio<select><option>Imediato</option><option>Diário</option><option>Semanal</option></select></label><label>Horário preferido<input type="time"></label></article><article><h4>Eventos e Alertas</h4><label><input type="checkbox" checked> Eventos operacionais</label><label><input type="checkbox" checked> Eventos financeiros</label><label><input type="checkbox" checked> Alertas do sistema</label></article></div>`);
+    return crmFidelityPanel('Notificações','Preferências globais de canais, frequência, horários, eventos e alertas',crmRefEmpty('Preferências não configuradas','Nenhum canal, frequência ou alerta é marcado como ativo até existir persistência funcional para essas preferências.'));
   }
 
   function crmSettingsSecurityBody(){
-    return crmFidelityPanel('Segurança','Políticas e parâmetros globais de segurança do Sistema Interno',`<div class="crm-ref-form-grid">${crmRefField('Tamanho mínimo de senha','passwordMinLength','number','12')}${crmRefSelect('Política de MFA','mfaPolicy',[['optional','Opcional'],['required','Obrigatório']])}${crmRefField('Duração da sessão (minutos)','sessionDuration','number','480')}${crmRefField('Tentativas antes do bloqueio','maxLoginAttempts','number','5')}${crmRefField('Duração do bloqueio (minutos)','lockDuration','number','30')}${crmRefSelect('Confirmação para ações destrutivas','destructiveConfirm',[['required','Obrigatória']])}</div><div class="crm-ref-settings-blocks"><article><h4>Autenticação</h4><p>Políticas globais de senha, MFA e proteção de acesso.</p></article><article><h4>Sessões</h4><p>Parâmetros de duração, expiração e segurança das sessões.</p></article><article><h4>Bloqueios</h4><p>Controle de tentativas, bloqueios e proteção contra acesso indevido.</p></article></div>`);
+    return crmFidelityPanel('Segurança','Autenticação permanece desativada neste protótipo.',crmRefEmpty('Autenticação desativada','Nenhuma senha, MFA, sessão, tentativa de login ou política de bloqueio é simulada enquanto não existir um provedor real de autenticação.'));
   }
 
   function crmSettingsIntegrationsBody(){
     const integrations=['Meta','Google Ads','TikTok Ads','YouTube Ads','Spotify Ads'];
-    const cards=integrations.map(x=>`<article><strong>${x}</strong><span class="crm-ref-badge">Não conectado</span><small>Conexão ainda não validada</small><button>Configurar</button></article>`).join('');
-    return `${crmFidelityPanel('Integrações','Conecte e configure integrações externas do Sistema Interno.',`<div class="crm-ref-integration-grid">${cards}</div>`)}${crmFidelityPanel('Distribuidoras','Conecte contas de distribuidoras quando aplicável.',crmRefEmpty('Nenhuma distribuidora conectada'))}`;
+    const cards=integrations.map(x=>`<article><strong>${x}</strong><span class="crm-ref-badge">Não configurado</span><small>Credenciais não são armazenadas nem validadas no navegador.</small></article>`).join('');
+    return `${crmFidelityPanel('Integrações','Status real das integrações externas do Sistema Interno.',`<div class="crm-ref-integration-grid">${cards}</div>`)}${crmFidelityPanel('Distribuidoras','Conecte contas de distribuidoras quando houver integração real.',crmRefEmpty('Nenhuma distribuidora conectada'))}`;
   }
 
   function crmSettingsAuditBody(){
-    const filters=crmFidelityPanel('Filtros','',`${crmRefToolbar(`<input type="date" placeholder="Data início"><input type="date" placeholder="Data fim"><label class="crm-ref-search">${icon('search',14)}<input placeholder="Pesquisar por usuário, ação, entidade, registro ou request ID…"></label><select><option>Módulo</option></select><select><option>Ação</option></select><button>Limpar filtros</button>`)}`,'<button>Atualizar</button>');
-    const table=crmFidelityTable('Eventos de Auditoria','Registro somente leitura das alterações e ações do sistema',['Data e hora','Usuário','Módulo','Ação','Entidade','Registro','Método','Request ID','Origem'],'Nenhum evento encontrado');
-    return `${filters}${table}`;
+    return crmFidelityTable('Eventos de Auditoria','Registro somente leitura das alterações e ações do sistema',['Data e hora','Usuário','Módulo','Ação','Entidade','Registro','Método','Request ID','Origem'],'Nenhum evento encontrado');
   }
 
   function crmSettingsUsersBody(){
@@ -61,8 +59,8 @@ JS_BLOCK = r'''  // VALTREN CRM DEFINITIVE ARCHITECTURE START
     const filters=crmRefToolbar(`<label class="crm-ref-search">${icon('search',14)}<input placeholder="Buscar por nome ou e-mail…"></label><select><option>Todos os papéis</option></select><select><option>Todos os status</option><option>Ativo</option><option>Inativo</option><option>Suspenso</option></select>`);
     const k=`<div class="crm-ref-kpis four">${crmRefKpi('Usuários Ativos',rows.length)}${crmRefKpi('Convites Pendentes',0)}${crmRefKpi('Papéis',0)}${crmRefKpi('Permissões',0)}</div>`;
     const table=crmFidelityTable('Usuários','Usuários autorizados a utilizar o Sistema Interno',['Nome','Papel do Sistema','Telefone','Criado em','Status','Ações'],'Nenhum usuário encontrado');
-    const roles=crmFidelityPanel('Papéis e Permissões','Papéis, permissões, escopos, restrições e unidades autorizadas',crmRefEmpty('Nenhum papel disponível','Crie ou sincronize papéis e permissões para controlar o acesso ao sistema.'),'<button>Criar Papel</button>');
-    const access=crmFidelityPanel('Segurança por Usuário','MFA, sessões, ativação, suspensão e revogação de acesso',crmRefEmpty('Nenhuma configuração individual disponível'));
+    const roles=crmFidelityPanel('Papéis e Permissões','Papéis, permissões, escopos, restrições e unidades autorizadas',crmRefEmpty('Nenhum papel disponível','Papéis e permissões só serão editáveis quando houver um owner funcional para controle de acesso.'));
+    const access=crmFidelityPanel('Segurança por Usuário','MFA, sessões, ativação, suspensão e revogação de acesso',crmRefEmpty('Autenticação desativada','Nenhuma sessão ou estado de MFA é fabricado no protótipo.'));
     return `${actions}${k}${filters}${table}${roles}${access}`;
   }
 
@@ -93,8 +91,11 @@ JS_BLOCK = r'''  // VALTREN CRM DEFINITIVE ARCHITECTURE START
 
   function crmCanonicalProfilePage(){
     const breadcrumb=crmArchitectureBreadcrumb([{label:'Meu Perfil',href:'#/crm/meu-perfil'}]);
-    const body=`${crmFidelityPanel('Informações Pessoais','Seus dados e preferências pessoais',`<div class="crm-ref-profile-head"><div>AD</div><div><h2>${esc(state.crmUserName||'Administrador')}</h2><p>Usuário</p></div><button>Alterar foto</button><button>Remover</button></div><div class="crm-ref-form-grid">${crmRefField('Nome Completo','name','text','',state.crmUserName||'Administrador')}${crmRefField('E-mail','email','email')}${crmRefField('Telefone','phone')}${crmRefField('Departamento','department','text','Selecione o departamento')}${crmRefField('Cargo','role','text','Selecione o cargo')}</div>`)}${crmFidelityPanel('Segurança da Minha Conta','Senha, MFA e sessões próprias',`<div class="crm-ref-form-grid">${crmRefField('Senha Atual','currentPassword','password')}${crmRefField('Nova Senha','newPassword','password')}${crmRefField('Confirmar Nova Senha','confirmPassword','password')}</div><div class="crm-ref-settings-blocks"><article><h4>MFA</h4><p>Gerencie a autenticação multifator da sua conta.</p></article><article><h4>Sessões</h4><button>Encerrar outras sessões</button></article></div>`)}`;
-    return crmFidelityPage('','profile','Meu Perfil','Gerencie seus dados e segurança pessoal','',`${breadcrumb}${body}`);
+    const name=String(state.crmUserName||'').trim();
+    const initials=name?name.split(/\s+/).filter(Boolean).slice(0,2).map(part=>part[0]).join('').toUpperCase():'—';
+    const displayName=name||'Perfil não configurado';
+    const body=`${crmFidelityPanel('Informações Pessoais','Dados pessoais só aparecem quando forem realmente informados.',`<div class="crm-ref-profile-head"><div>${esc(initials)}</div><div><h2>${esc(displayName)}</h2><p>${name?'Usuário local':'Nenhuma identidade configurada'}</p></div></div><div class="crm-ref-form-grid">${crmRefField('Nome Completo','name','text','',name)}${crmRefField('E-mail','email','email')}${crmRefField('Telefone','phone')}${crmRefField('Departamento','department','text','Selecione o departamento')}${crmRefField('Cargo','role','text','Selecione o cargo')}</div>`)}${crmFidelityPanel('Segurança da Minha Conta','Autenticação está desativada neste protótipo.',crmRefEmpty('Sem sessão autenticada','Senha, MFA e encerramento de sessões ficam indisponíveis até existir um provedor real de autenticação.'))}`;
+    return crmFidelityPage('','profile','Meu Perfil','Gerencie os dados pessoais disponíveis localmente','',`${breadcrumb}${body}`);
   }
 
   function crmLegacyRoute(canonicalHash,render){
@@ -181,12 +182,12 @@ CSS_PATCH = r'''
   gap:7px;
   margin:0 0 14px;
   color:#64748B;
-  font-size:10px;
+  font-size:11px;
   font-weight:700;
 }
 .crm-architecture-breadcrumb a{color:#64748B;text-decoration:none;}
 .crm-architecture-breadcrumb strong{color:#0B1D3A;}
-.crm-ref-integration-grid article small{display:block;margin-top:4px;color:#64748B;font-size:9px;}
+.crm-ref-integration-grid article small{display:block;margin-top:4px;color:#64748B;font-size:11px;line-height:1.4;}
 .crm-fidelity-panel>header{
   background:#FFFFFF!important;
   background-color:#FFFFFF!important;
@@ -258,6 +259,9 @@ def apply_crm_definitive_architecture() -> int:
     forbidden_integration = "Sound" + "charts"
     if forbidden_integration in JS_BLOCK:
         raise RuntimeError("Integração externa proibida não pertence à arquitetura do projeto")
+    for forbidden_fake in ("'Administrador'", "<div>AD</div>", "Chrome no Windows", "Bem-vindo ao Valtren"):
+        if forbidden_fake in JS_BLOCK:
+            raise RuntimeError(f"Arquitetura definitiva não pode fabricar identidade/sessão/notificação: {forbidden_fake}")
 
     settings_source = JS_BLOCK.split("  function crmCanonicalSettingsPage", 1)[1].split("  function crmCanonicalProfilePage", 1)[0]
     expected_tabs = ["['empresa','Empresa']", "['notificacoes','Notificações']", "['seguranca','Segurança']", "['integracoes','Integrações']", "['auditoria','Auditoria']", "['usuarios','Usuários']"]
