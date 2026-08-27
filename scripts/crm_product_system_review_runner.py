@@ -29,6 +29,20 @@ def _digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _residual_context(source: str, token: str, radius: int = 180) -> str:
+    contexts=[]
+    start=0
+    while True:
+        at=source.find(token,start)
+        if at<0:
+            break
+        left=max(0,at-radius)
+        right=min(len(source),at+len(token)+radius)
+        contexts.append(source[left:right].replace("\n"," "))
+        start=at+len(token)
+    return " || ".join(contexts[:8])
+
+
 def _verify_dashboard_idempotence() -> None:
     tracked = [dashboard.APP, dashboard.CSS, dashboard.ROOT / "index.html"]
     before = {path: _digest(path) for path in tracked if path.exists()}
@@ -107,7 +121,8 @@ def apply_crm_product_system_review() -> int:
     ]:
         app = app.replace(old, new)
     if 'Soundcharts' in app:
-        raise RuntimeError("Soundcharts não pertence ao projeto e sobreviveu à materialização final")
+        context=_residual_context(app,'Soundcharts')
+        raise RuntimeError(f"Soundcharts não pertence ao projeto e sobreviveu à materialização final; contexto residual: {context}")
     _assert_js_syntax(app, "normalização textual final")
     review.APP.write_text(app, encoding="utf-8")
 
