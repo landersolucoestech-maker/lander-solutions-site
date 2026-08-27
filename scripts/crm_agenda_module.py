@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 HERE = Path(__file__).resolve().parent
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CACHE_VERSION = "20260827-crm-agenda-events-v4"
+CACHE_VERSION = "20260827-crm-agenda-events-v5"
 
 
 def _parts(prefix: str) -> str:
@@ -48,10 +48,11 @@ def apply_crm_agenda_module() -> int:
     app = app.replace("\n    else if (path === '/crm/agenda') app.innerHTML = crmAgendaPage(query);", '')
 
     # Agenda é consumer da navegação e do header compartilhados. Ela não cria,
-    # adiciona, remove ou reescreve itens de crmRelSidebar.
+    # adiciona, remove ou reescreve itens de crmRelSidebar. O gate valida semântica,
+    # não espaçamento incidental do JavaScript gerado.
     if app.count("  function crmHeaderActions(context=''){") != 1:
         raise RuntimeError("Header compartilhado contextual não encontrado para Agenda")
-    if "context === 'agenda'" not in app:
+    if not re.search(r"context\s*===\s*['\"]agenda['\"]", app):
         raise RuntimeError("Header compartilhado não oferece o contexto Agenda")
 
     anchor = "  function contactPage(query)"
@@ -65,8 +66,6 @@ def apply_crm_agenda_module() -> int:
         count = app.count(route_anchor)
         if count < 1:
             raise RuntimeError("Rota canônica de CRM Relacionamentos não encontrada para registrar Agenda")
-        # O bootstrap atual possui um único renderer canônico. Não duplicamos rotas
-        # artificialmente apenas para satisfazer a arquitetura histórica de dois renderers.
         app = app.replace(route_anchor, route_anchor + "\n" + agenda_route)
 
     APP.write_text(app, encoding="utf-8")
