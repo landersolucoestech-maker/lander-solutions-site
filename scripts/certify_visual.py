@@ -80,6 +80,69 @@ def check_account_menu(driver, url_base: str, failures: list[str]) -> list[dict[
     return results
 
 
+def check_details(driver, url_base: str, outdir: Path, failures: list[str]) -> dict[str, Any]:
+    """Certifica a navegação canônica sem reintroduzir o subgrupo legado de Contratos."""
+    base.set_viewport(driver, 1440)
+    driver.get(base.normalize_url(url_base, "#/crm/dashboard"))
+    wait_ready(driver)
+    result: dict[str, Any] = {}
+
+    for label in ["Financeiro", "Jurídico", "Negócios"]:
+        summary = driver.find_element(By.XPATH, f"//nav[contains(@class,'crm-nav')]/details/summary[.//span[normalize-space()='{label}']]")
+        details = summary.find_element(By.XPATH, "..")
+        if details.get_attribute("open") is not None:
+            driver.execute_script("arguments[0].click()", summary)
+            time.sleep(0.03)
+        driver.execute_script("arguments[0].click()", summary)
+        time.sleep(0.04)
+        opened = details.get_attribute("open") is not None
+        transform = driver.execute_script("return getComputedStyle(arguments[0].querySelector('b')).transform", summary)
+        base.fail_if(not opened, f"details {label}: failed to open", failures)
+        driver.execute_script("arguments[0].click()", summary)
+        time.sleep(0.03)
+        base.fail_if(details.get_attribute("open") is not None, f"details {label}: failed to close", failures)
+        result[label] = {"opened": opened, "chevron_open_transform": transform}
+
+    # Contratos é uma entrada direta dentro de Jurídico. Templates e Variáveis são
+    # rotas internas acessíveis pelo Page Header e mantêm Contratos como item ativo.
+    driver.get(base.normalize_url(url_base, "#/crm/juridico/contratos"))
+    wait_ready(driver)
+    hierarchy = driver.execute_script(r"""
+      const visible=e=>{if(!e)return false;const s=getComputedStyle(e),r=e.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&r.width>0&&r.height>0};
+      const r=e=>{if(!e)return null;const x=e.getBoundingClientRect();return {left:x.left,right:x.right,top:x.top,width:x.width,height:x.height}};
+      const legal=document.querySelector('.crm-nav-legal');
+      const contract=legal?.querySelector('a[href="#/crm/juridico/contratos"]');
+      const templatesSidebar=legal?.querySelector('a[href="#/crm/juridico/contratos/templates"]');
+      const variablesSidebar=legal?.querySelector('a[href="#/crm/juridico/contratos/variaveis"]');
+      const legacySubgroup=legal?.querySelector('.crm-nav-subgroup');
+      const templatesHeader=document.querySelector('a.crm-legal-secondary-action[href="#/crm/juridico/contratos/templates"]');
+      const variablesHeader=document.querySelector('a.crm-legal-secondary-action[href="#/crm/juridico/contratos/variaveis"]');
+      return {
+        contract:r(contract),
+        contractActive:!!contract?.classList.contains('active'),
+        templatesSidebar:!!templatesSidebar,
+        variablesSidebar:!!variablesSidebar,
+        legacySubgroup:!!legacySubgroup,
+        templatesHeader:r(templatesHeader),
+        variablesHeader:r(variablesHeader),
+        templatesHeaderVisible:visible(templatesHeader),
+        variablesHeaderVisible:visible(variablesHeader),
+        bodyOverflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,
+      };
+    """)
+    base.fail_if(not hierarchy["contract"], f"Contracts direct sidebar link missing: {hierarchy}", failures)
+    base.fail_if(not hierarchy["contractActive"], f"Contracts direct sidebar link is not active on Contracts route: {hierarchy}", failures)
+    base.fail_if(hierarchy["templatesSidebar"] or hierarchy["variablesSidebar"], f"Templates/Variables leaked back into Sidebar: {hierarchy}", failures)
+    base.fail_if(hierarchy["legacySubgroup"], f"Legacy Contracts subgroup leaked back into Sidebar: {hierarchy}", failures)
+    base.fail_if(not hierarchy["templatesHeaderVisible"] or not hierarchy["variablesHeaderVisible"], f"Contracts header actions missing or hidden: {hierarchy}", failures)
+    base.fail_if(hierarchy["bodyOverflow"] > 1, f"Contracts canonical navigation causes body overflow: {hierarchy['bodyOverflow']}", failures)
+    shot = "contracts-1440-canonical-navigation.png"
+    driver.save_screenshot(str(outdir / shot))
+    result["contracts_navigation"] = hierarchy
+    result["screenshot"] = shot
+    return result
+
+
 def _exposed_overlay_point(driver) -> dict[str, Any]:
     return driver.execute_script(r"""
       const sidebar=document.querySelector('.crm-sidebar'),overlay=document.querySelector('.crm-sidebar-overlay');
@@ -166,6 +229,9 @@ def run(args: argparse.Namespace) -> int:
     base.wait_ready = wait_ready
     base.check_account_menu = check_account_menu
     base.check_drawer = check_drawer
+    base.check_details = check_details
+    base.EXPECTED_ACTIVE["#/crm/juridico/contratos/templates"] = "Contratos"
+    base.EXPECTED_ACTIVE["#/crm/juridico/contratos/variaveis"] = "Contratos"
     code = base.run(args)
     report_path = Path(args.output_dir) / "visual-certification-report.json"
     if not report_path.exists():
