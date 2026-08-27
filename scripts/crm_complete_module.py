@@ -56,8 +56,8 @@ CRM_PAGE_NEW = '''function crmRelationshipsPage(query){
 '''
 CONTACTS_ORDER_OLD = "${crmFullKpis([['Total de Contatos',real.length],['Com empresa',withCompany],['Clientes PF',customerPF]])}${crmFullSearchFilters(filters)}"
 CONTACTS_ORDER_NEW = "${crmFullKpis([['Total de Contatos',real.length],['Com empresa',withCompany],['Clientes PF',customerPF]])}${crmFullTabs('contacts')}${crmFullSearchFilters(filters)}"
-LEADS_ORDER_OLD = "${crmFullKpis([['Leads',real.length],['Qualificados',qualified],['Convertidos',converted]])}${pipeline}${crmFullSearchFilters(filters)}"
-LEADS_ORDER_NEW = "${crmFullKpis([['Leads',real.length],['Qualificados',qualified],['Convertidos',converted]])}${crmFullTabs('leads')}${pipeline}${crmFullSearchFilters(filters)}"
+LEADS_ORDER_OLD = "${crmFullKpis([['Leads',real.length],['Qualificados',qualified],['Convertidos',converted]])}${crmFullSearchFilters(filters)}"
+LEADS_ORDER_NEW = "${crmFullKpis([['Leads',real.length],['Qualificados',qualified],['Convertidos',converted]])}${crmFullTabs('leads')}${crmFullSearchFilters(filters)}"
 
 
 def _replace_once_or_accept(source: str, old: str, new: str, label: str) -> str:
