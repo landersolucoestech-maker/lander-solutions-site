@@ -16,7 +16,7 @@ DASHBOARD_START = "  // VALTREN CRM DASHBOARD START\n"
 DASHBOARD_END = "  // VALTREN CRM DASHBOARD END\n"
 CSS_MARKER = "/* VALTREN EXECUTIVE DASHBOARD */"
 LEGACY_CSS_MARKER = "/* VALTREN CRM INTEGRATED */"
-CACHE_VERSION = "20260827-executive-dashboard-v3"
+CACHE_VERSION = "20260827-executive-dashboard-v4"
 
 LEGACY_DASHBOARD_TOKENS = [
     "kpi('Contatos'",
@@ -190,7 +190,9 @@ def apply_crm_dashboard() -> int:
     if not APP.exists() or not CSS.exists():
         raise FileNotFoundError("app.js ou assets/valtren-brand.css ausente")
     _validate_sources()
-    app = _materialize_dashboard(APP.read_text(encoding="utf-8"))
+
+    original_app = APP.read_text(encoding="utf-8")
+    app = _materialize_dashboard(original_app)
     app = _materialize_route(app)
     if app.count(DASHBOARD_START) != 1 or app.count(DASHBOARD_END) != 1 or app.count("function crmDashboardPage(") != 1:
         raise RuntimeError("Dashboard executivo não ficou materializado exatamente uma vez")
@@ -200,13 +202,21 @@ def apply_crm_dashboard() -> int:
         if token in app[app.index(DASHBOARD_START):app.index(DASHBOARD_END)]:
             raise RuntimeError(f"Dashboard materializado contém estrutura CRM descartada: {token}")
     _assert_js_syntax(app, "bundle materializado")
-    APP.write_text(app, encoding="utf-8")
+    app_changed = app != original_app
+    if app_changed:
+        APP.write_text(app, encoding="utf-8")
 
-    css = CSS.read_text(encoding="utf-8")
-    updated_css = _replace_css_block(css)
-    if updated_css != css:
+    original_css = CSS.read_text(encoding="utf-8")
+    updated_css = _replace_css_block(original_css)
+    css_changed = updated_css != original_css
+    if css_changed:
         CSS.write_text(updated_css, encoding="utf-8")
-    _update_cache_busters()
+
+    # Cache-busters pertencem à mudança material. Em um rerun byte-stable do owner,
+    # não rebaixamos a versão final definida por materializadores transversais posteriores.
+    if app_changed or css_changed:
+        _update_cache_busters()
+
     print("Dashboard executivo materializado: Valtren consolidada, performance por unidades internas, Participações/Repasses sem dupla contagem, faturado x recebido e arquitetura financeira sem dados fictícios.")
     return 1
 
