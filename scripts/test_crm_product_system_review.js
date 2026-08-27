@@ -31,6 +31,8 @@ must(dashboard.includes('crm_dashboard_core.js'), 'Dashboard owner must load cal
 must(dashboard.includes('crm_dashboard_participation_core.js'), 'Dashboard owner must load participation integrity core');
 must(dashboard.includes('crm_dashboard_browser.js'), 'Dashboard owner must load browser components');
 must(dashboard.includes('crm_dashboard.css'), 'Dashboard owner must load dedicated CSS');
+must(dashboard.includes('REMOVED_DASHBOARD_COPY'), 'Dashboard owner must declare the removed-copy hierarchy contract');
+must(dashboard.includes('_dashboard_browser_source'), 'Dashboard owner must normalize its own browser source before materialization');
 must(dashboard.includes('function contactPage(query)'), 'Dashboard migration must use explicit contactPage boundary');
 must(!dashboard.includes('source.find("\\n  function ",'), 'Dashboard owner must not use generic next-function slicing');
 must(dashboardBrowser.includes('function crmDashboardPage(query)'), 'Dashboard browser owner must emit crmDashboardPage');
@@ -57,7 +59,7 @@ for (const legacy of ["kpi('Contatos'","kpi('Leads'","kpi('Clientes'",'Indicador
   'Protótipo · dados ilustrativos',
   'Empresa: Visa Fácil'
 ].forEach((token)=>must(!dashboardBrowser.includes(token), `Dashboard canonical browser still contains fake/demo token: ${token}`));
-must(dashboardBrowser.includes('Empresa: Valtren Solutions'), 'Dashboard must identify Valtren Solutions as the company');
+must(dashboardBrowser.includes('Visão financeira-gerencial consolidada da Valtren Solutions e performance das suas unidades econômicas internas.'), 'Dashboard canonical Page Header description must be preserved');
 must(dashboardBrowser.includes('Nenhum número foi inventado'), 'Dashboard error state must explicitly prohibit invented numbers');
 must(dashboardCss.includes('/* VALTREN EXECUTIVE DASHBOARD */'), 'Executive Dashboard CSS marker missing');
 must(dashboardCss.includes('grid-template-columns:repeat(4,minmax(0,1fr))'), 'Executive Dashboard desktop KPI grid missing');
@@ -88,9 +90,24 @@ if (materialized) {
     'Empresa: Visa Fácil'
   ];
   forbidden.forEach((token) => must(!app.includes(token), `materialized app still contains fake/demo UI token: ${token}`));
-  ['Autenticação desativada','Nenhuma identidade é simulada','Não configurado','Faturamento Bruto','Resultado Valtren','Performance por Unidade de Negócio','Empresa: Valtren Solutions'].forEach((token)=>must(app.includes(token), `materialized app missing canonical token: ${token}`));
+  ['Autenticação desativada','Nenhuma identidade é simulada','Não configurado','Faturamento Bruto','Resultado Valtren','Performance por Unidade de Negócio'].forEach((token)=>must(app.includes(token), `materialized app missing canonical token: ${token}`));
   must((app.match(/VALTREN CRM DASHBOARD START/g)||[]).length === 1, 'Dashboard start marker must exist exactly once');
   must((app.match(/function crmDashboardPage\(/g)||[]).length === 1, 'crmDashboardPage must exist exactly once');
+  const dashboardStart = app.indexOf('VALTREN CRM DASHBOARD START');
+  const dashboardEnd = app.indexOf('VALTREN CRM DASHBOARD END', dashboardStart);
+  must(dashboardStart >= 0 && dashboardEnd > dashboardStart, 'materialized Dashboard block boundaries must be valid');
+  const materializedDashboard = app.slice(dashboardStart, dashboardEnd);
+  for (const removed of [
+    'Sistema Interno',
+    'Visão Econômica Consolidada',
+    'Empresa: Valtren Solutions · Produtos, SaaS, Serviços e Unidades de Negócio são dimensões gerenciais internas.'
+  ]) {
+    must(!materializedDashboard.includes(removed), `materialized Dashboard route re-emitted removed hierarchy copy: ${removed}`);
+  }
+  must(materializedDashboard.includes('Visão financeira-gerencial consolidada da Valtren Solutions e performance das suas unidades econômicas internas.'), 'materialized Dashboard must preserve canonical Page Header description');
+  for (const kpi of ['Faturamento Bruto','Deduções e Impostos','Receita Líquida','Custos Diretos','Despesas Operacionais','Resultado Operacional','Participações / Repasses','Resultado Valtren']) {
+    must(materializedDashboard.includes(kpi), `materialized Dashboard missing KPI after hierarchy cleanup: ${kpi}`);
+  }
   must((app.match(/function crmHeaderActions\(/g)||[]).length === 1, 'crmHeaderActions must exist exactly once');
   must(app.includes('ValtrenDashboardParticipationCore'), 'Participation integrity core missing from materialized dashboard');
   must(app.includes('__participationIntegrityWrapped'), 'Participation double-count protection missing from materialized dashboard');
