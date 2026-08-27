@@ -257,6 +257,9 @@ _SCOPING_REPLACEMENTS = (
     ('footer, .site-footer, .main-footer {', '.site-footer, .main-footer {'),
     ('footer a, .site-footer a, .main-footer a {', '.site-footer a, .main-footer a {'),
     ('footer a:hover, .site-footer a:hover, .main-footer a:hover {', '.site-footer a:hover, .main-footer a:hover {'),
+    ('.admin-sidebar,.site-footer,footer{', '.admin-sidebar,.site-footer{'),
+    ('.admin-sidebar nav button,.admin-preview,.site-footer a,footer a{', '.admin-sidebar nav button,.admin-preview,.site-footer a{'),
+    ('.admin-sidebar nav button:hover,.admin-sidebar nav button.active,.admin-preview:hover,.site-footer a:hover,footer a:hover{', '.admin-sidebar nav button:hover,.admin-sidebar nav button.active,.admin-preview:hover,.site-footer a:hover{'),
 )
 
 
