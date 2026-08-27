@@ -24,14 +24,14 @@ def main():
   try:WebDriverWait(d,20).until(lambda x:x.execute_script('return !!window.__VALTREN_MOCK_MODE__'))
   except TimeoutException:
    logs,errors=browser_errors(d);evidence['console']=logs;evidence['consoleSevere']=errors;evidence['capturedErrors']=js_safe(d,'return window.__mockCapturedErrors||[]');evidence['readyState']=d.execute_script('return document.readyState');evidence['url']=d.current_url;evidence['bodyText']=d.find_element('tag name','body').text[:4000]
-   failures.append('BOOTSTRAP_TIMEOUT');
+   failures.append('BOOTSTRAP_TIMEOUT')
    if evidence['capturedErrors']:failures.append('Captured JS error: '+json.dumps(evidence['capturedErrors'],ensure_ascii=False)[:12000])
    elif errors:failures.append('Console SEVERE: '+json.dumps(errors,ensure_ascii=False)[:5000])
    d.save_screenshot(str(out/'dashboard-mock-bootstrap-failure.png'));raise RuntimeError('mock bootstrap flag ausente')
   time.sleep(1);k=d.execute_script('return window.__VALTREN_MOCK_MODE__.kpis()') or {};evidence['kpis']=k
   for key,val in EXPECTED.items():
    if key not in k or not close(k[key],val):failures.append(f'KPI {key}: {k.get(key)} != {val}')
-  calcs=d.execute_script("return (window.crmParticipationService?.().data.calculations||[]).filter(x=>x.id==='mock_participation_a'||x.id==='mock_participation_b').map(x=>({id:x.id,base:x.distributableBase,amount:x.participationAmount,status:x.calculationStatus,consistency:x.consistencyStatus,workflow:x.workflowStatus}))");evidence['participations']=calcs;by={x['id']:x for x in calcs}
+  calcs=d.execute_script("return (window.state?.crmEconomicParticipations?.calculations||[]).filter(x=>x.id==='mock_participation_a'||x.id==='mock_participation_b').map(x=>({id:x.id,base:x.distributableBase,amount:x.participationAmount,status:x.calculationStatus,consistency:x.consistencyStatus,workflow:x.workflowStatus}))");evidence['participations']=calcs;by={x['id']:x for x in calcs}
   for cid,amount in [('mock_participation_a',14400),('mock_participation_b',9600)]:
    x=by.get(cid)
    if not x or not close(x.get('base',0),96000) or not close(x.get('amount',0),amount):failures.append(f'Participation {cid} inválida: {x}')
