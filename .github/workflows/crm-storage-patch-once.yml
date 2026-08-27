@@ -1,5 +1,5 @@
 name: CRM Storage Patch Once
-# one-shot trigger
+# one-shot delimiter matcher
 
 on:
   push:
@@ -23,18 +23,11 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
-          p = Path('scripts/crm_complete_browser.js')
-          s = p.read_text(encoding='utf-8')
-          old = """function crmFullRestorePersistence(){
-            if(state.__crmFullPersistenceRestored)return;
-            state.__crmFullPersistenceRestored=true;
-            try{
-              if(!state.__crmCanonicalPartyService){const saved=localStorage.getItem(CRM_FULL_STORAGE_PARTIES);if(saved)state.crmCanonicalParties=ValtrenPartyCore.ensureState(JSON.parse(saved));}
-              const crmSaved=localStorage.getItem(CRM_FULL_STORAGE_DOMAIN);if(crmSaved)state.crmDomain=ValtrenCrmCore.ensureState(JSON.parse(crmSaved));
-            }catch(error){console.warn('CRM: persistência local não pôde ser restaurada.',error);}
-          }
-          """
-          new = """function crmFullStoredObject(key,label){
+          p=Path('scripts/crm_complete_browser.js')
+          s=p.read_text(encoding='utf-8')
+          start=s.index('function crmFullRestorePersistence(){')
+          end=s.index('function crmFullPersist(){',start)
+          restored="""function crmFullStoredObject(key,label){
             const saved=localStorage.getItem(key);if(!saved)return null;
             try{const parsed=JSON.parse(saved);if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw new TypeError(`${label} deve possuir raiz Object`);return parsed;}
             catch(error){console.warn(`CRM: ${label} local não pôde ser restaurado.`,error);return null;}
@@ -50,18 +43,10 @@ jobs:
             if(domain){try{state.crmDomain=ValtrenCrmCore.ensureState(domain);}catch(error){console.warn('CRM: domínio CRM local é inválido.',error);}}
           }
           """
-          if old not in s:
-              raise SystemExit('restore block not found')
-          s = s.replace(old, new, 1)
-          old_users = """function crmFullUsers(){
-            const rows=[],seen=new Set();
-            const add=(id,name)=>{id=String(id||'').trim();name=String(name||id||'').trim();if(!id||seen.has(id))return;seen.add(id);rows.push({id,name});};
-            add(state.crmUserId||state.crmUserName||'current',state.crmUserName||'Administrador');
-            (state.crmRefUsers||[]).forEach((u)=>add(u.id||u.email,u.name||u.email));
-            return rows;
-          }
-          """
-          new_users = """function crmFullUsers(){
+          s=s[:start]+restored+s[end:]
+          start=s.index('function crmFullUsers(){')
+          end=s.index('function crmFullResponsibleName(',start)
+          users="""function crmFullUsers(){
             const rows=[],seen=new Set();
             const add=(id,name)=>{id=String(id||'').trim();name=String(name||id||'').trim();if(!id||seen.has(id))return;seen.add(id);rows.push({id,name});};
             const currentId=String(state.crmUserId||'').trim(),currentName=String(state.crmUserName||'').trim();
@@ -70,10 +55,8 @@ jobs:
             return rows;
           }
           """
-          if old_users not in s:
-              raise SystemExit('users block not found')
-          s = s.replace(old_users, new_users, 1)
-          p.write_text(s, encoding='utf-8')
+          s=s[:start]+users+s[end:]
+          p.write_text(s,encoding='utf-8')
           PY
       - name: Assert hardening
         run: |
@@ -81,6 +64,7 @@ jobs:
           grep -q 'Array.isArray(parsed)' scripts/crm_complete_browser.js
           ! grep -q "||'current'" scripts/crm_complete_browser.js
           ! grep -q "||'Administrador'" scripts/crm_complete_browser.js
+          node --check scripts/crm_complete_browser.js
       - name: Commit source fix
         run: |
           git config user.name 'github-actions[bot]'
