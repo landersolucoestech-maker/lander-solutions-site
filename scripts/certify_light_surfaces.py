@@ -38,6 +38,7 @@ DASHBOARD_SECTIONS = [
     "Participações e Repasses",
     "Estrutura de Custos e Despesas",
 ]
+ACTIVE_STATE_VIEWPORTS = (1440, 390)
 
 
 def normalize_url(base: str, route: str) -> str:
@@ -65,6 +66,22 @@ def set_viewport(driver, width: int, height: int | None = None):
     h = height or (900 if width >= 768 else 844)
     driver.set_window_rect(width=width, height=h)
     time.sleep(0.03)
+
+
+def css_luminance(value: str | None) -> float:
+    rgb = [int(x) for x in re.findall(r"\d+", value or "")[:3]]
+    if len(rgb) != 3:
+        return 255.0
+    return .2126 * rgb[0] + .7152 * rgb[1] + .0722 * rgb[2]
+
+
+def element_style(driver, selector: str) -> dict:
+    return driver.execute_script(r"""
+      const e=document.querySelector(arguments[0]);
+      if(!e)return {found:false};
+      const s=getComputedStyle(e),r=e.getBoundingClientRect();
+      return {found:true,visible:s.display!=='none'&&s.visibility!=='hidden'&&r.width>0&&r.height>0,backgroundColor:s.backgroundColor,backgroundImage:s.backgroundImage,color:s.color,borderColor:s.borderColor,outlineColor:s.outlineColor,rect:{x:r.x,y:r.y,width:r.width,height:r.height}};
+    """, selector)
 
 
 def scan_route(driver) -> dict:
@@ -97,6 +114,50 @@ def dashboard_section_styles(driver) -> list[dict]:
       const lum=c=>c?(.2126*c.r+.7152*c.g+.0722*c.b):255;
       return wanted.map(title=>{const h=[...document.querySelectorAll('.crm-dashboard-panel h3')].find(n=>(n.textContent||'').trim()===title);const panel=h?.closest('.crm-dashboard-panel'),head=panel?.querySelector(':scope>header');const ps=panel?getComputedStyle(panel):null,hs=head?getComputedStyle(head):null;return {title,found:!!panel,panelBackground:ps?.backgroundColor||null,panelLuminance:lum(parse(ps?.backgroundColor)),headerBackground:hs?.backgroundColor||null,headerLuminance:lum(parse(hs?.backgroundColor)),titleColor:h?getComputedStyle(h).color:null}});
     """, DASHBOARD_SECTIONS)
+
+
+def certify_active_states(driver, base_url: str, output: Path, failures: list[str], screenshots: list[str]) -> list[dict]:
+    results=[]
+    for width in ACTIVE_STATE_VIEWPORTS:
+        set_viewport(driver,width)
+        driver.get(normalize_url(base_url,"#/crm/financeiro/accounting?view=entries&only=pending")); wait_ready(driver)
+        accounting=element_style(driver,".crm-acct-entry-head button.active")
+        accounting.update({"component":"accounting","selector":".crm-acct-entry-head button.active","width":width})
+        results.append(accounting)
+        if not accounting.get("found") or not accounting.get("visible"):
+            failures.append(f"Accounting active state @{width}: selector não renderizado")
+        else:
+            if css_luminance(accounting.get("backgroundColor")) < 180:
+                failures.append(f"Accounting active state @{width}: background dark {accounting}")
+            if accounting.get("backgroundImage") not in (None,"","none"):
+                failures.append(f"Accounting active state @{width}: backgroundImage inesperado {accounting['backgroundImage']}")
+        filename=f"accounting-active-{width}-light-surface.png"; driver.save_screenshot(str(output/filename)); screenshots.append(filename)
+
+        set_viewport(driver,width)
+        driver.get(normalize_url(base_url,ROUTES["rateios"])); wait_ready(driver)
+        candidates=driver.find_elements(By.XPATH,"//*[self::button or self::a][contains(normalize-space(.),'Novo Rateio')]")
+        target=next((e for e in candidates if e.is_displayed()),None)
+        if target is None:
+            rateios={"component":"rateios","selector":".crm-alloc-steps button.active","width":width,"found":False,"error":"Novo Rateio control not found"}
+            failures.append(f"Rateios active state @{width}: Novo Rateio control not found")
+        else:
+            driver.execute_script("arguments[0].click()",target)
+            try:
+                WebDriverWait(driver,8).until(lambda d:d.find_elements(By.CSS_SELECTOR,".crm-alloc-steps button.active"))
+            except Exception:
+                pass
+            rateios=element_style(driver,".crm-alloc-steps button.active")
+            rateios.update({"component":"rateios","selector":".crm-alloc-steps button.active","width":width})
+            if not rateios.get("found") or not rateios.get("visible"):
+                failures.append(f"Rateios active state @{width}: selector não renderizado")
+            else:
+                if css_luminance(rateios.get("backgroundColor")) < 180:
+                    failures.append(f"Rateios active state @{width}: background dark {rateios}")
+                if rateios.get("backgroundImage") not in (None,"","none"):
+                    failures.append(f"Rateios active state @{width}: backgroundImage inesperado {rateios['backgroundImage']}")
+        results.append(rateios)
+        filename=f"rateios-active-{width}-light-surface.png"; driver.save_screenshot(str(output/filename)); screenshots.append(filename)
+    return results
 
 
 def open_contract_modal(driver, base_url: str, output: Path) -> dict:
@@ -138,7 +199,7 @@ def main() -> int:
     args=parser.parse_args()
     out=Path(args.output_dir); out.mkdir(parents=True, exist_ok=True)
     failures=[]; route_results=[]; screenshots=[]
-    dashboard=[]; modal={}
+    dashboard=[]; modal={}; active_states=[]
     driver=driver_factory()
     try:
         for name,route in ROUTES.items():
@@ -167,6 +228,7 @@ def main() -> int:
                 failures.append(f"Dashboard section missing: {item['title']}")
             elif item["panelLuminance"]<180 or item["headerLuminance"]<180:
                 failures.append(f"Dashboard section dark: {item}")
+        active_states=certify_active_states(driver,args.base_url,out,failures,screenshots)
         modal=open_contract_modal(driver,args.base_url,out)
         if not modal.get("opened"):
             failures.append(f"Contracts modal: {modal.get('error')}")
@@ -182,7 +244,7 @@ def main() -> int:
         if console: failures.append(f"Runtime console errors: {console[:5]}")
     finally:
         driver.quit()
-    report={"status":"PASS" if not failures else "FAIL","mode":args.mode,"dark_surfaces_outside_header_sidebar":sum(r.get('darkCount',0) for r in route_results),"route_scenarios":len(route_results),"dashboard_sections":dashboard,"contract_modal":modal,"screenshots":screenshots,"failures":failures}
+    report={"status":"PASS" if not failures else "FAIL","mode":args.mode,"dark_surfaces_outside_header_sidebar":sum(r.get('darkCount',0) for r in route_results),"route_scenarios":len(route_results),"dashboard_sections":dashboard,"active_states":active_states,"contract_modal":modal,"screenshots":screenshots,"failures":failures}
     (out/"light-surface-certification-report.json").write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf-8")
     print(json.dumps(report,ensure_ascii=False,indent=2))
     return 0 if not failures else 1
