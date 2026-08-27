@@ -69,20 +69,39 @@ def account_menu_checks(d: webdriver.Chrome, base: str, failures: list[str]) -> 
 
         initial = d.execute_script(r"""
           const s=document.querySelector('.crm-account-menu>summary'),r=s.getBoundingClientRect();
-          return {left:r.left,right:r.right,width:r.width,height:r.height,docSW:document.documentElement.scrollWidth,docCW:document.documentElement.clientWidth,text:document.querySelector('.crm-account-menu').innerText};
+          return {
+            left:r.left,
+            right:r.right,
+            width:r.width,
+            height:r.height,
+            docSW:document.documentElement.scrollWidth,
+            docCW:document.documentElement.clientWidth,
+            summaryVisibleText:(s.innerText||'').trim(),
+            summaryText:(s.textContent||'').trim(),
+            summaryAriaLabel:(s.getAttribute('aria-label')||'').trim()
+          };
         """)
         ensure(initial["right"] <= 769 and initial["left"] >= -1, f"account@768 {route}: summary fora do viewport {initial}", failures)
         ensure(initial["height"] >= 40, f"account@768 {route}: target do summary abaixo de 40px: {initial['height']}", failures)
         ensure(initial["docSW"] <= initial["docCW"] + 1, f"account@768 {route}: body overflow fechado", failures)
-        ensure("Autenticação desativada" in initial["text"], f"account@768 {route}: cópia de autenticação ausente", failures)
-        ensure("Sem sessão ativa" in initial["text"], f"account@768 {route}: cópia de sessão ausente", failures)
+        ensure("Autenticação desativada" in initial["summaryText"], f"account@768 {route}: cópia de autenticação ausente do summary", failures)
 
         summary.click(); time.sleep(0.06)
         opened = d.execute_script(r"""
           const m=document.querySelector('.crm-account-menu'),c=document.querySelector('.crm-account-chevron'),p=document.querySelector('.crm-account-popover'),r=p.getBoundingClientRect();
-          return {open:m.hasAttribute('open'),chevron:getComputedStyle(c).transform,popover:{left:r.left,right:r.right,top:r.top,bottom:r.bottom},docSW:document.documentElement.scrollWidth,docCW:document.documentElement.clientWidth};
+          return {
+            open:m.hasAttribute('open'),
+            chevron:getComputedStyle(c).transform,
+            popoverText:(p.innerText||'').trim(),
+            popoverVisible:!!(p.offsetWidth||p.offsetHeight||p.getClientRects().length),
+            popover:{left:r.left,right:r.right,top:r.top,bottom:r.bottom},
+            docSW:document.documentElement.scrollWidth,
+            docCW:document.documentElement.clientWidth
+          };
         """)
         ensure(opened["open"], f"account@768 {route}: não abriu", failures)
+        ensure(opened["popoverVisible"], f"account@768 {route}: popover não ficou visível após abrir", failures)
+        ensure("Sem sessão ativa" in opened["popoverText"], f"account@768 {route}: cópia de sessão ausente do popover aberto", failures)
         ensure(opened["chevron"] not in ("", "none"), f"account@768 {route}: chevron não acompanha estado aberto", failures)
         ensure(opened["popover"]["left"] >= -1 and opened["popover"]["right"] <= 769, f"account@768 {route}: popover fora do viewport {opened['popover']}", failures)
         ensure(opened["docSW"] <= opened["docCW"] + 1, f"account@768 {route}: body overflow aberto", failures)
