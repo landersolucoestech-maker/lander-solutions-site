@@ -66,7 +66,7 @@ def check_account_menu(driver, url_base: str, failures: list[str]) -> list[dict[
           const menu=document.querySelector('.crm-account-menu');
           const summary=document.querySelector('.crm-account-menu>summary');
           const p=document.querySelector('.crm-account-popover');
-          return {popover:p?r(p):null,summary:r(summary),docSW:document.documentElement.scrollWidth,docCW:document.documentElement.clientWidth,summaryText:(summary?.innerText||'').trim(),popoverText:(p?.innerText||'').trim(),menuText:(menu?.innerText||'').trim()};
+          return {popover:p?r(p):null,summary:r(summary),docSW:document.documentElement.scrollWidth,docCW:document.documentElement.clientWidth,summaryText:(summary?.textContent||'').trim(),popoverText:(p?.textContent||'').trim(),menuText:(menu?.textContent||'').trim()};
         """)
         base.fail_if(not data["popover"], f"Account Menu@768 {route}: popover missing", failures)
         if data["popover"]:
