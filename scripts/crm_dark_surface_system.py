@@ -324,10 +324,12 @@ def assert_dark_surface_ownership(css: str | None = None) -> dict[str, int]:
         raise RuntimeError(f"Tokens semânticos de surface ausentes: {missing}")
 
     pre_surface = source[:marker_at]
-    if re.search(r"(^|[,\n])\s*header\s*(?:,|\{)", pre_surface) and "background: var(--valtren-navy) !important" in pre_surface:
-        raise RuntimeError("Seletor genérico header ainda controla surface navy")
-    if re.search(r"(^|[,\n])\s*footer\s*(?:,|\{)", pre_surface) and "background: var(--valtren-navy) !important" in pre_surface:
-        raise RuntimeError("Seletor genérico footer ainda controla surface navy")
+    for _, selector, backgrounds in _rules(pre_surface):
+        # Ownership é avaliado por regra: texto/accent navy em outro seletor não contamina este gate.
+        if re.search(r"(^|,)\s*header\s*(?:,|$)", selector):
+            raise RuntimeError(f"Seletor genérico header ainda controla surface escura: {selector} => {backgrounds}")
+        if re.search(r"(^|,)\s*footer\s*(?:,|$)", selector):
+            raise RuntimeError(f"Seletor genérico footer ainda controla surface escura: {selector} => {backgrounds}")
 
     counts = {"shell": 0, "overlay": 0, "accent": 0, "overridden": 0, "violations": 0}
     violations: list[str] = []
