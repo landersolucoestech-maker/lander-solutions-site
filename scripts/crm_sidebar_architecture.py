@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CACHE_VERSION = "20260826-sidebar-architecture-v2"
+CACHE_VERSION = "20260827-sidebar-architecture-v3"
 JS_START = "  // VALTREN SIDEBAR ARCHITECTURE START\n"
 JS_END = "  // VALTREN SIDEBAR ARCHITECTURE END\n"
 CSS_MARKER = "/* VALTREN SIDEBAR ARCHITECTURE */"
@@ -30,13 +30,10 @@ JS_BLOCK = r'''  // VALTREN SIDEBAR ARCHITECTURE START
       ['services','Serviços','#/crm/negocios/servicos'],
       ['units','Unidades de Negócio','#/crm/negocios/unidades']
     ];
+    const legalContractActive=active==='legal'&&['contracts','contracts-templates','contracts-variables'].includes(sub);
     const legal=`<details class="crm-nav-group crm-nav-legal" ${active==='legal'?'open':''}><summary>${icon('file',18)}<span>Jurídico</span><b aria-hidden="true">⌄</b></summary><div>
       <a class="${active==='legal'&&sub==='matters'?'active':''}" href="#/crm/juridico">Assuntos Jurídicos</a>
-      <details class="crm-nav-subgroup" ${active==='legal'&&String(sub).startsWith('contracts')?'open':''}><summary><span>Contratos</span><b aria-hidden="true">⌄</b></summary><div>
-        <a class="${active==='legal'&&sub==='contracts'?'active':''}" href="#/crm/juridico/contratos">Contratos</a>
-        <a class="${active==='legal'&&sub==='contracts-templates'?'active':''}" href="#/crm/juridico/contratos/templates">Templates</a>
-        <a class="${active==='legal'&&sub==='contracts-variables'?'active':''}" href="#/crm/juridico/contratos/variaveis">Variáveis</a>
-      </div></details>
+      <a class="${legalContractActive?'active':''}" href="#/crm/juridico/contratos">Contratos</a>
       <a class="${active==='legal'&&sub==='compliance'?'active':''}" href="#/crm/juridico/compliance">Compliance e Políticas</a>
       <a class="${active==='legal'&&sub==='ip'?'active':''}" href="#/crm/juridico/propriedade-intelectual">Propriedade Intelectual</a>
       <a class="${active==='legal'&&sub==='corporate'?'active':''}" href="#/crm/juridico/societario">Societário</a>
@@ -155,35 +152,10 @@ CSS_PATCH = r'''
   object-fit:contain;
   flex:0 0 34px;
 }
-.crm-brand>span{
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  min-width:0;
-  gap:2px;
-}
-.crm-brand strong{
-  display:block;
-  color:#FFFFFF;
-  font:800 14px/1.05 Raleway,Arial,sans-serif;
-  letter-spacing:.09em;
-}
-.crm-brand small{
-  display:block;
-  color:#AEBBCD;
-  font:600 10px/1.2 Montserrat,Arial,sans-serif;
-  letter-spacing:.02em;
-}
-.crm-nav{
-  width:100%;
-  min-width:0;
-  display:flex;
-  flex:1 0 auto;
-  flex-direction:column;
-  align-items:stretch;
-  gap:4px;
-  padding:14px 0 6px;
-}
+.crm-brand>span{display:flex;flex-direction:column;justify-content:center;min-width:0;gap:2px}
+.crm-brand strong{display:block;color:#FFFFFF;font:800 14px/1.05 Raleway,Arial,sans-serif;letter-spacing:.09em}
+.crm-brand small{display:block;color:#AEBBCD;font:600 10px/1.2 Montserrat,Arial,sans-serif;letter-spacing:.02em}
+.crm-nav{width:100%;min-width:0;display:flex;flex:1 0 auto;flex-direction:column;align-items:stretch;gap:4px;padding:14px 0 6px}
 .crm-nav>a,.crm-nav-group>summary{
   width:100%;
   min-width:0;
@@ -203,132 +175,24 @@ CSS_PATCH = r'''
 }
 .crm-nav>a{flex:0 0 auto}
 .crm-nav>a>span,.crm-nav-group>summary>span{min-width:0;flex:1}
-.crm-nav svg,.crm-nav-group>summary svg{
-  width:18px!important;
-  height:18px!important;
-  min-width:18px;
-  min-height:18px;
-  flex:0 0 18px;
-  color:currentColor;
-}
-.crm-nav>a:hover,.crm-nav>a:focus-visible,.crm-nav-group>summary:hover,.crm-nav-group>summary:focus-visible{
-  color:#FFFFFF;
-  background:rgba(255,255,255,.075);
-}
-.crm-nav>a:focus-visible,.crm-nav-group>summary:focus-visible,.crm-nav-group>div>a:focus-visible,.crm-nav-subgroup>summary:focus-visible,.crm-nav-subgroup>div>a:focus-visible,.crm-brand:focus-visible,.crm-sidebar-close:focus-visible{
-  outline:2px solid #D4AF37;
-  outline-offset:2px;
-}
-.crm-nav>a.active{
-  color:#FFE39A;
-  background:rgba(212,175,55,.16);
-  box-shadow:inset 3px 0 0 #D4AF37;
-  font-weight:800;
-}
+.crm-nav svg,.crm-nav-group>summary svg{width:18px!important;height:18px!important;min-width:18px;min-height:18px;flex:0 0 18px;color:currentColor}
+.crm-nav>a:hover,.crm-nav>a:focus-visible,.crm-nav-group>summary:hover,.crm-nav-group>summary:focus-visible{color:#FFFFFF;background:rgba(255,255,255,.075)}
+.crm-nav>a:focus-visible,.crm-nav-group>summary:focus-visible,.crm-nav-group>div>a:focus-visible,.crm-brand:focus-visible,.crm-sidebar-close:focus-visible{outline:2px solid #D4AF37;outline-offset:2px}
+.crm-nav>a.active{color:#FFE39A;background:rgba(212,175,55,.16);box-shadow:inset 3px 0 0 #D4AF37;font-weight:800}
 .crm-nav a[aria-disabled="true"]{opacity:.48;pointer-events:none}
 .crm-nav-group{width:100%;min-width:0;margin:0;padding:0}
-.crm-nav-group>summary,.crm-nav-subgroup>summary{list-style:none;cursor:pointer;user-select:none}
-.crm-nav-group>summary::-webkit-details-marker,.crm-nav-subgroup>summary::-webkit-details-marker{display:none}
-.crm-nav-group>summary::marker,.crm-nav-subgroup>summary::marker{content:""}
-.crm-nav-group>summary>b,.crm-nav-subgroup>summary>b{
-  width:16px;
-  flex:0 0 16px;
-  margin-left:auto;
-  color:#8998AC;
-  font-size:12px;
-  line-height:1;
-  text-align:center;
-  transition:transform .18s ease,color .18s ease;
-}
-.crm-nav-group[open]>summary{
-  color:#FFFFFF;
-  background:rgba(255,255,255,.055);
-}
-.crm-nav-group[open]>summary>b,.crm-nav-subgroup[open]>summary>b{transform:rotate(180deg);color:#D4AF37}
-.crm-nav-group:not([open])>div,.crm-nav-subgroup:not([open])>div{display:none}
-.crm-nav-group>div{
-  width:100%;
-  min-width:0;
-  display:grid;
-  gap:2px;
-  padding:4px 0 5px 28px;
-}
-.crm-nav-group>div>a{
-  width:100%;
-  min-width:0;
-  min-height:34px;
-  display:flex;
-  align-items:center;
-  padding:7px 9px;
-  border-radius:7px;
-  color:#AEBBCD;
-  text-decoration:none;
-  font:600 11px/1.35 Raleway,Arial,sans-serif;
-}
+.crm-nav-group>summary{list-style:none;cursor:pointer;user-select:none}
+.crm-nav-group>summary::-webkit-details-marker{display:none}
+.crm-nav-group>summary::marker{content:""}
+.crm-nav-group>summary>b{width:16px;flex:0 0 16px;margin-left:auto;color:#8998AC;font-size:12px;line-height:1;text-align:center;transition:transform .18s ease,color .18s ease}
+.crm-nav-group[open]>summary{color:#FFFFFF;background:rgba(255,255,255,.055)}
+.crm-nav-group[open]>summary>b{transform:rotate(180deg);color:#D4AF37}
+.crm-nav-group:not([open])>div{display:none}
+.crm-nav-group>div{width:100%;min-width:0;display:grid;gap:2px;padding:4px 0 5px 28px}
+.crm-nav-group>div>a{width:100%;min-width:0;min-height:34px;display:flex;align-items:center;padding:7px 9px;border-radius:7px;color:#AEBBCD;text-decoration:none;font:600 11px/1.35 Raleway,Arial,sans-serif}
 .crm-nav-group>div>a:hover,.crm-nav-group>div>a:focus-visible{color:#FFFFFF;background:rgba(255,255,255,.065)}
-.crm-nav-group>div>a.active{
-  color:#FFE39A;
-  background:rgba(212,175,55,.14);
-  box-shadow:inset 2px 0 0 #D4AF37;
-  font-weight:800;
-}
-.crm-nav-subgroup{width:100%;min-width:0;margin:1px 0;padding:0}
-.crm-nav-subgroup>summary{
-  width:100%;
-  min-width:0;
-  min-height:32px;
-  display:flex;
-  align-items:center;
-  gap:8px;
-  padding:6px 9px;
-  border-radius:7px;
-  color:#B9C5D4;
-  background:transparent;
-  font:700 11px/1.3 Raleway,Arial,sans-serif;
-}
-.crm-nav-subgroup>summary>span{min-width:0;flex:1}
-.crm-nav-subgroup>summary:hover,.crm-nav-subgroup>summary:focus-visible,.crm-nav-subgroup[open]>summary{color:#FFFFFF;background:rgba(255,255,255,.055)}
-.crm-nav-subgroup>div{
-  width:auto;
-  min-width:0;
-  display:grid;
-  gap:2px;
-  margin:2px 0 3px 8px;
-  padding:2px 0 2px 10px;
-  border-left:1px solid rgba(212,175,55,.28);
-}
-.crm-nav-subgroup>div>a{
-  width:100%;
-  min-width:0;
-  min-height:30px;
-  display:flex;
-  align-items:center;
-  padding:6px 8px;
-  border-radius:6px;
-  color:#9FADBF;
-  text-decoration:none;
-  font:600 10.5px/1.35 Raleway,Arial,sans-serif;
-}
-.crm-nav-subgroup>div>a:hover,.crm-nav-subgroup>div>a:focus-visible{color:#FFFFFF;background:rgba(255,255,255,.055)}
-.crm-nav-subgroup>div>a.active{
-  color:#FFE39A;
-  background:rgba(212,175,55,.12);
-  box-shadow:inset 2px 0 0 #D4AF37;
-  font-weight:800;
-}
-.crm-sidebar-close{
-  display:none;
-  width:36px;
-  height:36px;
-  flex:0 0 36px;
-  border:1px solid rgba(255,255,255,.16);
-  border-radius:8px;
-  background:rgba(255,255,255,.08);
-  color:#FFFFFF;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-}
+.crm-nav-group>div>a.active{color:#FFE39A;background:rgba(212,175,55,.14);box-shadow:inset 2px 0 0 #D4AF37;font-weight:800}
+.crm-sidebar-close{display:none;width:36px;height:36px;flex:0 0 36px;border:1px solid rgba(255,255,255,.16);border-radius:8px;background:rgba(255,255,255,.08);color:#FFFFFF;align-items:center;justify-content:center;cursor:pointer}
 .crm-sidebar-close:hover{background:rgba(255,255,255,.14)}
 .crm-sidebar-overlay{display:none}
 @media(max-width:980px) and (min-width:761px){
@@ -340,28 +204,14 @@ CSS_PATCH = r'''
 }
 @media(max-width:760px){
   .crm-app-shell{padding-left:0}
-  .crm-sidebar{
-    display:flex;
-    position:fixed;
-    inset:0 auto 0 0;
-    width:min(88vw,300px);
-    height:100dvh;
-    max-height:100dvh;
-    padding-left:12px;
-    padding-right:12px;
-    overflow-y:auto;
-    transform:translateX(-104%);
-    transition:transform .2s ease;
-    z-index:750;
-    box-shadow:18px 0 48px rgba(4,15,31,.28);
-  }
+  .crm-sidebar{display:flex;position:fixed;inset:0 auto 0 0;width:min(88vw,300px);height:100dvh;max-height:100dvh;padding-left:12px;padding-right:12px;overflow-y:auto;transform:translateX(-104%);transition:transform .2s ease;z-index:750;box-shadow:18px 0 48px rgba(4,15,31,.28)}
   .crm-sidebar.is-open{transform:translateX(0)}
   .crm-sidebar-head{position:sticky;top:0;z-index:2;margin:0 -2px;background:#0B1D3A}
   .crm-sidebar-close{display:inline-flex}
   .crm-sidebar-overlay{display:block;position:fixed;inset:0;background:rgba(4,15,31,.52);opacity:0;pointer-events:none;transition:opacity .2s ease;z-index:740}
   .crm-sidebar-overlay.is-open{opacity:1;pointer-events:auto}
   html.crm-sidebar-lock,body.crm-sidebar-lock{overflow:hidden}
-  .crm-nav-group[open]>div,.crm-nav-subgroup[open]>div{display:grid}
+  .crm-nav-group[open]>div{display:grid}
 }
 '''
 
@@ -403,9 +253,9 @@ def _materialize_js(app: str) -> str:
     if declarations!=1:
         raise RuntimeError(f'crmRelSidebar deve possuir exatamente 1 declaração, encontrado {declarations}')
     block=updated[updated.index(JS_START):updated.index(JS_END)]
-    if any(token in block for token in ['ValtrenChat','MusicChat','>RH<','Administração']):
-        raise RuntimeError('Sidebar canônica contém módulo residual removido')
-    for required in ['Marketing','Relatórios','Configurações','Negócios','Jurídico','Financeiro']:
+    if any(token in block for token in ['ValtrenChat','MusicChat','>RH<','Administração','#/crm/juridico/contratos/templates','#/crm/juridico/contratos/variaveis']):
+        raise RuntimeError('Sidebar canônica contém módulo ou subrota residual removida')
+    for required in ['Marketing','Relatórios','Configurações','Negócios','Jurídico','Financeiro','Assuntos Jurídicos','Contratos','Compliance e Políticas','Propriedade Intelectual','Societário']:
         if required not in block:
             raise RuntimeError(f'Sidebar canônica sem módulo obrigatório: {required}')
     _assert_js_syntax(updated)
@@ -440,8 +290,6 @@ def apply_crm_sidebar_architecture() -> int:
     css_changed=updated_css!=css
     if css_changed:
         CSS.write_text(updated_css,encoding='utf-8')
-    # Cache ownership changes only when this owner actually changes its output.
-    # A no-op rerun after later materializers must remain byte-stable, including HTML.
     if app_changed or css_changed:
         for path in ROOT.rglob('*.html'):
             rel=path.relative_to(ROOT)
@@ -452,7 +300,7 @@ def apply_crm_sidebar_architecture() -> int:
             updated=re.sub(r'valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?',f'valtren-brand.css?v={CACHE_VERSION}',updated)
             if updated!=text:
                 path.write_text(updated,encoding='utf-8')
-    print('Sidebar Architecture materializada com owner único, apresentação estrutural canônica, drawer mobile e saída byte-stable.')
+    print('Sidebar Architecture materializada com Jurídico canônico, Contratos direto, drawer mobile e saída byte-stable.')
     return 1
 
 
