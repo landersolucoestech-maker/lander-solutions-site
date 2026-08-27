@@ -28,7 +28,7 @@ def _apply_valtren_brand() -> bool:
         from header_menu_center_fix import center_header_menu
         from services_logo_refactor import main as apply_services_and_logo_refactor
         from crm_dashboard_module import apply_crm_dashboard
-        from crm_relationships_module import apply_crm_relationships
+        from crm_relationships_module_runner import apply_crm_relationships
         from crm_header_modal_fix import apply_crm_header_modal_fix
         from crm_global_header import apply_crm_global_header
         from crm_header_context_actions import apply_crm_header_context_actions
