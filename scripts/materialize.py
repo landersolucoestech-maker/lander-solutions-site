@@ -25,6 +25,7 @@ def _apply_valtren_brand() -> bool:
         from identity_sweep import sweep_identity
         from logo_site_fix import apply_logo_site_fix
         from site_architecture_refactor import refactor_site_architecture
+        from site_storage_runtime import apply_site_storage_runtime
         from header_menu_center_fix import center_header_menu
         from services_logo_refactor import main as apply_services_and_logo_refactor
         from crm_dashboard_module import apply_crm_dashboard
@@ -77,6 +78,7 @@ def _apply_valtren_brand() -> bool:
         sweep_identity()
         apply_logo_site_fix()
         refactor_site_architecture()
+        apply_site_storage_runtime()
         center_header_menu()
         apply_services_and_logo_refactor()
         apply_crm_dashboard()
@@ -195,7 +197,7 @@ def main() -> int:
             archive = _read_packaged_archive(chunks)
             with zipfile.ZipFile(io.BytesIO(archive)) as package:
                 package.extractall(ROOT)
-        except (ValueError, zipfile.BadZipFile, base64.binascii.Error, zlib.error) as error:
+        except (ValueError, zipfile.BadZip64Error, base64.binascii.Error, zlib.error) as error:
             print(f"Falha ao reconstruir o projeto: {error}", file=sys.stderr)
             return 1
     if not _apply_valtren_brand():
