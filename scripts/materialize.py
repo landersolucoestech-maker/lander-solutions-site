@@ -60,6 +60,7 @@ def _apply_valtren_brand() -> bool:
         from crm_economic_participations import apply_crm_economic_participations
         from crm_payouts import apply_crm_payouts
         from crm_business import apply_crm_business
+        from crm_marketing_module import apply_crm_marketing_module
         from crm_legal_matters import apply_crm_legal_matters
         from crm_compliance import apply_crm_compliance
         from crm_intellectual_property import apply_crm_intellectual_property
@@ -125,6 +126,8 @@ def _apply_valtren_brand() -> bool:
         apply_crm_payouts()
         # Negócios owns Product/Service/Business Unit and patches final lookup adapters.
         apply_crm_business()
+        # Marketing owns planning records locally while external channel metrics remain honest.
+        apply_crm_marketing_module()
         # Remaining legal owners run after Contracts and Business so references resolve canonically.
         # They replace only their four reserved legal placeholders and never rewrite Contracts,
         # Finance, Business or the canonical sidebar architecture.

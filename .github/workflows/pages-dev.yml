@@ -95,6 +95,12 @@ jobs:
           node scripts/test_crm_business.js
           node scripts/test_crm_business_ui.js
 
+      - name: Test Marketing workspace
+        run: |
+          node --check scripts/crm_marketing_module.js
+          python -m py_compile scripts/crm_marketing_module.py
+          node scripts/test_crm_marketing_module.js
+
       - name: Test Legal Matters domain
         run: |
           node --check scripts/crm_legal_matters_core.js
@@ -247,6 +253,7 @@ jobs:
           readonly_suite scripts/test_crm_payouts_ui.js --materialized
           readonly_suite scripts/test_materialized_admin_compatibility.js scripts/test_crm_business.js --materialized
           readonly_suite scripts/test_crm_business_ui.js --materialized
+          readonly_suite scripts/test_crm_marketing_module.js --materialized
           readonly_suite scripts/test_crm_legal_matters.js --materialized
           readonly_suite scripts/test_crm_legal_matters_ui.js --materialized
           readonly_suite scripts/test_crm_compliance.js --materialized
