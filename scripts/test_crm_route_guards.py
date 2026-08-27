@@ -249,7 +249,7 @@ def main() -> int:
         "Jurídico / Compliance": "if(path==='/crm/juridico/compliance')returncrmCompliancePage();",
         "Jurídico / Propriedade Intelectual": "if(path==='/crm/juridico/propriedade-intelectual')returncrmIntellectualPropertyPage();",
         "Jurídico / Societário": "if(path==='/crm/juridico/societario')returncrmCorporateGovernancePage();",
-        "Marketing": "if(path.startsWith('/crm/marketing'))returncrmMarketingUnavailablePage();",
+        "Marketing": "if(path.startsWith('/crm/marketing'))returncrmMarketingPage(path);",
         "Negócios / Produtos": "if(path==='/crm/negocios')returncrmBusinessProductsPage();",
         "Negócios / Serviços": "if(path==='/crm/negocios/servicos')returncrmBusinessServicesPage();",
         "Negócios / Unidades": "if(path==='/crm/negocios/unidades')returncrmBusinessUnitsPage();",
