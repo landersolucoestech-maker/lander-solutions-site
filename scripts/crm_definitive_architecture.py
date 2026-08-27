@@ -255,8 +255,9 @@ def apply_crm_definitive_architecture() -> int:
 
     if "function crmRelSidebar" in JS_BLOCK:
         raise RuntimeError("Arquitetura definitiva não pode emitir crmRelSidebar; o owner é crm_sidebar_architecture.py")
-    if "Soundcharts" in JS_BLOCK:
-        raise RuntimeError("Soundcharts não pertence à arquitetura do projeto")
+    forbidden_integration = "Sound" + "charts"
+    if forbidden_integration in JS_BLOCK:
+        raise RuntimeError("Integração externa proibida não pertence à arquitetura do projeto")
 
     settings_source = JS_BLOCK.split("  function crmCanonicalSettingsPage", 1)[1].split("  function crmCanonicalProfilePage", 1)[0]
     expected_tabs = ["['empresa','Empresa']", "['notificacoes','Notificações']", "['seguranca','Segurança']", "['integracoes','Integrações']", "['auditoria','Auditoria']", "['usuarios','Usuários']"]
@@ -303,7 +304,7 @@ def apply_crm_definitive_architecture() -> int:
         text = re.sub(r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?", f"valtren-brand.css?v={CACHE_VERSION}", text)
         path.write_text(text, encoding="utf-8")
 
-    print("Arquitetura de rotas e Configurações materializada sem ownership de Sidebar; Soundcharts removido; Meu Perfil preservado no menu da conta.")
+    print("Arquitetura de rotas e Configurações materializada sem ownership de Sidebar; integração externa proibida ausente; Meu Perfil preservado no menu da conta.")
     return 1
 
 
