@@ -76,7 +76,10 @@ def source_checks() -> None:
     for token in ("Autenticação desativada", "Nenhuma identidade é simulada"):
         if token not in header:
             fail(f"transparent auth state missing from header: {token}")
-    harness = (SCRIPTS / "certify_visual.py").read_text(encoding="utf-8")
+    harness_files = (SCRIPTS / "certify_visual.py", SCRIPTS / "certify_visual_base.py")
+    if not all(path.exists() for path in harness_files):
+        fail("split visual certification harness is incomplete")
+    harness = "\n".join(path.read_text(encoding="utf-8") for path in harness_files)
     if '("Integrações", "Não configurado")' not in harness:
         fail("ValtrenChat compatibility harness is not aligned to 'Não configurado'")
     if "BREAKPOINTS = [1440, 1280, 1024, 768, 390]" not in harness:
