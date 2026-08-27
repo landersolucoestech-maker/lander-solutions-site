@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CACHE_VERSION = "20260827-product-system-review-v5"
+CACHE_VERSION = "20260827-product-system-review-v6"
 CSS_MARKER = "/* VALTREN PRODUCT SYSTEM REVIEW */"
 
 
@@ -129,16 +129,32 @@ html,body{background:var(--crm-bg)}
 .crm-page-header-actions,.crm-ref-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
 .crm-app-shell button,.crm-app-shell .crm-empty-action,.crm-app-shell a.crm-empty-action{font-family:Raleway,Arial,sans-serif;font-size:var(--crm-font-sm);font-weight:700}
 .crm-app-shell button{min-height:36px;padding:8px 12px;border-radius:var(--crm-radius-sm)}
+.crm-ref-actions button,.crm-ref-actions a,.crm-legal-secondary-action{height:auto!important;min-height:36px!important;padding:8px 12px!important;border:1px solid var(--crm-border-strong)!important;border-radius:var(--crm-radius-sm)!important;background:#FFFFFF!important;color:var(--crm-text)!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:6px!important;text-decoration:none!important;font:700 var(--crm-font-sm)/1.2 Raleway,Arial,sans-serif!important;cursor:pointer}
+.crm-ref-actions .primary,.crm-ref-actions button.primary{background:var(--crm-text)!important;color:#FFFFFF!important;border-color:var(--crm-text)!important}
+.crm-ref-actions a:hover,.crm-legal-secondary-action:hover{background:var(--crm-surface-soft)!important;border-color:#AEBBC9!important}
+.crm-architecture-breadcrumb{gap:7px!important;margin:0 0 14px!important;color:var(--crm-muted)!important;font-size:var(--crm-font-xs)!important;font-weight:700!important;line-height:1.4!important}
+.crm-architecture-breadcrumb a{color:var(--crm-muted)!important;text-decoration:none!important}.crm-architecture-breadcrumb strong{color:var(--crm-text)!important}
+.crm-ref-subtabs a,.crm-ref-pnl-tabs button,.crm-ref-ai-tabs button{min-height:34px!important;height:auto!important;padding:7px 10px!important;font:700 var(--crm-font-sm)/1.25 Raleway,Arial,sans-serif!important}
+.crm-ref-toolbar{gap:8px!important;padding:10px!important;background:var(--crm-surface-soft)!important;border-color:var(--crm-border)!important}
+.crm-ref-toolbar input,.crm-ref-toolbar select,.crm-ref-search{min-height:36px!important;height:36px!important;font:500 var(--crm-font-sm)/1.3 Montserrat,Arial,sans-serif!important;color:var(--crm-text)!important}
+.crm-ref-search input{height:34px!important;font-size:var(--crm-font-sm)!important}
+.crm-ref-period{font-size:var(--crm-font-sm)!important;color:var(--crm-muted)!important}
 .crm-kpi-grid,.crm-ref-kpis,.crm-rel-kpis{gap:12px}
 .crm-kpi,.crm-ref-kpi,.crm-rel-kpi{min-width:0;background:var(--crm-surface);border:1px solid var(--crm-border);border-radius:var(--crm-radius-md);padding:15px 16px;box-shadow:var(--crm-shadow-sm);color:var(--crm-text)}
-.crm-kpi>span,.crm-ref-kpi>span,.crm-rel-kpi>span{display:block;color:var(--crm-muted);font-size:var(--crm-font-sm);font-weight:700;line-height:1.35}
-.crm-kpi>strong,.crm-ref-kpi>strong,.crm-rel-kpi>strong{display:block;margin-top:7px;font-size:20px;line-height:1.15;overflow-wrap:anywhere;color:var(--crm-text)}
-.crm-kpi>small,.crm-ref-kpi>small,.crm-rel-kpi>small{display:block;margin-top:5px;color:var(--crm-muted);font-size:var(--crm-font-xs);line-height:1.4}
+.crm-kpi>span,.crm-ref-kpi>span,.crm-rel-kpi>span{display:block;color:var(--crm-muted);font-size:var(--crm-font-sm)!important;font-weight:700;line-height:1.35}
+.crm-kpi>strong,.crm-ref-kpi>strong,.crm-rel-kpi>strong{display:block;margin-top:7px;font-size:20px!important;line-height:1.15;overflow-wrap:anywhere;color:var(--crm-text)}
+.crm-kpi>small,.crm-ref-kpi>small,.crm-rel-kpi>small{display:block;margin-top:5px;color:var(--crm-muted);font-size:var(--crm-font-xs)!important;line-height:1.4}
 .crm-panel,.crm-ref-panel,.crm-rel-list-panel,.crm-ref-table-card,.crm-legal-table-card{background:var(--crm-surface);border:1px solid var(--crm-border);border-radius:var(--crm-radius-md);box-shadow:var(--crm-shadow-sm);color:var(--crm-text)}
 .crm-panel{padding:16px}
 .crm-panel-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
 .crm-panel-heading span{color:var(--crm-muted);font-size:var(--crm-font-xs);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
 .crm-panel-heading h2{font-size:var(--crm-font-lg);line-height:1.3;margin:3px 0 0}
+.crm-ref-table-card>header h3,.crm-ref-panel>header h3{font-size:14px!important;line-height:1.3!important;color:var(--crm-text)!important}.crm-ref-table-card>header p,.crm-ref-panel>header p{font:400 var(--crm-font-xs)/1.45 Montserrat,Arial,sans-serif!important;color:var(--crm-muted)!important}.crm-ref-table-card>header>span{font-size:var(--crm-font-xs)!important;color:var(--crm-muted)!important}
+.crm-ref-badge,.crm-ref-mini-badges span{font-size:var(--crm-font-xs)!important;line-height:1.2!important;padding:5px 8px!important}
+.crm-ref-empty strong{font-size:13px!important;color:var(--crm-text)!important}.crm-ref-empty span{font:400 var(--crm-font-xs)/1.45 Montserrat,Arial,sans-serif!important;color:var(--crm-muted)!important}
+.crm-ref-field>span,.crm-ref-form-grid label,.crm-rel-field label{font-size:var(--crm-font-xs)!important;line-height:1.35!important;color:var(--crm-muted)!important}
+.crm-ref-field>small{font-size:var(--crm-font-xs)!important;color:var(--crm-muted)!important}
+.crm-ref-settings-blocks h4,.crm-ref-integration-grid strong{font-size:13px!important;color:var(--crm-text)!important}.crm-ref-settings-blocks p,.crm-ref-settings-blocks label,.crm-ref-integration-grid article small{font-size:var(--crm-font-xs)!important;line-height:1.45!important;color:var(--crm-muted)!important}
 .crm-empty-state{min-height:116px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;border:1px dashed var(--crm-border-strong);border-radius:var(--crm-radius-md);background:var(--crm-surface-soft);color:var(--crm-text)}
 .crm-empty-state strong{font-size:14px;color:var(--crm-text)}
 .crm-empty-state p{max-width:620px;margin:6px auto 0;color:var(--crm-muted);font-size:12px;line-height:1.5}
@@ -151,22 +167,23 @@ html,body{background:var(--crm-bg)}
 .crm-integration-grid-readonly{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
 .crm-integration-grid-readonly article{min-height:126px;padding:14px;background:var(--crm-surface);border:1px solid var(--crm-border);border-radius:var(--crm-radius-md);color:var(--crm-text)}
 .crm-integration-grid-readonly article strong{font-size:13px;color:var(--crm-text)}
-.crm-integration-grid-readonly article small,.crm-integration-note{display:block;color:var(--crm-muted);font-size:var(--crm-font-xs);line-height:1.45}
+.crm-integration-grid-readonly article small,.crm-integration-note{display:block;color:var(--crm-muted);font-size:var(--crm-font-xs)!important;line-height:1.45}
 .crm-integration-note{margin-top:6px}
 .crm-table-wrap,.crm-rel-table-wrap,.crm-fidelity-table-wrap,.crm-ref-table-wrap,.crm-legal-table-wrap{max-width:100%;overflow:auto}
 .crm-table,.crm-rel-table,.crm-fidelity-table,.crm-ref-table-wrap table,.crm-legal-table-wrap table{font-size:12px;color:var(--crm-text)}
-.crm-table th,.crm-rel-table th,.crm-fidelity-table th,.crm-ref-table-wrap th,.crm-legal-table-wrap th{white-space:nowrap;color:var(--crm-muted);font-size:11px;font-weight:800;line-height:1.3;background:var(--crm-surface-soft)}
-.crm-table td,.crm-rel-table td,.crm-fidelity-table td,.crm-ref-table-wrap td,.crm-legal-table-wrap td{vertical-align:middle;color:var(--crm-text);font-size:12px;line-height:1.4}
+.crm-table th,.crm-rel-table th,.crm-fidelity-table th,.crm-ref-table-wrap th,.crm-legal-table-wrap th{white-space:nowrap;color:var(--crm-muted);font-size:11px!important;font-weight:800;line-height:1.3;background:var(--crm-surface-soft)}
+.crm-table td,.crm-rel-table td,.crm-fidelity-table td,.crm-ref-table-wrap td,.crm-legal-table-wrap td{vertical-align:middle;color:var(--crm-text);font-size:12px!important;line-height:1.4}
 .crm-rel-table td,.crm-table td,.crm-fidelity-table td{padding-top:10px;padding-bottom:10px}
-.crm-ref-form-grid input,.crm-ref-form-grid select,.crm-ref-form-grid textarea,.crm-rel-field input,.crm-rel-field select,.crm-rel-field textarea,.crm-legal-toolbar input,.crm-legal-toolbar select{min-height:38px;border-radius:var(--crm-radius-sm);border-color:var(--crm-border-strong);background:#FFFFFF;color:var(--crm-text);font-size:12px;box-sizing:border-box;color-scheme:light}
+.crm-ref-form-grid input,.crm-ref-form-grid select,.crm-ref-form-grid textarea,.crm-rel-field input,.crm-rel-field select,.crm-rel-field textarea,.crm-legal-toolbar input,.crm-legal-toolbar select{min-height:38px;border-radius:var(--crm-radius-sm);border-color:var(--crm-border-strong);background:#FFFFFF;color:var(--crm-text);font:500 var(--crm-font-sm)/1.35 Montserrat,Arial,sans-serif!important;box-sizing:border-box;color-scheme:light}
 .crm-ref-form-grid textarea,.crm-rel-field textarea{min-height:88px}
 .crm-app-shell input::placeholder,.crm-app-shell textarea::placeholder{color:#8795A6;opacity:1}
 .crm-modal,.crm-drawer,.crm-rel-modal,.crm-agenda-modal,.crm-ref-modal{max-width:calc(100vw - 28px);background:#FFFFFF;color:var(--crm-text);border-color:var(--crm-border);border-radius:var(--crm-radius-lg);box-shadow:var(--crm-shadow-md);color-scheme:light}
+.crm-ref-modal>header h2{font-size:18px!important}.crm-ref-modal>header p,.crm-ref-modal-body,.crm-ref-modal footer button{font-size:var(--crm-font-sm)!important}.crm-ref-modal footer button{min-height:36px!important;height:auto!important}
 #crm-rel-modal-root,#crm-agenda-modal-root,#crm-ref-modal-root,#crm-legal-overlay-root{--crm-text:#0B1D3A;--crm-muted:#5F6F82;--crm-border:#D9E1E9;color-scheme:light}
 #crm-rel-modal-root .crm-rel-modal,#crm-rel-modal-root .crm-rel-modal-header,#crm-rel-modal-root .crm-rel-modal-body,#crm-rel-modal-root .crm-rel-modal-footer,#crm-agenda-modal-root .crm-agenda-modal,#crm-agenda-modal-root .crm-agenda-modal>header,#crm-agenda-modal-root .crm-agenda-modal-body,#crm-agenda-modal-root .crm-agenda-modal footer,#crm-ref-modal-root .crm-ref-modal,#crm-ref-modal-root .crm-ref-modal>header,#crm-ref-modal-root .crm-ref-modal-body,#crm-ref-modal-root .crm-ref-modal footer,#crm-legal-overlay-root .crm-legal-overlay,#crm-legal-overlay-root .crm-legal-modal,#crm-legal-overlay-root .crm-legal-drawer{background:#FFFFFF!important;color:#0B1D3A!important;border-color:#D9E1E9!important;color-scheme:light!important}
 #crm-rel-modal-root h1,#crm-rel-modal-root h2,#crm-rel-modal-root h3,#crm-agenda-modal-root h1,#crm-agenda-modal-root h2,#crm-agenda-modal-root h3,#crm-ref-modal-root h1,#crm-ref-modal-root h2,#crm-ref-modal-root h3,#crm-legal-overlay-root h1,#crm-legal-overlay-root h2,#crm-legal-overlay-root h3{color:#0B1D3A!important}
 #crm-rel-modal-root p,#crm-agenda-modal-root p,#crm-ref-modal-root p,#crm-legal-overlay-root p{color:#5F6F82}
-#crm-rel-modal-root input,#crm-rel-modal-root select,#crm-rel-modal-root textarea,#crm-agenda-modal-root input,#crm-agenda-modal-root select,#crm-agenda-modal-root textarea,#crm-ref-modal-root input,#crm-ref-modal-root select,#crm-ref-modal-root textarea,#crm-legal-overlay-root input,#crm-legal-overlay-root select,#crm-legal-overlay-root textarea{background:#FFFFFF!important;color:#0B1D3A!important;-webkit-text-fill-color:#0B1D3A!important;border-color:#C8D2DD!important;color-scheme:light!important}
+#crm-rel-modal-root input,#crm-rel-modal-root select,#crm-rel-modal-root textarea,#crm-agenda-modal-root input,#crm-agenda-modal-root select,#crm-agenda-modal-root textarea,#crm-ref-modal-root input,#crm-ref-modal-root select,#crm-ref-modal-root textarea,#crm-legal-overlay-root input,#crm-legal-overlay-root select,#crm-legal-overlay-root textarea{background:#FFFFFF!important;color:#0B1D3A!important;-webkit-text-fill-color:#0B1D3A!important;border-color:#C8D2DD!important;color-scheme:light!important;font-size:var(--crm-font-sm)!important}
 .crm-global-loading{position:fixed;inset:0;z-index:2000;display:grid;place-items:center;background:var(--crm-bg)}
 .crm-global-loading-inner{width:min(280px,70vw);display:grid;justify-items:center;gap:16px}
 .crm-global-loading-inner img{width:78px;max-height:70px;object-fit:contain}
@@ -175,7 +192,7 @@ html,body{background:var(--crm-bg)}
 @keyframes crm-loading-slide{0%{transform:translateX(-120%)}100%{transform:translateX(320%)}}
 @media(max-width:1200px){.crm-kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:980px) and (min-width:761px){.crm-workspace,.crm-ref-workspace,.crm-agenda-workspace{padding:20px}.crm-app-shell .crm-topbar{padding-inline:20px}}
-@media(max-width:760px){.crm-app-shell .crm-topbar{min-height:auto;padding:14px 16px;align-items:flex-start;flex-direction:column}.crm-workspace,.crm-ref-workspace,.crm-agenda-workspace{padding:16px}.crm-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.crm-page-header{flex-direction:column;margin-bottom:16px}.crm-page-header h1,.crm-page-header h2{font-size:21px}.crm-panel{padding:14px}}
+@media(max-width:760px){.crm-app-shell .crm-topbar{min-height:auto;padding:14px 16px;align-items:flex-start;flex-direction:column}.crm-workspace,.crm-ref-workspace,.crm-agenda-workspace{padding:16px}.crm-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.crm-page-header{flex-direction:column;margin-bottom:16px}.crm-page-header h1,.crm-page-header h2{font-size:21px}.crm-panel{padding:14px}.crm-ref-actions{width:100%;justify-content:flex-start}}
 @media(max-width:480px){.crm-kpi-grid{grid-template-columns:1fr}.crm-workspace,.crm-ref-workspace,.crm-agenda-workspace{padding:12px}.crm-panel{border-radius:8px}.crm-page-header-actions,.crm-ref-actions{width:100%;justify-content:flex-start}}
 '''
 
@@ -241,7 +258,7 @@ def apply_crm_product_system_review() -> int:
         updated = re.sub(r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?", f"valtren-brand.css?v={CACHE_VERSION}", original)
         if updated != original:
             path.write_text(updated, encoding="utf-8")
-    print("Revisão global transversal materializada: escala visual, contraste, estados vazios, settings transparentes e design system consolidados; Soundcharts ausente.")
+    print("Revisão global transversal materializada: tipografia operacional >=11px, ações/filtros normalizados, contraste claro consistente e Soundcharts ausente.")
     return 1
 
 
