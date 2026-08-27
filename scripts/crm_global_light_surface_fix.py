@@ -5,7 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CSS = ROOT / "assets" / "valtren-brand.css"
-CACHE_VERSION = "20260825-crm-global-light-surfaces-v1"
+CACHE_VERSION = "20260827-crm-global-light-surfaces-v2"
 
 CSS_PATCH = r'''
 /* VALTREN CRM GLOBAL LIGHT SURFACES */
@@ -53,9 +53,10 @@ CSS_PATCH = r'''
 #crm-agenda-modal-root textarea::placeholder,
 #crm-ref-modal-root input::placeholder,
 #crm-ref-modal-root textarea::placeholder{
-  color:#94A3B8!important;
-  -webkit-text-fill-color:#94A3B8!important;
+  color:#64748B!important;
+  -webkit-text-fill-color:#64748B!important;
   opacity:1!important;
+  font-weight:500!important;
 }
 
 .crm-app-shell .crm-workspace .crm-panel,
@@ -88,7 +89,8 @@ CSS_PATCH = r'''
 }
 .crm-app-shell .crm-workspace .crm-result-total>span,
 .crm-app-shell .crm-workspace .crm-distribution-calc .total span{
-  color:#64748B!important;
+  color:#526174!important;
+  font-weight:500!important;
 }
 .crm-app-shell .crm-workspace .crm-result-total strong,
 .crm-app-shell .crm-workspace .crm-distribution-calc .total strong{
@@ -125,7 +127,7 @@ CSS_PATCH = r'''
   box-shadow:none!important;
 }
 .crm-agenda-month .crm-agenda-day.muted>header span{
-  color:#94A3B8!important;
+  color:#64748B!important;
 }
 .crm-agenda-month .crm-agenda-day.today>header span{
   background:#FFF7D6!important;
@@ -211,7 +213,7 @@ def apply_crm_global_light_surface_fix() -> int:
         text = re.sub(r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?", f"valtren-brand.css?v={CACHE_VERSION}", text)
         path.write_text(text, encoding="utf-8")
 
-    print("Superfícies internas do CRM padronizadas em tema claro; navy restrito ao chrome e estados controlados.")
+    print("Superfícies internas do CRM padronizadas em tema claro; placeholders e textos auxiliares preservam contraste legível; navy restrito ao chrome e estados controlados.")
     return 1
 
 
