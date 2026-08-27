@@ -49,6 +49,13 @@ for(const [name,source] of [['Payouts',payouts],['Business',business],['Legal sh
 must(ownerPayload.includes("nav('#/crm/marketing','Marketing'"),'Marketing must remain first-level');
 must(ownerPayload.includes("nav('#/crm/relatorios','Relatórios'"),'Reports must remain');
 ['ValtrenChat','MusicChat',"nav('#/crm/rh'",'Administração'].forEach((token)=>must(!ownerPayload.includes(token),`sidebar payload still contains removed module: ${token}`));
+for(const label of ['Assuntos Jurídicos','Contratos','Compliance e Políticas','Propriedade Intelectual','Societário'])must(ownerPayload.includes(label),`Legal canonical item missing: ${label}`);
+must(ownerPayload.includes('href="#/crm/juridico/contratos">Contratos</a>'),'Contracts must be a direct Legal link');
+must(ownerPayload.includes("['contracts','contracts-templates','contracts-variables'].includes(sub)"),'Templates and Variables routes must keep Contracts active in Sidebar');
+must(!ownerPayload.includes('#/crm/juridico/contratos/templates'),'Templates must not appear in Sidebar');
+must(!ownerPayload.includes('#/crm/juridico/contratos/variaveis'),'Variables must not appear in Sidebar');
+must(!ownerPayload.includes('<span>Templates</span>'),'Templates nested item survived Sidebar');
+must(!ownerPayload.includes('<span>Variáveis</span>'),'Variables nested item survived Sidebar');
 must(header.includes('crm-sidebar-toggle'),'Header missing mobile navigation toggle');
 must(header.includes('@media(max-width:980px){.crm-account-copy{display:none}'),'Header missing tablet Account Menu compaction');
 must(!review.includes('.crm-sidebar{position:'),'global review still positions Sidebar');
@@ -71,8 +78,6 @@ must(!review.includes('.crm-account-menu>summary'),'global review still styles A
   ['.crm-nav>a.active{','sidebar active main state missing'],
   ['box-shadow:inset 3px 0 0 #D4AF37','sidebar active indicator missing'],
   ['.crm-nav-group>div{','sidebar submenu layout missing'],
-  ['.crm-nav-subgroup>summary{','Contracts subgroup presentation missing'],
-  ['.crm-nav-subgroup>div{\n  width:auto;','Contracts nested submenu must respect indented width without horizontal overflow'],
   ['outline:2px solid #D4AF37','sidebar focus-visible state missing'],
   ['padding-left:232px','tablet content offset missing'],
   ['.crm-sidebar{width:232px','tablet readable sidebar width missing'],
@@ -80,6 +85,7 @@ must(!review.includes('.crm-account-menu>summary'),'global review still styles A
   ['.crm-sidebar.is-open{transform:translateX(0)}','mobile drawer open state missing'],
   ['html.crm-sidebar-lock,body.crm-sidebar-lock{overflow:hidden}','mobile body lock missing']
 ].forEach(([token,message])=>must(ownerCss.includes(token),message));
+must(!ownerCss.includes('.crm-nav-subgroup'),'dead nested Contracts subgroup CSS must be removed');
 must(!ownerCss.includes('zoom:'),'sidebar owner must not use zoom hack');
 must(!ownerCss.includes('scale('),'sidebar owner must not use scale hack');
 must(!/font-size:\s*[0-8](?:px|rem)/.test(ownerCss),'sidebar owner contains illegibly small font sizing');
@@ -93,8 +99,8 @@ if(materialized){
  const s=app.indexOf('VALTREN SIDEBAR ARCHITECTURE START');
  const e=app.indexOf('VALTREN SIDEBAR ARCHITECTURE END',s);
  const block=app.slice(s,e);
- ['ValtrenChat','MusicChat','>RH<','Administração'].forEach((token)=>must(!block.includes(token),`removed module leaked into materialized sidebar: ${token}`));
- ['Marketing','Relatórios','Configurações','Negócios','Jurídico','Financeiro'].forEach((token)=>must(block.includes(token),`required sidebar module missing: ${token}`));
+ ['ValtrenChat','MusicChat','>RH<','Administração','#/crm/juridico/contratos/templates','#/crm/juridico/contratos/variaveis'].forEach((token)=>must(!block.includes(token),`removed module/subroute leaked into materialized sidebar: ${token}`));
+ ['Marketing','Relatórios','Configurações','Negócios','Jurídico','Financeiro','Assuntos Jurídicos','Contratos','Compliance e Políticas','Propriedade Intelectual','Societário'].forEach((token)=>must(block.includes(token),`required sidebar module missing: ${token}`));
  must(app.includes("if(path==='/crm/valtrenchat'||path==='/crm/musicchat')return crmLegacyRoute('#/crm/configuracoes?tab=integracoes',crmCanonicalSettingsPage);"),'ValtrenChat legacy route missing integration redirect');
  must(app.includes("if(path==='/crm/rh')return crmArchitecturePlaceholderPage('','hr','RH'"),'RH compatibility route missing honest placeholder');
  must(app.includes("if(path.startsWith('/crm/marketing'))return crmMarketingPage(path);"),'Marketing route must use canonical operational workspace');
@@ -107,7 +113,8 @@ if(materialized){
  const cssStart=css.indexOf('/* VALTREN SIDEBAR ARCHITECTURE */');
  const cssNext=css.indexOf('\n/* ',cssStart+1);
  const sidebarCss=css.slice(cssStart,cssNext<0?css.length:cssNext);
- ['.crm-brand img{','.crm-nav{','.crm-nav>a.active{','.crm-nav-group>div{','.crm-nav-subgroup>div{','width:auto;','padding-left:232px','transform:translateX(-104%)'].forEach((token)=>must(sidebarCss.includes(token),`materialized sidebar CSS missing structural token: ${token}`));
+ ['.crm-brand img{','.crm-nav{','.crm-nav>a.active{','.crm-nav-group>div{','padding-left:232px','transform:translateX(-104%)'].forEach((token)=>must(sidebarCss.includes(token),`materialized sidebar CSS missing structural token: ${token}`));
+ must(!sidebarCss.includes('.crm-nav-subgroup'),'dead Contracts nested subgroup CSS survived materialization');
  const refStart=css.indexOf('/* VALTREN CRM REFERENCE MODULES */');
  must(refStart>=0,'materialized Reference Modules CSS marker missing');
  const refNext=css.indexOf('\n/* ',refStart+1);
