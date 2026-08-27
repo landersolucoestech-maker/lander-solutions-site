@@ -7,14 +7,18 @@ APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
 INDEX = ROOT / "index.html"
 ANCHOR = "  // VALTREN BUSINESS CATALOG START\n"
-FINAL_CACHE_VERSION = "20260826-legal-complete-v1"
+FINAL_CACHE_VERSION = "20260827-legal-complete-v2"
 
 LEGAL_SIDEBAR_REQUIRED = [
-    "Assuntos Jurídicos", "Contratos", "Templates", "Variáveis",
+    "Assuntos Jurídicos", "Contratos",
     "Compliance e Políticas", "Propriedade Intelectual", "Societário",
 ]
 LEGAL_SIDEBAR_FORBIDDEN_LINK_LABELS = [
-    "Processos", "Litígios", "Marcas", "Patentes", "Sócios", "Atos", "Políticas", "Obrigações",
+    "Templates", "Variáveis", "Processos", "Litígios", "Marcas", "Patentes", "Sócios", "Atos", "Políticas", "Obrigações",
+]
+LEGAL_SIDEBAR_FORBIDDEN_ROUTES = [
+    "#/crm/juridico/contratos/templates",
+    "#/crm/juridico/contratos/variaveis",
 ]
 PREVIOUS_OWNER_HANDLERS = [
     "if(path==='/crm/financeiro')return crmTransactionsPage();",
@@ -83,6 +87,9 @@ def validate_legal_sidebar(app: str) -> None:
     for label in LEGAL_SIDEBAR_FORBIDDEN_LINK_LABELS:
         if re.search(rf">\s*{re.escape(label)}\s*</a>", sidebar):
             raise RuntimeError(f"Subitem jurídico indevido no sidebar: {label}")
+    leaked_routes = [route for route in LEGAL_SIDEBAR_FORBIDDEN_ROUTES if route in sidebar]
+    if leaked_routes:
+        raise RuntimeError(f"Rota contratual interna vazou para a Sidebar: {leaked_routes}")
 
 def validate_previous_owners(app: str) -> None:
     missing = [x for x in PREVIOUS_OWNER_HANDLERS if x not in app]
