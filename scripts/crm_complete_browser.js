@@ -4,13 +4,20 @@ const CRM_FULL_ROLE_OPTIONS=[['customer','Cliente'],['prospect','Prospect'],['pa
 const CRM_FULL_STORAGE_PARTIES='valtren.crm.canonical-parties.v1';
 const CRM_FULL_STORAGE_DOMAIN='valtren.crm.domain.v1';
 
+function crmFullStoredObject(key,label){
+  const saved=localStorage.getItem(key);if(!saved)return null;
+  try{const parsed=JSON.parse(saved);if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw new TypeError(`${label} deve possuir raiz Object`);return parsed;}
+  catch(error){console.warn(`CRM: ${label} local não pôde ser restaurado.`,error);return null;}
+}
 function crmFullRestorePersistence(){
   if(state.__crmFullPersistenceRestored)return;
   state.__crmFullPersistenceRestored=true;
-  try{
-    if(!state.__crmCanonicalPartyService){const saved=localStorage.getItem(CRM_FULL_STORAGE_PARTIES);if(saved)state.crmCanonicalParties=ValtrenPartyCore.ensureState(JSON.parse(saved));}
-    const crmSaved=localStorage.getItem(CRM_FULL_STORAGE_DOMAIN);if(crmSaved)state.crmDomain=ValtrenCrmCore.ensureState(JSON.parse(crmSaved));
-  }catch(error){console.warn('CRM: persistência local não pôde ser restaurada.',error);}
+  if(!state.__crmCanonicalPartyService){
+    const parties=crmFullStoredObject(CRM_FULL_STORAGE_PARTIES,'Pessoas/Organizações');
+    if(parties){try{state.crmCanonicalParties=ValtrenPartyCore.ensureState(parties);}catch(error){console.warn('CRM: Pessoas/Organizações locais são inválidas.',error);}}
+  }
+  const domain=crmFullStoredObject(CRM_FULL_STORAGE_DOMAIN,'Domínio CRM');
+  if(domain){try{state.crmDomain=ValtrenCrmCore.ensureState(domain);}catch(error){console.warn('CRM: domínio CRM local é inválido.',error);}}
 }
 function crmFullPersist(){
   try{localStorage.setItem(CRM_FULL_STORAGE_PARTIES,JSON.stringify(state.crmCanonicalParties||{}));localStorage.setItem(CRM_FULL_STORAGE_DOMAIN,JSON.stringify(state.crmDomain||{}));}catch(error){console.warn('CRM: persistência local indisponível.',error);}
@@ -32,7 +39,8 @@ function crmFullService(){
 function crmFullUsers(){
   const rows=[],seen=new Set();
   const add=(id,name)=>{id=String(id||'').trim();name=String(name||id||'').trim();if(!id||seen.has(id))return;seen.add(id);rows.push({id,name});};
-  add(state.crmUserId||state.crmUserName||'current',state.crmUserName||'Administrador');
+  const currentId=String(state.crmUserId||'').trim(),currentName=String(state.crmUserName||'').trim();
+  if(currentId||currentName)add(currentId||currentName,currentName||currentId);
   (state.crmRefUsers||[]).forEach((u)=>add(u.id||u.email,u.name||u.email));
   return rows;
 }
