@@ -1,4 +1,5 @@
 name: CRM Storage Patch Once
+# one-shot trigger
 
 on:
   push:
