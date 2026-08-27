@@ -9,7 +9,7 @@ CSS = ROOT / "assets" / "valtren-brand.css"
 CORE = ROOT / "scripts" / "crm_legal_contracts_core.js"
 BROWSER = ROOT / "scripts" / "crm_legal_contracts_browser.js"
 MODULE_CSS = ROOT / "scripts" / "crm_legal_contracts.css"
-CACHE_VERSION = "20260825-legal-contracts-v2"
+CACHE_VERSION = "20260827-legal-contracts-v3"
 JS_START = "  // VALTREN LEGAL CONTRACTS START\n"
 JS_END = "  // VALTREN LEGAL CONTRACTS END\n"
 
@@ -22,6 +22,12 @@ def apply_crm_legal_contracts() -> int:
     app = APP.read_text(encoding="utf-8")
     core = CORE.read_text(encoding="utf-8").strip()
     browser = BROWSER.read_text(encoding="utf-8").strip()
+
+    old_contract_actions = "const actions=`<button type=\"button\" class=\"primary\" data-action=\"crm-legal-new-contract\">${icon('plus',14)} Novo Contrato</button>`;"
+    new_contract_actions = "const actions=`<a class=\"crm-legal-secondary-action\" href=\"#/crm/juridico/contratos/templates\">Templates</a><a class=\"crm-legal-secondary-action\" href=\"#/crm/juridico/contratos/variaveis\">Variáveis</a><button type=\"button\" class=\"primary\" data-action=\"crm-legal-new-contract\">${icon('plus',14)} Novo Contrato</button>`;"
+    if browser.count(old_contract_actions) != 1:
+        raise RuntimeError(f"Ações canônicas do Page Header de Contratos divergentes: {browser.count(old_contract_actions)}")
+    browser = browser.replace(old_contract_actions, new_contract_actions, 1)
 
     app = re.sub(
         r"\n?  // VALTREN LEGAL CONTRACTS START\n.*?  // VALTREN LEGAL CONTRACTS END\n",
@@ -68,6 +74,9 @@ def apply_crm_legal_contracts() -> int:
         "PRODUTO.NOME",
         "SERVICO.NOME",
         "UNIDADE.NOME",
+        "crm-legal-secondary-action",
+        "#/crm/juridico/contratos/templates",
+        "#/crm/juridico/contratos/variaveis",
     ]
     missing = [item for item in required if item not in app]
     if missing:
@@ -77,7 +86,6 @@ def apply_crm_legal_contracts() -> int:
         if old in app:
             raise RuntimeError("Placeholder de Contratos sobreviveu no bundle")
 
-    # Other Legal areas are explicitly out of scope and must remain placeholders.
     untouched_legal = [
         "if(path==='/crm/juridico')return crmArchitecturePlaceholderPage('legal','matters','Assuntos Jurídicos');",
         "if(path==='/crm/juridico/compliance')return crmArchitecturePlaceholderPage('legal','compliance','Compliance e Políticas');",
@@ -88,9 +96,6 @@ def apply_crm_legal_contracts() -> int:
     if missing_untouched:
         raise RuntimeError(f"Módulo Jurídico fora do escopo foi alterado: {missing_untouched}")
 
-    # Canonical Finance stack must remain intact. Participações/Repasses are validated as
-    # placeholders using the current canonical Portuguese sub-ids; older English sub-ids
-    # are accepted only as route-compatibility markers from prior architecture revisions.
     finance_required = [
         "if(path==='/crm/financeiro')return crmTransactionsPage();",
         "if(path==='/crm/financeiro/accounting')return crmAccountingPage();",
@@ -127,8 +132,6 @@ def apply_crm_legal_contracts() -> int:
     expected_legal = [
         "Assuntos Jurídicos",
         "Contratos",
-        "Templates",
-        "Variáveis",
         "Compliance e Políticas",
         "Propriedade Intelectual",
         "Societário",
@@ -136,16 +139,20 @@ def apply_crm_legal_contracts() -> int:
     missing_sidebar = [label for label in expected_legal if label not in sidebar]
     if missing_sidebar:
         raise RuntimeError(f"Sidebar Jurídico sofreu regressão: {missing_sidebar}")
-    required_links = [
-        "#/crm/juridico/contratos",
+    if "#/crm/juridico/contratos" not in sidebar:
+        raise RuntimeError("Link direto de Contratos desapareceu da Sidebar")
+    forbidden_sidebar = [
         "#/crm/juridico/contratos/templates",
         "#/crm/juridico/contratos/variaveis",
+        ">Templates<",
+        ">Variáveis<",
+        "Cláusulas",
+        "Aprovações",
+        "Assinaturas",
+        "Regras Econômicas",
+        "Participantes",
     ]
-    missing_links = [link for link in required_links if link not in sidebar]
-    if missing_links:
-        raise RuntimeError(f"Hierarquia de Contratos no sidebar foi alterada: {missing_links}")
-    forbidden_sidebar = ["Cláusulas", "Aprovações", "Assinaturas", "Regras Econômicas", "Participantes"]
-    leaked = [label for label in forbidden_sidebar if label in sidebar]
+    leaked = [token for token in forbidden_sidebar if token in sidebar]
     if leaked:
         raise RuntimeError(f"Submódulo contratual indevido foi adicionado ao sidebar: {leaked}")
 
@@ -164,7 +171,7 @@ def apply_crm_legal_contracts() -> int:
         text_value = re.sub(r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?", f"valtren-brand.css?v={CACHE_VERSION}", text_value)
         path.write_text(text_value, encoding="utf-8")
 
-    print("Jurídico → Contratos materializado com Contratos, Templates e Variáveis canônicos; Pessoas/Organizações reutilizadas; feed econômico somente leitura preparado; Financeiro e demais áreas Jurídicas preservados.")
+    print("Jurídico → Contratos materializado com Contratos direto na Sidebar; Templates e Variáveis acessíveis pelo Page Header; domínios adjacentes preservados.")
     return 1
 
 
