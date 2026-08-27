@@ -209,11 +209,11 @@ SEMANTIC_CSS = r'''
   border-color:#D9E1E9!important;
 }
 
-/* Controles e menus dentro do workspace ficam claros. Account Menu é shell e fica excluído. */
+/* Controles e menus dentro do workspace ficam claros. Account Menu (trigger e popover) pertence exclusivamente ao owner do Header. */
 .crm-app-shell .crm-main input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 .crm-app-shell .crm-main select,
 .crm-app-shell .crm-main textarea,
-.crm-app-shell .crm-main [class*="popover"],
+.crm-app-shell .crm-main [class*="popover"]:not(.crm-account-popover),
 .crm-app-shell .crm-main [class*="dropdown"]:not(.crm-nav-dropdown),
 .crm-app-shell .crm-main [class$="-more"]>div,
 .crm-app-shell .crm-main [class$="-menu"]:not(.crm-nav):not(.crm-sidebar):not(.crm-account-menu){
@@ -414,6 +414,7 @@ def assert_dark_surface_ownership(css: str | None = None) -> dict[str, int]:
         ".crm-app-shell .crm-acct-entry-head button.active",
         ".crm-app-shell .crm-alloc-steps button.active",
         ".crm-app-shell .crm-main button.primary",
+        ".crm-app-shell .crm-main [class*=\"popover\"]:not(.crm-account-popover)",
     ):
         if token not in source[marker_at:]:
             raise RuntimeError(f"Proteção final de light surface ausente: {token}")
@@ -433,7 +434,7 @@ def apply_crm_dark_surface_system() -> int:
     css = _append_as_final_owner(css)
     assert_dark_surface_ownership(css)
     CSS.write_text(css, encoding="utf-8")
-    print("Dark shell/light workspace aplicado como owner CSS final: navy estrutural restrito ao Header global e Sidebar; Account Menu integrado ao shell; conteúdo ocupa 100% da área útil.")
+    print("Dark shell/light workspace aplicado como owner CSS final: navy estrutural restrito ao Header global e Sidebar; Account Menu isolado do owner de workspace; conteúdo ocupa 100% da área útil.")
     return 1
 
 
