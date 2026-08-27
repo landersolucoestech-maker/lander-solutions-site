@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CSS_VERSION = "20260827-crm-global-header-v5"
+CSS_VERSION = "20260827-crm-global-header-v6"
 JS_START = "  // VALTREN CRM GLOBAL HEADER START\n"
 JS_END = "  // VALTREN CRM GLOBAL HEADER END\n"
 DASHBOARD_START = "  // VALTREN CRM DASHBOARD START\n"
@@ -58,7 +58,9 @@ CSS_PATCH = r'''
 .crm-account-icon{width:30px;height:30px;flex:0 0 30px;border-radius:50%;display:grid;place-items:center;background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.72);color:#D4AF37}
 .crm-account-copy{display:flex;min-width:0;flex-direction:column;align-items:flex-start;line-height:1.15}.crm-account-copy strong{font-size:13px;color:#FFFFFF}.crm-account-copy small{font-size:11px;color:#E8CC73;margin-top:3px;white-space:nowrap}
 .crm-account-chevron{color:#D4AF37;flex:0 0 auto;transition:transform .18s ease}.crm-account-menu[open] .crm-account-chevron{transform:rotate(180deg)}
-.crm-account-popover{position:absolute;right:0;top:calc(100% + 8px);width:min(320px,calc(100vw - 28px));box-sizing:border-box;padding:16px;border:1px solid rgba(11,29,58,.12);border-radius:12px;background:#fff;box-shadow:0 16px 40px rgba(11,29,58,.16);z-index:800}.crm-account-popover p{font-size:12px;line-height:1.5;color:#687386;margin:7px 0 12px}.crm-account-popover a{display:inline-flex;min-height:36px;align-items:center;color:#0B1D3A;font-size:12px;font-weight:700;text-decoration:none}
+.crm-account-popover{position:absolute;right:0;top:calc(100% + 8px);width:min(320px,calc(100vw - 28px));box-sizing:border-box;padding:16px;border:1px solid rgba(11,29,58,.12);border-radius:12px;background:#fff;color:#0B1D3A;color-scheme:light;box-shadow:0 16px 40px rgba(11,29,58,.16);z-index:800}
+.crm-account-popover>strong{display:block;color:#0B1D3A;font-size:13px;line-height:1.3}
+.crm-account-popover p{font-size:12px;line-height:1.5;color:#526174!important;font-weight:500;margin:7px 0 12px}.crm-account-popover a{display:inline-flex;min-height:36px;align-items:center;color:#0B1D3A;font-size:12px;font-weight:700;text-decoration:none}
 @media(max-width:980px){.crm-account-copy{display:none}.crm-account-menu>summary{gap:6px;padding:5px 8px}.crm-account-popover{max-width:calc(100vw - 24px)}}
 @media(max-width:760px){.crm-header-actions{width:100%;justify-content:flex-start;flex-wrap:wrap;margin-left:0}.crm-mobile-nav-toggle{display:inline-flex}.crm-account-menu{margin-left:auto}.crm-account-popover{position:fixed;right:12px;top:auto;max-width:calc(100vw - 24px)}}
 '''
