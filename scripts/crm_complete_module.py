@@ -127,13 +127,14 @@ def apply_crm_complete_module() -> int:
     browser = BROWSER_JS.read_text(encoding="utf-8").strip()
     hardening = HARDENING_JS.read_text(encoding="utf-8").strip()
 
-    # Authentication is intentionally disabled. Do not manufacture a current user
-    # for responsible/owner selectors; only real locally registered users are valid.
+    # Authentication is intentionally disabled. The source owner must already avoid
+    # manufacturing an identity; materialization verifies that contract instead of patching it.
     fake_current_user = "add(state.crmUserId||state.crmUserName||'current',state.crmUserName||'Administrador');"
-    real_current_user = "if(state.crmUserId&&state.crmUserName)add(state.crmUserId,state.crmUserName);"
-    if fake_current_user not in browser:
-        raise RuntimeError("CRM completo: fallback fictício de usuário não encontrado no owner de origem")
-    browser = browser.replace(fake_current_user, real_current_user, 1)
+    real_current_user = "const currentId=String(state.crmUserId||'').trim(),currentName=String(state.crmUserName||'').trim();"
+    if fake_current_user in browser:
+        raise RuntimeError("CRM completo: owner de origem ainda fabrica usuário atual")
+    if real_current_user not in browser:
+        raise RuntimeError("CRM completo: owner de origem não possui seleção de identidade real")
 
     # CRM route composition is owned here: the domain may still expose Organizations,
     # Customers and Interactions, but the visual CRM navigation contains only Contacts
