@@ -10,7 +10,7 @@ DOMAIN_JS = ROOT / "scripts" / "crm_complete_domain.js"
 BROWSER_JS = ROOT / "scripts" / "crm_complete_browser.js"
 HARDENING_JS = ROOT / "scripts" / "crm_complete_hardening.js"
 MODULE_CSS = ROOT / "scripts" / "crm_complete_module.css"
-CACHE_VERSION = "20260825-crm-complete-v2"
+CACHE_VERSION = "20260827-crm-complete-v3"
 JS_START = "  // VALTREN CRM COMPLETE START\n"
 JS_END = "  // VALTREN CRM COMPLETE END\n"
 
@@ -24,6 +24,14 @@ def apply_crm_complete_module() -> int:
     domain = DOMAIN_JS.read_text(encoding="utf-8").strip()
     browser = BROWSER_JS.read_text(encoding="utf-8").strip()
     hardening = HARDENING_JS.read_text(encoding="utf-8").strip()
+
+    # Authentication is intentionally disabled. Do not manufacture a current user
+    # for responsible/owner selectors; only real locally registered users are valid.
+    fake_current_user = "add(state.crmUserId||state.crmUserName||'current',state.crmUserName||'Administrador');"
+    real_current_user = "if(state.crmUserId&&state.crmUserName)add(state.crmUserId,state.crmUserName);"
+    if fake_current_user not in browser:
+        raise RuntimeError("CRM completo: fallback fictício de usuário não encontrado no owner de origem")
+    browser = browser.replace(fake_current_user, real_current_user, 1)
 
     # app.js materializa os módulos dentro do shell indentado. Normalizar somente
     # declarações top-level do browser evita limites ambíguos entre materializadores
@@ -61,10 +69,13 @@ def apply_crm_complete_module() -> int:
         "function crmFullCustomersView()",
         "VALTREN CRM COMPLETE HARDENING",
         "{legacy:true}",
+        real_current_user,
     ]
     missing = [item for item in required if item not in app]
     if missing:
         raise RuntimeError(f"CRM completo incompleto no bundle: {missing}")
+    if fake_current_user in app:
+        raise RuntimeError("CRM completo ainda fabrica usuário atual no runtime materializado")
 
     module_source = domain + "\n" + browser + "\n" + hardening
     forbidden_writes = [
