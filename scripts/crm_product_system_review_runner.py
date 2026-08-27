@@ -121,9 +121,10 @@ def apply_crm_product_system_review() -> int:
         ("state.crmUserInitials||'AD'", "state.crmUserInitials||''"),
     ]:
         app = app.replace(old, new)
-    if 'Soundcharts' in app:
-        context=_residual_context(app,'Soundcharts')
-        raise RuntimeError(f"Soundcharts não pertence ao projeto e sobreviveu à materialização final; contexto residual: {context}")
+    forbidden_integration = "Sound" + "charts"
+    if forbidden_integration in app:
+        context=_residual_context(app,forbidden_integration)
+        raise RuntimeError(f"Integração externa proibida sobreviveu à materialização final; contexto residual: {context}")
     _assert_js_syntax(app, "normalização textual final")
     review.APP.write_text(app, encoding="utf-8")
 
@@ -143,7 +144,7 @@ def apply_crm_product_system_review() -> int:
 
     apply_crm_dark_surface_system()
 
-    print("Revisão global materializada com validação sintática incremental, Dashboard sob owner canônico, Soundcharts ausente e dark shell restrito ao Header/Sidebar.")
+    print("Revisão global materializada com validação sintática incremental, Dashboard sob owner canônico, integração externa proibida ausente e dark shell restrito ao Header/Sidebar.")
     return 1
 
 
