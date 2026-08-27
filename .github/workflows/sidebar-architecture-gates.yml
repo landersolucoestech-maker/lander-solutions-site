@@ -22,9 +22,13 @@ jobs:
         with:
           ref: ${{ github.sha }}
 
-      - name: Verify sidebar and visual-system source ownership
+      - name: Verify sidebar, dashboard and visual-system source ownership
         run: |
           python -m py_compile scripts/crm_dashboard_module.py scripts/crm_sidebar_architecture.py scripts/crm_global_header.py scripts/crm_product_system_review.py scripts/crm_reference_modules.py scripts/test_sidebar_css_ownership.py scripts/test_frontend_visual_system.py scripts/test_crm_route_guards.py scripts/certify_visual.py
+          node --check scripts/crm_dashboard_core.js
+          node --check scripts/crm_dashboard_browser.js
+          node scripts/test_crm_dashboard_core.js
+          node scripts/test_crm_dashboard_ui.js
           python scripts/test_sidebar_css_ownership.py
           python scripts/test_frontend_visual_system.py
           node scripts/test_crm_sidebar_architecture.js
@@ -33,13 +37,15 @@ jobs:
       - name: Materialize clean workspace
         run: python scripts/materialize.py
 
-      - name: Verify materialized ownership, visual system and routes
+      - name: Verify materialized ownership, dashboard, visual system and routes
         run: |
           node --check app.js
+          node scripts/test_crm_dashboard_ui.js --materialized
           python scripts/test_frontend_visual_system.py --materialized
           node scripts/test_crm_sidebar_architecture.js --materialized
           python scripts/test_crm_route_guards.py
           test "$(grep -Ec '^[[:space:]]*function crmRelSidebar\(' app.js)" -eq 1
+          test "$(grep -Ec '^[[:space:]]*function crmDashboardPage\(' app.js)" -eq 1
 
       - name: Verify Dashboard byte stability
         run: |
@@ -59,6 +65,7 @@ jobs:
           test "$INDEX_BEFORE" = "$INDEX_AFTER"
           test "$POSITION_BEFORE" = "$POSITION_AFTER"
           node --check app.js
+          node scripts/test_crm_dashboard_ui.js --materialized
 
       - name: Verify Sidebar Architecture byte stability
         run: |
