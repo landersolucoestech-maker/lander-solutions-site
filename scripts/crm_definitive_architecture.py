@@ -187,6 +187,25 @@ CSS_PATCH = r'''
 .crm-architecture-breadcrumb a{color:#64748B;text-decoration:none;}
 .crm-architecture-breadcrumb strong{color:#0B1D3A;}
 .crm-ref-integration-grid article small{display:block;margin-top:4px;color:#64748B;font-size:9px;}
+.crm-fidelity-panel>header{
+  background:#FFFFFF!important;
+  background-color:#FFFFFF!important;
+  color:#0B1D3A!important;
+  border-bottom:1px solid #E2E8F0!important;
+}
+.crm-fidelity-panel>header h3{
+  color:#0B1D3A!important;
+  -webkit-text-fill-color:#0B1D3A!important;
+  opacity:1!important;
+  visibility:visible!important;
+}
+.crm-fidelity-panel>header a,
+.crm-fidelity-panel>header button{
+  color:#0B1D3A!important;
+  -webkit-text-fill-color:#0B1D3A!important;
+  opacity:1!important;
+  visibility:visible!important;
+}
 '''
 
 
