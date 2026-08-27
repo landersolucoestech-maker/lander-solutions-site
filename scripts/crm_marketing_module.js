@@ -1,13 +1,21 @@
 const CRM_MARKETING_KEY='valtren-marketing-v1';
+function crmMarketingSafeRead(){
+  try{
+    const raw=localStorage.getItem(CRM_MARKETING_KEY);
+    if(raw==null||raw==='')return null;
+    const parsed=JSON.parse(raw);
+    return parsed&&typeof parsed==='object'&&!Array.isArray(parsed)?parsed:null;
+  }catch(_error){return null;}
+}
 function crmMarketingEnsure(){
   if(!state.crmMarketing){
-    let saved=null;try{saved=JSON.parse(localStorage.getItem(CRM_MARKETING_KEY)||'null')}catch(_error){}
-    state.crmMarketing=saved&&typeof saved==='object'?saved:{campaigns:[],content:[],briefings:[],tasks:[]};
+    const saved=crmMarketingSafeRead();
+    state.crmMarketing=saved||{campaigns:[],content:[],briefings:[],tasks:[]};
   }
   for(const key of ['campaigns','content','briefings','tasks'])if(!Array.isArray(state.crmMarketing[key]))state.crmMarketing[key]=[];
   return state.crmMarketing;
 }
-function crmMarketingSave(){localStorage.setItem(CRM_MARKETING_KEY,JSON.stringify(crmMarketingEnsure()));}
+function crmMarketingSave(){try{localStorage.setItem(CRM_MARKETING_KEY,JSON.stringify(crmMarketingEnsure()));return true;}catch(_error){return false;}}
 function crmMarketingTab(path){const tail=String(path||'').split('/')[3]||'overview';return ['campaigns','calendar','metrics','briefings','tasks'].includes(tail)?tail:'overview';}
 function crmMarketingTabs(active){const tabs=[['overview','Visão Geral','#/crm/marketing'],['campaigns','Campanhas','#/crm/marketing/campaigns'],['calendar','Calendário','#/crm/marketing/calendar'],['metrics','Métricas','#/crm/marketing/metrics'],['briefings','Briefings','#/crm/marketing/briefings'],['tasks','Tarefas','#/crm/marketing/tasks']];return `<nav class="crm-marketing-tabs" aria-label="Áreas de Marketing">${tabs.map(([id,label,href])=>`<a href="${href}" class="${active===id?'active':''}">${label}</a>`).join('')}</nav>`;}
 function crmMarketingEmpty(title,copy,action=''){return `<div class="crm-marketing-empty"><strong>${title}</strong><p>${copy}</p>${action}</div>`;}
