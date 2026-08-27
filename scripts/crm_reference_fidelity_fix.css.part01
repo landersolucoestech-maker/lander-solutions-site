@@ -24,6 +24,9 @@
 .crm-fidelity-add-row{display:flex;gap:8px;margin-top:10px}.crm-fidelity-add-row input{flex:1}
 .crm-fidelity-entity-list article{background:#fff}
 .crm-fidelity-import-modal .crm-ref-dropzone strong{display:block}.crm-fidelity-import-modal .crm-ref-dropzone span{display:block;margin-top:5px;color:#526174;font-weight:500}
+.crm-fidelity-workspace .crm-ref-reports-empty{color:#526174;font-size:12px;font-weight:500;line-height:1.5}
+.crm-fidelity-workspace .crm-ref-ai-hero p,.crm-fidelity-workspace .crm-ref-objective-copy p,.crm-fidelity-workspace .crm-ref-objective-copy small,.crm-fidelity-workspace .crm-ref-campaign-side p{color:#526174;font-size:11px;font-weight:500;line-height:1.45}
+.crm-fidelity-workspace .crm-ref-settings-blocks p,.crm-fidelity-workspace .crm-ref-settings-blocks label,.crm-fidelity-workspace .crm-ref-profile-head p,.crm-fidelity-workspace .crm-ref-plan span,.crm-fidelity-workspace .crm-ref-plan-grid p{color:#526174;font-size:11px;font-weight:500;line-height:1.45}
 @media(max-width:900px){.crm-fidelity-topbar{align-items:flex-start}.crm-fidelity-top-actions{justify-content:flex-start}.settings-company-grid{grid-template-columns:1fr}.crm-fidelity-workspace{gap:18px}}
 
 .crm-fidelity-action-menu{position:relative;margin:0}.crm-fidelity-action-menu summary{list-style:none;cursor:pointer}.crm-fidelity-action-menu summary::-webkit-details-marker{display:none}.crm-fidelity-action-menu>div{position:absolute;right:0;top:calc(100% + 6px);z-index:20;min-width:170px;padding:6px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 12px 30px rgba(15,23,42,.12)}.crm-fidelity-action-menu>div button{display:flex;width:100%;justify-content:flex-start;background:#fff;color:#0f172a;border:0;padding:8px 10px;border-radius:6px}.crm-fidelity-action-menu>div button:hover{background:#f8fafc}
