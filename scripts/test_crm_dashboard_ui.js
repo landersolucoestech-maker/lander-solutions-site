@@ -1,0 +1,33 @@
+'use strict';
+const assert=require('assert');
+const fs=require('fs');
+const path=require('path');
+const browser=fs.readFileSync(path.resolve(__dirname,'crm_dashboard_browser.js'),'utf8');
+const css=fs.readFileSync(path.resolve(__dirname,'crm_dashboard.css'),'utf8');
+const materializer=fs.readFileSync(path.resolve(__dirname,'crm_dashboard_module.py'),'utf8');
+const required=['Faturamento Bruto','Deduções e Impostos','Receita Líquida','Custos Diretos','Despesas Operacionais','Resultado Operacional','Participações / Repasses','Resultado Valtren','Formação do Resultado','Performance por Unidade de Negócio','Produtos x Serviços','Faturamento por Unidade','Resultado por Unidade','Margem Operacional por Unidade','Evolução Financeira','Participações e Repasses','Faturado x Recebido','Contas a Receber e a Pagar','Tributos e Deduções','Estrutura de Custos e Despesas','Destaques das Unidades'];
+for(const token of required)assert(browser.includes(token),`dashboard UI missing: ${token}`);
+for(const fn of ['crmDashboardKpis','crmDashboardBridge','crmDashboardUnitTable','crmDashboardProductsVsServices','crmDashboardTrendSvg','crmDashboardParticipationSummary','crmDashboardBilledVsReceived','crmDashboardReceivablesPayables','crmDashboardDeductions','crmDashboardCostStructure','crmDashboardRankings','crmDashboardEmptyState'])assert(browser.includes(`function ${fn}`),`dashboard component missing: ${fn}`);
+for(const legacy of ["kpi('Contatos'","kpi('Leads'","kpi('Clientes'",'Indicadores essenciais de CRM e Financeiro','O que precisa de atenção','Revisar pipeline comercial','Acessos principais'])assert(!browser.includes(legacy),`legacy CRM dashboard survived: ${legacy}`);
+for(const fake of ['R$ 120.000','R$ 105.000','R$ 70.000','R$ 42.000','43% do faturamento','57% do faturamento','Empresa: Visa Fácil'])assert(!browser.includes(fake),`hardcoded conceptual data leaked into UI: ${fake}`);
+assert(browser.includes('Empresa: Valtren Solutions'));
+assert(browser.includes('não representa participação societária na Valtren Solutions'));
+assert(browser.includes('Nenhum dado foi inventado'));
+assert(browser.includes('Nenhum rateio é calculado automaticamente sem regra configurada'));
+assert(css.includes('grid-template-columns:repeat(4,minmax(0,1fr))'),'desktop KPI 4-column grid missing');
+assert(css.includes('@media(max-width:1200px)'),'tablet KPI adaptation missing');
+assert(css.includes('@media(max-width:460px)'),'mobile adaptation missing');
+assert(!css.includes('zoom:'),'dashboard CSS must not use zoom');
+assert(!css.includes('transform:scale('),'dashboard CSS must not use scale hacks');
+assert(materializer.includes('crm_dashboard_core.js'));assert(materializer.includes('crm_dashboard_browser.js'));assert(materializer.includes('crm_dashboard.css'));
+if(process.argv.includes('--materialized')){
+  const app=fs.readFileSync(path.resolve(__dirname,'..','app.js'),'utf8');
+  const siteCss=fs.readFileSync(path.resolve(__dirname,'..','assets','valtren-brand.css'),'utf8');
+  assert.equal((app.match(/function crmDashboardPage\(/g)||[]).length,1,'crmDashboardPage must have one owner');
+  assert.equal((app.match(/VALTREN CRM DASHBOARD START/g)||[]).length,1,'dashboard start marker mismatch');
+  assert(app.includes('ValtrenDashboardCore'));
+  for(const token of required)assert(app.includes(token),`materialized dashboard missing: ${token}`);
+  for(const legacy of ["kpi('Contatos'","kpi('Leads'","kpi('Clientes'",'Indicadores essenciais de CRM e Financeiro','O que precisa de atenção'])assert(!app.slice(app.indexOf('VALTREN CRM DASHBOARD START'),app.indexOf('VALTREN CRM DASHBOARD END')).includes(legacy),`materialized legacy dashboard survived: ${legacy}`);
+  assert.equal((siteCss.match(/\/\* VALTREN EXECUTIVE DASHBOARD \*\//g)||[]).length,1,'dashboard CSS owner marker mismatch');
+}
+console.log(`dashboard-ui: PASS${process.argv.includes('--materialized')?' (materialized)':''}`);
