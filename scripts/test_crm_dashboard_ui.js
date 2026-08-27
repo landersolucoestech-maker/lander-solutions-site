@@ -12,7 +12,7 @@ for(const legacy of ["kpi('Contatos'","kpi('Leads'","kpi('Clientes'",'Indicadore
 for(const fake of ['R$ 120.000','R$ 105.000','R$ 70.000','R$ 42.000','43% do faturamento','57% do faturamento','Empresa: Visa Fácil'])assert(!browser.includes(fake),`hardcoded conceptual data leaked into UI: ${fake}`);
 assert(browser.includes('Empresa: Valtren Solutions'));
 assert(browser.includes('não representa participação societária na Valtren Solutions'));
-assert(browser.includes('Nenhum dado foi inventado'));
+assert(browser.includes('Nenhum número foi inventado'));
 assert(browser.includes('Nenhum rateio é calculado automaticamente sem regra configurada'));
 assert(css.includes('grid-template-columns:repeat(4,minmax(0,1fr))'),'desktop KPI 4-column grid missing');
 assert(css.includes('@media(max-width:1200px)'),'tablet KPI adaptation missing');
