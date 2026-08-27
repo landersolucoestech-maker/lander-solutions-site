@@ -74,7 +74,6 @@ function crmFullRestorePersistence(){
         shell: python
         run: |
           from pathlib import Path
-          import re
           s=Path('scripts/crm_complete_browser.js').read_text(encoding='utf-8')
           assert "||'current'" not in s
           assert "||'Administrador'" not in s
@@ -82,7 +81,6 @@ function crmFullRestorePersistence(){
           assert "Array.isArray(parsed)" in s
           assert s.count("crmFullStoredObject(CRM_FULL_STORAGE_PARTIES") == 1
           assert s.count("crmFullStoredObject(CRM_FULL_STORAGE_DOMAIN") == 1
-          # Each key is parsed independently; one invalid root cannot suppress restoration of the other.
           restore=s[s.index('function crmFullRestorePersistence'):s.index('function crmFullPersist')]
           assert 'try{' in restore and restore.count('catch(error)') >= 2
           print('CRM storage source hardening assertions: PASS')
