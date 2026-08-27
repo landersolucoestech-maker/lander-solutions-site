@@ -51,7 +51,9 @@ def driver_factory():
     opts.add_argument("--no-sandbox")
     opts.add_argument("--disable-dev-shm-usage")
     opts.add_argument("--disable-gpu")
+    opts.add_argument("--hide-scrollbars")
     opts.add_argument("--force-device-scale-factor=1")
+    opts.add_argument("--window-size=1440,1000")
     opts.set_capability("goog:loggingPrefs", {"browser": "ALL"})
     return webdriver.Chrome(options=opts)
 
@@ -63,8 +65,13 @@ def wait_ready(driver):
 
 
 def set_viewport(driver, width: int, height: int | None = None):
-    h = height or (900 if width >= 768 else 844)
-    driver.set_window_rect(width=width, height=h)
+    h = height or (1000 if width >= 768 else 844)
+    driver.execute_cdp_cmd("Emulation.setDeviceMetricsOverride", {
+        "width": width,
+        "height": h,
+        "deviceScaleFactor": 1,
+        "mobile": False,
+    })
     time.sleep(0.03)
 
 
