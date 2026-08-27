@@ -8,54 +8,53 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
+CORE = ROOT / "scripts" / "crm_dashboard_core.js"
+BROWSER = ROOT / "scripts" / "crm_dashboard_browser.js"
+MODULE_CSS = ROOT / "scripts" / "crm_dashboard.css"
 DASHBOARD_START = "  // VALTREN CRM DASHBOARD START\n"
 DASHBOARD_END = "  // VALTREN CRM DASHBOARD END\n"
-CSS_MARKER = "/* VALTREN CRM INTEGRATED */"
+CSS_MARKER = "/* VALTREN EXECUTIVE DASHBOARD */"
+LEGACY_CSS_MARKER = "/* VALTREN CRM INTEGRATED */"
+CACHE_VERSION = "20260827-executive-dashboard-v1"
 
-CRM_FUNCTION = r'''  function crmDashboardPage(query){
-    try { if (typeof crmCanonicalEnsureFromLegacy === 'function') crmCanonicalEnsureFromLegacy(); } catch (error) { console.error('Falha ao consolidar CRM no dashboard:', error); }
-    const contacts = Array.isArray(state.crmRelContacts) ? state.crmRelContacts : [];
-    const leads = Array.isArray(state.crmRelLeads) ? state.crmRelLeads : [];
-    const clients = contacts.filter((item)=>{
-      const roles = Array.isArray(item.canonicalRoles) ? item.canonicalRoles : [];
-      const segment = String(item.segment || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-      return roles.includes('customer') || segment === 'cliente';
-    });
-    let transactions = [];
-    try {
-      if (typeof crmFinanceService === 'function') transactions = crmFinanceService().data.transactions || [];
-      else if (state.crmFinancialTransactions && Array.isArray(state.crmFinancialTransactions.transactions)) transactions = state.crmFinancialTransactions.transactions;
-    } catch (error) { console.error('Falha ao consolidar Financeiro no dashboard:', error); }
-    const posted = transactions.filter((tx)=>tx && tx.status === 'posted' && !tx.isDemo);
-    const revenue = posted.filter((tx)=>tx.financialNature === 'revenue').reduce((sum,tx)=>sum + Number(tx.amount || 0),0);
-    const expenses = posted.filter((tx)=>tx.financialNature === 'expense').reduce((sum,tx)=>sum + Number(tx.amount || 0),0);
-    const result = revenue - expenses;
-    const pendingTransactions = transactions.filter((tx)=>tx && tx.status === 'pending' && !tx.isDemo).length;
-    const openLeads = leads.filter((lead)=>!['converted','convertido'].includes(String(lead.stage || '').toLowerCase())).length;
-    const money = (value)=>Number(value || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-    const kpi = (label,value,meta='')=>`<article class="crm-kpi"><span>${label}</span><strong>${value}</strong>${meta?`<small>${meta}</small>`:''}</article>`;
-    const attention = [];
-    if (openLeads) attention.push(`<a href="#/crm/relationships?tab=leads"><strong>${openLeads}</strong><span>lead${openLeads===1?'':'s'} em acompanhamento</span><small>Revisar pipeline comercial</small></a>`);
-    if (pendingTransactions) attention.push(`<a href="#/crm/financeiro"><strong>${pendingTransactions}</strong><span>transaç${pendingTransactions===1?'ão':'ões'} pendente${pendingTransactions===1?'':'s'}</span><small>Classificar ou lançar no Financeiro</small></a>`);
-    const attentionBody = attention.length ? `<div class="crm-dashboard-attention-grid">${attention.join('')}</div>` : `<div class="crm-empty-state"><strong>Nenhuma pendência consolidada</strong><p>O dashboard exibirá aqui apenas itens reais que exigirem atenção.</p></div>`;
-    const noData = !contacts.length && !leads.length && !posted.length;
-    return `<div class="crm-app-shell">${crmRelSidebar('dashboard','dashboard')}<main class="crm-main"><header class="crm-topbar"><div><span>Sistema Interno</span><h1>Dashboard</h1><p>Visão objetiva dos dados reais já registrados no sistema.</p></div>${crmHeaderActions('dashboard')}</header><section class="crm-workspace crm-dashboard-workspace" aria-label="Dashboard"><div class="crm-page-header"><div><h2>Visão geral</h2><p>Indicadores essenciais de CRM e Financeiro, sem duplicar os módulos operacionais.</p></div></div><div class="crm-kpi-grid crm-dashboard-kpis">${kpi('Contatos',contacts.length)}${kpi('Leads',leads.length)}${kpi('Clientes',clients.length)}${kpi('Receitas',money(revenue),'Transações lançadas')}${kpi('Despesas',money(expenses),'Transações lançadas')}${kpi('Resultado',money(result),'Receitas − despesas')}</div>${noData?`<section class="crm-panel"><div class="crm-empty-state"><strong>Ainda não há dados operacionais</strong><p>Cadastre contatos, leads ou transações reais para alimentar esta visão. O sistema não cria números fictícios para preencher o dashboard.</p></div></section>`:''}<div class="crm-dashboard-grid"><section class="crm-panel"><div class="crm-panel-heading"><div><span>Prioridades</span><h2>O que precisa de atenção</h2></div></div>${attentionBody}</section><section class="crm-panel"><div class="crm-panel-heading"><div><span>Navegação</span><h2>Acessos principais</h2></div></div><nav class="crm-dashboard-shortcuts" aria-label="Acessos principais"><a href="#/crm/relationships">CRM<span>Contatos, clientes e leads</span></a><a href="#/crm/financeiro">Financeiro<span>Transações e conciliação operacional</span></a><a href="#/crm/negocios">Negócios<span>Produtos, serviços e unidades</span></a><a href="#/crm/juridico">Jurídico<span>Assuntos, contratos e demais owners jurídicos</span></a></nav></section></div></section></main></div>`;
-  }
-'''
+LEGACY_DASHBOARD_TOKENS = [
+    "kpi('Contatos'",
+    "kpi('Leads'",
+    "kpi('Clientes'",
+    "Indicadores essenciais de CRM e Financeiro",
+    "O que precisa de atenção",
+    "Revisar pipeline comercial",
+    "Acessos principais",
+]
 
-CSS_PATCH = r'''
-/* VALTREN CRM INTEGRATED */
-.crm-dashboard-workspace{display:grid;gap:var(--crm-space-5,24px)}
-.crm-dashboard-workspace>.crm-page-header{margin-bottom:0}
-.crm-dashboard-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
-.crm-dashboard-attention-grid,.crm-dashboard-shortcuts{display:grid;gap:10px}
-.crm-dashboard-attention-grid a,.crm-dashboard-shortcuts a{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;align-items:center;padding:12px;border:1px solid var(--crm-border,rgba(11,29,58,.12));border-radius:var(--crm-radius-sm,8px);color:var(--crm-text,#0b1d3a);text-decoration:none;background:var(--crm-surface,#fff)}
-.crm-dashboard-attention-grid a strong{grid-row:1/3;font-size:22px}
-.crm-dashboard-attention-grid a small,.crm-dashboard-shortcuts a span{grid-column:2;color:var(--crm-muted,#687386);font-size:11px}
-.crm-dashboard-shortcuts a{grid-template-columns:1fr}
-.crm-dashboard-shortcuts a span{grid-column:1}
-@media(max-width:1200px){.crm-dashboard-grid{grid-template-columns:1fr}}
-'''
+REQUIRED_BROWSER_COMPONENTS = [
+    "crmDashboardKpis",
+    "crmDashboardBridge",
+    "crmDashboardUnitTable",
+    "crmDashboardProductsVsServices",
+    "crmDashboardBarList",
+    "crmDashboardTrendSvg",
+    "crmDashboardParticipationSummary",
+    "crmDashboardBilledVsReceived",
+    "crmDashboardReceivablesPayables",
+    "crmDashboardDeductions",
+    "crmDashboardCostStructure",
+    "crmDashboardRankings",
+    "crmDashboardEmptyState",
+]
+
+REQUIRED_CORE_FUNCTIONS = [
+    "buildUnitPerformance",
+    "consolidatedFromDre",
+    "buildProductsVsServices",
+    "buildTrend",
+    "buildFiscalSummary",
+    "buildParticipationSummary",
+    "buildDeductionBreakdown",
+    "buildCostStructure",
+    "buildRankings",
+    "buildDashboard",
+]
 
 
 def _assert_js_syntax(source: str, stage: str) -> None:
@@ -66,94 +65,131 @@ def _assert_js_syntax(source: str, stage: str) -> None:
         result = subprocess.run(["node", "--check", str(temp_path)], capture_output=True, text=True)
         if result.returncode != 0:
             detail = (result.stderr or result.stdout or "erro sintático desconhecido").strip()
-            raise RuntimeError(f"Dashboard produziu bundle inválido em {stage}: {detail}")
+            raise RuntimeError(f"Dashboard produziu JavaScript inválido em {stage}: {detail}")
     finally:
         temp_path.unlink(missing_ok=True)
 
 
-def _dashboard_block() -> str:
-    return DASHBOARD_START + CRM_FUNCTION.rstrip() + "\n" + DASHBOARD_END
+def _source_block() -> str:
+    core = CORE.read_text(encoding="utf-8").strip()
+    browser = BROWSER.read_text(encoding="utf-8").strip()
+    return DASHBOARD_START + core + "\n\n" + browser + "\n" + DASHBOARD_END
 
 
-def _materialize_dashboard_function(app: str) -> str:
-    block = _dashboard_block()
+def _materialize_dashboard(app: str) -> str:
+    block = _source_block()
     start_count = app.count(DASHBOARD_START)
     end_count = app.count(DASHBOARD_END)
     if start_count == 1 and end_count == 1:
         start = app.index(DASHBOARD_START)
         end = app.index(DASHBOARD_END, start) + len(DASHBOARD_END)
-        current = app[start:end]
-        return app if current == block else app[:start] + block + app[end:]
+        return app if app[start:end] == block else app[:start] + block + app[end:]
     if start_count or end_count:
         raise RuntimeError(f"Marcadores do Dashboard divergentes: {start_count}/{end_count}")
 
     function_anchor = "  function crmDashboardPage("
     contact_anchor = "  function contactPage(query)"
     function_count = app.count(function_anchor)
-    contact_count = app.count(contact_anchor)
-    if function_count not in {0, 1} or contact_count != 1:
-        raise RuntimeError(f"Âncoras do Dashboard inválidas: dashboard={function_count}, contactPage={contact_count}")
+    if app.count(contact_anchor) != 1 or function_count not in {0, 1}:
+        raise RuntimeError(f"Âncoras do Dashboard inválidas: dashboard={function_count}, contactPage={app.count(contact_anchor)}")
     contact_at = app.index(contact_anchor)
     if function_count == 1:
         start = app.index(function_anchor)
         if start >= contact_at:
             raise RuntimeError("crmDashboardPage apareceu depois da âncora contactPage")
-        app = app[:start] + block + "\n" + app[contact_at:]
-    else:
-        app = app[:contact_at] + block + "\n" + app[contact_at:]
-    return app
+        return app[:start] + block + "\n" + app[contact_at:]
+    return app[:contact_at] + block + "\n" + app[contact_at:]
 
 
 def _materialize_route(app: str) -> str:
     old_route = "    else if (path === '/crm/dashboard' || path === '/crm') app.innerHTML = crmDashboardPage();"
-    new_route = "    else if (path === '/crm/dashboard' || path === '/crm') app.innerHTML = crmDashboardPage(query);"
+    canonical_route = "    else if (path === '/crm/dashboard' || path === '/crm') app.innerHTML = crmDashboardPage(query);"
     if old_route in app:
-        app = app.replace(old_route, new_route)
-    if new_route in app:
+        app = app.replace(old_route, canonical_route)
+    if canonical_route in app:
         return app
     if "path === '/crm/dashboard'" in app or "path==='/crm/dashboard'" in app:
-        return app
+        raise RuntimeError("Rota do Dashboard existe em formato não canônico; correção manual necessária")
     anchor = "    else if (path === '/contato') app.innerHTML = contactPage(query);"
-    count = app.count(anchor)
-    if count < 1:
+    if app.count(anchor) != 1:
         raise RuntimeError("Rota do Dashboard ausente e âncora de compatibilidade não encontrada")
-    return app.replace(anchor, new_route + "\n" + anchor)
+    return app.replace(anchor, canonical_route + "\n" + anchor, 1)
 
 
 def _replace_css_block(css: str) -> str:
-    desired = CSS_PATCH.strip()
+    desired = MODULE_CSS.read_text(encoding="utf-8").strip()
     marker_at = css.find(CSS_MARKER)
     if marker_at < 0:
+        marker_at = css.find(LEGACY_CSS_MARKER)
+    if marker_at < 0:
         return css.rstrip() + "\n\n" + desired + "\n"
-    next_marker = css.find("\n/* ", marker_at + len(CSS_MARKER))
+    next_marker = css.find("\n/* ", marker_at + 3)
     end = len(css) if next_marker < 0 else next_marker + 1
     current = css[marker_at:end].strip()
     if current == desired:
         return css
     prefix = css[:marker_at].rstrip()
     suffix = css[end:].lstrip("\n")
-    return prefix + "\n\n" + desired + "\n" + ("\n" + suffix if suffix else "")
+    return prefix + "\n\n" + desired + "\n" + (("\n" + suffix) if suffix else "")
+
+
+def _validate_sources() -> None:
+    for path in (CORE, BROWSER, MODULE_CSS):
+        if not path.exists():
+            raise FileNotFoundError(path)
+    core = CORE.read_text(encoding="utf-8")
+    browser = BROWSER.read_text(encoding="utf-8")
+    _assert_js_syntax(core, "crm_dashboard_core.js")
+    _assert_js_syntax(browser, "crm_dashboard_browser.js")
+    missing_core = [name for name in REQUIRED_CORE_FUNCTIONS if name not in core]
+    missing_browser = [name for name in REQUIRED_BROWSER_COMPONENTS if name not in browser]
+    if missing_core or missing_browser:
+        raise RuntimeError(f"Arquitetura do Dashboard incompleta: core={missing_core}, browser={missing_browser}")
+    for token in LEGACY_DASHBOARD_TOKENS:
+        if token in browser:
+            raise RuntimeError(f"Dashboard legado sobreviveu no browser owner: {token}")
+    forbidden_company_models = ["Empresa: Visa Fácil", "Empresa: Music OS 360", "Empresa: Vivendo da Música", "Empresa: Dica de Cria"]
+    for token in forbidden_company_models:
+        if token in browser or token in core:
+            raise RuntimeError(f"Unidade de negócio foi tratada como empresa independente: {token}")
+    if "single_legal_entity_with_internal_business_dimensions" not in core:
+        raise RuntimeError("Core do Dashboard perdeu o modelo de entidade jurídica única")
+    if "operatingResult-thirdPartyParticipation" not in core:
+        raise RuntimeError("Fórmula central de Resultado Valtren ausente")
+
+
+def _update_cache_busters() -> None:
+    for path in ROOT.rglob("*.html"):
+        rel = path.relative_to(ROOT)
+        if any(part in {".git", ".bootstrap", "node_modules", "scripts"} for part in rel.parts):
+            continue
+        original = path.read_text(encoding="utf-8")
+        updated = re.sub(r"app\.js(?:\?v=[A-Za-z0-9._-]+)?", f"app.js?v={CACHE_VERSION}", original)
+        updated = re.sub(r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?", f"valtren-brand.css?v={CACHE_VERSION}", updated)
+        if updated != original:
+            path.write_text(updated, encoding="utf-8")
 
 
 def apply_crm_dashboard() -> int:
     if not APP.exists() or not CSS.exists():
         raise FileNotFoundError("app.js ou assets/valtren-brand.css ausente")
-    app = APP.read_text(encoding="utf-8")
-    app = _materialize_dashboard_function(app)
+    _validate_sources()
+    app = _materialize_dashboard(APP.read_text(encoding="utf-8"))
     app = _materialize_route(app)
     if app.count(DASHBOARD_START) != 1 or app.count(DASHBOARD_END) != 1 or app.count("function crmDashboardPage(") != 1:
-        raise RuntimeError("Dashboard canônico não ficou materializado exatamente uma vez")
-    for forbidden in ("Receita Consolidada","R$ 275.000","Music OS 360</h3><p>SaaS / Plataforma","23 novas vendas","R$ 18.500 recebido","Protótipo · dados ilustrativos"):
-        if forbidden in CRM_FUNCTION:
-            raise RuntimeError(f"Dashboard canônico contém dado ilustrativo proibido: {forbidden}")
-    _assert_js_syntax(app, "crmDashboardPage")
+        raise RuntimeError("Dashboard executivo não ficou materializado exatamente uma vez")
+    for token in LEGACY_DASHBOARD_TOKENS:
+        if token in app[app.index(DASHBOARD_START):app.index(DASHBOARD_END)]:
+            raise RuntimeError(f"Dashboard materializado contém estrutura CRM descartada: {token}")
+    _assert_js_syntax(app, "bundle materializado")
     APP.write_text(app, encoding="utf-8")
 
     css = CSS.read_text(encoding="utf-8")
     updated_css = _replace_css_block(css)
     if updated_css != css:
         CSS.write_text(updated_css, encoding="utf-8")
-    print("Dashboard canônico materializado pelo owner do Dashboard, sem dados ilustrativos.")
+    _update_cache_busters()
+    print("Dashboard executivo materializado: Valtren consolidada, performance por unidades internas, Participações/Repasses, faturado x recebido e arquitetura financeira sem dados fictícios.")
     return 1
 
 
