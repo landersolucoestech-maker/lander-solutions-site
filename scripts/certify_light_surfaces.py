@@ -1,260 +1,265 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import argparse
 import json
 import re
-import time
 from pathlib import Path
 
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
 
-ROUTES = {
+import certify_light_surfaces_base as base
+
+# Full canonical surface/layout matrix for the autonomous certification round.
+# 1920/1600 validate the intentionally unbounded workspace; 320 is a smoke width.
+FULL_VIEWPORTS = [1920, 1600, 1440, 1280, 1024, 768, 390, 320]
+FULL_ROUTES = {
     "dashboard": "#/crm/dashboard",
-    "crm": "#/crm/relationships",
+    "crm-contatos": "#/crm/relationships?tab=contacts",
+    "crm-leads": "#/crm/relationships?tab=leads",
     "agenda": "#/crm/agenda",
-    "financeiro": "#/crm/financeiro",
+    "transacoes": "#/crm/financeiro",
     "contabilidade": "#/crm/financeiro/accounting",
-    "notas-fiscais": "#/crm/financeiro/notas-fiscais",
+    "notas-fiscais": "#/crm/financeiro/invoices",
     "rateios": "#/crm/financeiro/rateios",
     "participacoes": "#/crm/financeiro/participacoes",
     "repasses": "#/crm/financeiro/repasses",
+    "assuntos-juridicos": "#/crm/juridico",
     "contratos": "#/crm/juridico/contratos",
+    "templates": "#/crm/juridico/contratos/templates",
+    "variaveis": "#/crm/juridico/contratos/variaveis",
+    "compliance": "#/crm/juridico/compliance",
+    "propriedade-intelectual": "#/crm/juridico/propriedade-intelectual",
+    "societario": "#/crm/juridico/societario",
     "marketing": "#/crm/marketing",
     "negocios": "#/crm/negocios",
     "relatorios": "#/crm/relatorios",
     "configuracoes": "#/crm/configuracoes",
 }
-VIEWPORTS = [1440, 1280, 1024, 768, 390]
-SCREENSHOT_ROUTES = {"dashboard", "financeiro", "contratos", "marketing", "configuracoes"}
-DASHBOARD_SECTIONS = [
-    "Formação do Resultado",
-    "Performance por Unidade de Negócio",
-    "Produtos x Serviços",
-    "Evolução Financeira",
-    "Participações e Repasses",
-    "Estrutura de Custos e Despesas",
-]
-ACTIVE_STATE_VIEWPORTS = (1440, 390)
+
+base.ROUTES = FULL_ROUTES
+base.VIEWPORTS = FULL_VIEWPORTS
+base.SCREENSHOT_ROUTES = set(FULL_ROUTES)
+base.ACTIVE_STATE_VIEWPORTS = (1920, 1440, 390, 320)
+
+_EXTENDED_LAYOUT: list[dict] = []
+_ORIGINAL_SCAN = base.scan_route
 
 
-def normalize_url(base: str, route: str) -> str:
-    return base.rstrip("/") + "/" + route
+def _rgba(value: str | None) -> tuple[int, int, int, float] | None:
+    match = re.search(r"rgba?\((\d+)[, ]+(\d+)[, ]+(\d+)(?:[, /]+([0-9.]+))?\)", value or "", re.I)
+    if not match:
+        return None
+    return int(match.group(1)), int(match.group(2)), int(match.group(3)), float(match.group(4) or 1)
 
 
-def driver_factory():
-    opts = Options()
-    opts.add_argument("--headless=new")
-    opts.add_argument("--no-sandbox")
-    opts.add_argument("--disable-dev-shm-usage")
-    opts.add_argument("--disable-gpu")
-    opts.add_argument("--hide-scrollbars")
-    opts.add_argument("--force-device-scale-factor=1")
-    opts.add_argument("--window-size=1440,1000")
-    opts.set_capability("goog:loggingPrefs", {"browser": "ALL"})
-    return webdriver.Chrome(options=opts)
-
-
-def wait_ready(driver):
-    WebDriverWait(driver, 15).until(lambda d: d.execute_script("return document.readyState") == "complete")
-    WebDriverWait(driver, 15).until(lambda d: d.find_elements(By.CSS_SELECTOR, ".crm-app-shell"))
-    time.sleep(0.08)
-
-
-def set_viewport(driver, width: int, height: int | None = None):
-    h = height or (1000 if width >= 768 else 844)
-    driver.execute_cdp_cmd("Emulation.setDeviceMetricsOverride", {
-        "width": width,
-        "height": h,
-        "deviceScaleFactor": 1,
-        "mobile": False,
-    })
-    time.sleep(0.03)
-
-
-def css_luminance(value: str | None) -> float:
-    rgb = [int(x) for x in re.findall(r"\d+", value or "")[:3]]
-    if len(rgb) != 3:
+def _luminance(value: str | None) -> float:
+    color = _rgba(value)
+    if not color:
         return 255.0
-    return .2126 * rgb[0] + .7152 * rgb[1] + .0722 * rgb[2]
+    r, g, b, _ = color
+    return .2126 * r + .7152 * g + .0722 * b
 
 
-def element_style(driver, selector: str) -> dict:
-    return driver.execute_script(r"""
-      const e=document.querySelector(arguments[0]);
-      if(!e)return {found:false};
-      const s=getComputedStyle(e),r=e.getBoundingClientRect();
-      return {found:true,visible:s.display!=='none'&&s.visibility!=='hidden'&&r.width>0&&r.height>0,backgroundColor:s.backgroundColor,backgroundImage:s.backgroundImage,color:s.color,borderColor:s.borderColor,outlineColor:s.outlineColor,rect:{x:r.x,y:r.y,width:r.width,height:r.height}};
-    """, selector)
+def _is_gold(value: str | None) -> bool:
+    color = _rgba(value)
+    if not color:
+        return False
+    r, g, b, _ = color
+    return abs(r - 212) <= 12 and abs(g - 175) <= 12 and abs(b - 55) <= 16
 
 
-def scan_route(driver) -> dict:
-    return driver.execute_script(r"""
-      const parse=(value)=>{const m=(value||'').match(/rgba?\((\d+)[, ]+(\d+)[, ]+(\d+)(?:[, /]+([0-9.]+))?\)/i);return m?{r:+m[1],g:+m[2],b:+m[3],a:m[4]==null?1:+m[4]}:null};
-      const lum=c=>c?(.2126*c.r+.7152*c.g+.0722*c.b):255;
-      const visible=e=>{const s=getComputedStyle(e),r=e.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&r.width>0&&r.height>0};
-      const style=e=>{const s=getComputedStyle(e),r=e.getBoundingClientRect(),bg=parse(s.backgroundColor),fg=parse(s.color);return {tag:e.tagName,className:String(e.className||''),id:e.id||'',text:(e.textContent||'').trim().slice(0,100),backgroundColor:s.backgroundColor,color:s.color,backgroundLuminance:lum(bg),foregroundLuminance:lum(fg),area:Math.round(r.width*r.height),rect:{x:r.x,y:r.y,width:r.width,height:r.height}}};
-      const shell=e=>!!e.closest('.crm-sidebar,.crm-topbar');
-      const overlay=e=>/overlay|backdrop/i.test(String(e.className||''));
-      const accent=e=>/badge|status|icon|avatar|legend|indicator|today|event/i.test(String(e.className||''));
-      const structural=e=>{const c=String(e.className||'').toLowerCase(),t=e.tagName;return ['SECTION','ARTICLE','HEADER','FOOTER','FORM','DIALOG','TABLE','THEAD','TH'].includes(t)||/(panel|card|modal|drawer|toolbar|tabs?|empty|ranking|summary|breakdown|bulk|popover|dropdown)/.test(c)};
-      const dark=[];
-      for(const e of document.querySelectorAll('.crm-app-shell *, body>[id^="crm-"] *')){
-        if(!visible(e)||shell(e)||overlay(e))continue;
-        const x=style(e),bg=parse(x.backgroundColor);
-        if(!bg||bg.a<.8||x.backgroundLuminance>=85)continue;
-        if(accent(e)&&x.area<=2200)continue;
-        if(structural(e)||x.area>3200)dark.push(x);
-      }
-      const topbar=document.querySelector('.crm-topbar'),sidebar=document.querySelector('.crm-sidebar'),main=document.querySelector('.crm-main');
-      return {route:location.hash,width:innerWidth,docWidth:document.documentElement.scrollWidth,clientWidth:document.documentElement.clientWidth,topbar:topbar?style(topbar):null,sidebar:sidebar?style(sidebar):null,main:main?style(main):null,darkSurfaces:dark.slice(0,50),darkCount:dark.length};
+def _is_white(value: str | None) -> bool:
+    color = _rgba(value)
+    return bool(color and min(color[:3]) >= 238)
+
+
+def _extended_scan(driver) -> dict:
+    data = _ORIGINAL_SCAN(driver)
+    extra = driver.execute_script(r"""
+      const main=document.querySelector('.crm-main');
+      const ws=document.querySelector('.crm-workspace,.crm-ref-workspace,.crm-agenda-workspace');
+      const rect=e=>e?e.getBoundingClientRect():null;
+      const style=e=>e?getComputedStyle(e):null;
+      const mr=rect(main),wr=rect(ws),ms=style(main),wsStyle=style(ws);
+      const root=document.documentElement;
+      const body=document.body;
+      const mainScrollable=!!main && ['auto','scroll'].includes(ms.overflowY) && main.scrollHeight>main.clientHeight+1;
+      const documentScrollable=Math.max(root.scrollHeight,body?.scrollHeight||0)>root.clientHeight+1;
+      return {
+        viewportWidth:innerWidth,
+        viewportHeight:innerHeight,
+        main:{left:mr?.left??null,right:mr?.right??null,width:mr?.width??null,maxWidth:ms?.maxWidth??null,minWidth:ms?.minWidth??null,overflowY:ms?.overflowY??null,clientHeight:main?.clientHeight??null,scrollHeight:main?.scrollHeight??null},
+        workspace:ws?{left:wr.left,right:wr.right,width:wr.width,maxWidth:wsStyle.maxWidth,minWidth:wsStyle.minWidth}:null,
+        document:{clientWidth:root.clientWidth,scrollWidth:root.scrollWidth,clientHeight:root.clientHeight,scrollHeight:root.scrollHeight},
+        doubleVerticalScroll:!!(mainScrollable&&documentScrollable)
+      };
     """)
-
-
-def dashboard_section_styles(driver) -> list[dict]:
-    return driver.execute_script(r"""
-      const wanted=arguments[0];
-      const parse=v=>{const m=(v||'').match(/rgba?\((\d+)[, ]+(\d+)[, ]+(\d+)/i);return m?{r:+m[1],g:+m[2],b:+m[3]}:null};
-      const lum=c=>c?(.2126*c.r+.7152*c.g+.0722*c.b):255;
-      return wanted.map(title=>{const h=[...document.querySelectorAll('.crm-dashboard-panel h3')].find(n=>(n.textContent||'').trim()===title);const panel=h?.closest('.crm-dashboard-panel'),head=panel?.querySelector(':scope>header');const ps=panel?getComputedStyle(panel):null,hs=head?getComputedStyle(head):null;return {title,found:!!panel,panelBackground:ps?.backgroundColor||null,panelLuminance:lum(parse(ps?.backgroundColor)),headerBackground:hs?.backgroundColor||null,headerLuminance:lum(parse(hs?.backgroundColor)),titleColor:h?getComputedStyle(h).color:null}});
-    """, DASHBOARD_SECTIONS)
-
-
-def certify_active_states(driver, base_url: str, output: Path, failures: list[str], screenshots: list[str]) -> list[dict]:
-    results=[]
-    for width in ACTIVE_STATE_VIEWPORTS:
-        set_viewport(driver,width)
-        driver.get(normalize_url(base_url,"#/crm/financeiro/accounting?view=entries&only=pending")); wait_ready(driver)
-        accounting=element_style(driver,".crm-acct-entry-head button.active")
-        accounting.update({"component":"accounting","selector":".crm-acct-entry-head button.active","width":width})
-        results.append(accounting)
-        if not accounting.get("found") or not accounting.get("visible"):
-            failures.append(f"Accounting active state @{width}: selector não renderizado")
-        else:
-            if css_luminance(accounting.get("backgroundColor")) < 180:
-                failures.append(f"Accounting active state @{width}: background dark {accounting}")
-            if accounting.get("backgroundImage") not in (None,"","none"):
-                failures.append(f"Accounting active state @{width}: backgroundImage inesperado {accounting['backgroundImage']}")
-        filename=f"accounting-active-{width}-light-surface.png"; driver.save_screenshot(str(output/filename)); screenshots.append(filename)
-
-        set_viewport(driver,width)
-        driver.get(normalize_url(base_url,ROUTES["rateios"])); wait_ready(driver)
-        candidates=driver.find_elements(By.XPATH,"//*[self::button or self::a][contains(normalize-space(.),'Novo Rateio')]")
-        target=next((e for e in candidates if e.is_displayed()),None)
-        if target is None:
-            rateios={"component":"rateios","selector":".crm-alloc-steps button.active","width":width,"found":False,"error":"Novo Rateio control not found"}
-            failures.append(f"Rateios active state @{width}: Novo Rateio control not found")
-        else:
-            driver.execute_script("arguments[0].click()",target)
-            try:
-                WebDriverWait(driver,8).until(lambda d:d.find_elements(By.CSS_SELECTOR,".crm-alloc-steps button.active"))
-            except Exception:
-                pass
-            rateios=element_style(driver,".crm-alloc-steps button.active")
-            rateios.update({"component":"rateios","selector":".crm-alloc-steps button.active","width":width})
-            if not rateios.get("found") or not rateios.get("visible"):
-                failures.append(f"Rateios active state @{width}: selector não renderizado")
-            else:
-                if css_luminance(rateios.get("backgroundColor")) < 180:
-                    failures.append(f"Rateios active state @{width}: background dark {rateios}")
-                if rateios.get("backgroundImage") not in (None,"","none"):
-                    failures.append(f"Rateios active state @{width}: backgroundImage inesperado {rateios['backgroundImage']}")
-        results.append(rateios)
-        filename=f"rateios-active-{width}-light-surface.png"; driver.save_screenshot(str(output/filename)); screenshots.append(filename)
-    return results
-
-
-def open_contract_modal(driver, base_url: str, output: Path) -> dict:
-    driver.get(normalize_url(base_url, ROUTES["contratos"]))
-    wait_ready(driver)
-    set_viewport(driver, 390, 844)
-    candidates = driver.find_elements(By.XPATH, "//*[self::button or self::a][contains(normalize-space(.),'Novo Contrato')]")
-    target = next((e for e in candidates if e.is_displayed()), None)
-    if target is None:
-        return {"opened": False, "error": "Novo Contrato control not found"}
-    driver.execute_script("arguments[0].click()", target)
-    try:
-        WebDriverWait(driver, 8).until(lambda d: d.find_elements(By.CSS_SELECTOR, ".crm-legal-modal"))
-    except Exception:
-        return {"opened": False, "error": "crm-legal-modal not rendered"}
-    data = driver.execute_script(r"""
-      const one=s=>document.querySelector(s),sty=e=>e?{backgroundColor:getComputedStyle(e).backgroundColor,color:getComputedStyle(e).color}:null;const modal=one('.crm-legal-modal'),head=modal?.querySelector('header'),foot=modal?.querySelector('footer');return {opened:!!modal,modal:sty(modal),header:sty(head),footer:sty(foot),docWidth:document.documentElement.scrollWidth,clientWidth:document.documentElement.clientWidth};
-    """)
-    shot = output / "contracts-modal-390-light-surface.png"
-    driver.save_screenshot(str(shot))
-    data["screenshot"] = shot.name
+    extra["route"] = data.get("route")
+    extra["width"] = data.get("width")
+    _EXTENDED_LAYOUT.append(extra)
     return data
 
 
-def relevant_console(driver) -> list[dict]:
-    out=[]
-    for row in driver.get_log("browser"):
-        msg=(row.get("message") or "").lower()
-        if row.get("level") in {"SEVERE", "ERROR"} and not any(x in msg for x in ("favicon", "googleapis", "fonts.gstatic")):
-            out.append(row)
-    return out
+base.scan_route = _extended_scan
+
+
+def _account_contract(base_url: str, output_dir: Path) -> tuple[list[dict], list[str], list[str]]:
+    failures: list[str] = []
+    rows: list[dict] = []
+    screenshots: list[str] = []
+    driver = base.driver_factory()
+    try:
+        for width in FULL_VIEWPORTS:
+            base.set_viewport(driver, width)
+            driver.get(base.normalize_url(base_url, "#/crm/dashboard"))
+            base.wait_ready(driver)
+            closed = driver.execute_script(r"""
+              const menu=document.querySelector('.crm-account-menu');
+              const summary=menu?.querySelector(':scope>summary');
+              const copy=menu?.querySelector('.crm-account-copy');
+              const strong=menu?.querySelector('.crm-account-copy strong');
+              const small=menu?.querySelector('.crm-account-copy small');
+              const icon=menu?.querySelector('.crm-account-icon');
+              const chev=menu?.querySelector('.crm-account-chevron');
+              const s=summary?getComputedStyle(summary):null;
+              const r=summary?.getBoundingClientRect();
+              return {
+                found:!!menu&&!!summary,
+                backgroundColor:s?.backgroundColor||null,
+                borderColor:s?.borderColor||null,
+                titleColor:strong?getComputedStyle(strong).color:null,
+                secondaryColor:small?getComputedStyle(small).color:null,
+                iconColor:icon?getComputedStyle(icon).color:null,
+                chevronColor:chev?getComputedStyle(chev).color:null,
+                copyVisible:copy?getComputedStyle(copy).display!=='none':false,
+                rect:r?{left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}:null,
+                docWidth:document.documentElement.scrollWidth,
+                clientWidth:document.documentElement.clientWidth
+              };
+            """)
+            if not closed.get("found"):
+                failures.append(f"Account Menu @{width}: trigger ausente")
+                continue
+            bg = _rgba(closed.get("backgroundColor"))
+            if not bg or bg[3] > .15:
+                failures.append(f"Account Menu @{width}: trigger fechado não é transparente ({closed.get('backgroundColor')})")
+            if not _is_gold(closed.get("borderColor")):
+                failures.append(f"Account Menu @{width}: borda do trigger não é dourada ({closed.get('borderColor')})")
+            if not _is_gold(closed.get("iconColor")) or not _is_gold(closed.get("chevronColor")):
+                failures.append(f"Account Menu @{width}: ícone/chevron fora do dourado canônico")
+            if closed.get("copyVisible"):
+                if not _is_white(closed.get("titleColor")):
+                    failures.append(f"Account Menu @{width}: Conta não está branca ({closed.get('titleColor')})")
+                if not _is_gold(closed.get("secondaryColor")):
+                    failures.append(f"Account Menu @{width}: secondary não está dourado ({closed.get('secondaryColor')})")
+            if closed.get("docWidth", 0) > closed.get("clientWidth", 0) + 1:
+                failures.append(f"Account Menu @{width}: overflow horizontal fechado")
+
+            summary = driver.find_element(By.CSS_SELECTOR, ".crm-account-menu>summary")
+            driver.execute_script("arguments[0].click()", summary)
+            opened = driver.execute_script(r"""
+              const menu=document.querySelector('.crm-account-menu');
+              const summary=menu?.querySelector(':scope>summary');
+              const pop=menu?.querySelector('.crm-account-popover');
+              const strong=pop?.querySelector(':scope>strong');
+              const para=pop?.querySelector('p');
+              const action=pop?.querySelector('a');
+              const ps=pop?getComputedStyle(pop):null;
+              const ss=summary?getComputedStyle(summary):null;
+              const r=pop?.getBoundingClientRect();
+              return {
+                open:!!menu?.open,
+                triggerBackground:ss?.backgroundColor||null,
+                popoverBackground:ps?.backgroundColor||null,
+                popoverColor:ps?.color||null,
+                strongColor:strong?getComputedStyle(strong).color:null,
+                paragraphColor:para?getComputedStyle(para).color:null,
+                actionColor:action?getComputedStyle(action).color:null,
+                rect:r?{left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}:null,
+                docWidth:document.documentElement.scrollWidth,
+                clientWidth:document.documentElement.clientWidth,
+                innerWidth:innerWidth,
+                innerHeight:innerHeight
+              };
+            """)
+            if not opened.get("open"):
+                failures.append(f"Account Menu @{width}: popover não abriu")
+            if _luminance(opened.get("popoverBackground")) < 180:
+                failures.append(f"Account Menu @{width}: popover aberto não é light ({opened.get('popoverBackground')})")
+            for key in ("strongColor", "paragraphColor", "actionColor"):
+                if _luminance(opened.get(key)) > 185:
+                    failures.append(f"Account Menu @{width}: {key} tem contraste insuficiente sobre surface clara ({opened.get(key)})")
+            rect = opened.get("rect") or {}
+            if rect and (rect.get("left", 0) < -1 or rect.get("right", 0) > width + 1):
+                failures.append(f"Account Menu @{width}: popover fora do viewport {rect}")
+            if opened.get("docWidth", 0) > opened.get("clientWidth", 0) + 1:
+                failures.append(f"Account Menu @{width}: overflow horizontal aberto")
+            name = f"account-menu-open-{width}.png"
+            driver.save_screenshot(str(output_dir / name))
+            screenshots.append(name)
+            rows.append({"width": width, "closed": closed, "opened": opened, "screenshot": name})
+    finally:
+        driver.quit()
+    return rows, failures, screenshots
 
 
 def main() -> int:
-    parser=argparse.ArgumentParser()
-    parser.add_argument("--base-url", required=True)
-    parser.add_argument("--output-dir", required=True)
-    parser.add_argument("--mode", default="manual")
-    args=parser.parse_args()
-    out=Path(args.output_dir); out.mkdir(parents=True, exist_ok=True)
-    failures=[]; route_results=[]; screenshots=[]
-    dashboard=[]; modal={}; active_states=[]
-    driver=driver_factory()
+    # Existing certifier remains authoritative for dark surfaces, dashboard states,
+    # contract modal and runtime errors; this wrapper makes its coverage complete.
+    base_result = base.main()
+    parser_report = Path(".")
+    # Resolve output-dir from the same CLI without changing the base parser contract.
+    import sys
     try:
-        for name,route in ROUTES.items():
-            for width in VIEWPORTS:
-                set_viewport(driver,width)
-                driver.get(normalize_url(args.base_url,route)); wait_ready(driver)
-                data=scan_route(driver); route_results.append({"name":name,**data})
-                if not data.get("topbar") or data["topbar"]["backgroundLuminance"]>=85:
-                    failures.append(f"{name}@{width}: Header global não está dark")
-                if not data.get("sidebar") or data["sidebar"]["backgroundLuminance"]>=85:
-                    failures.append(f"{name}@{width}: Sidebar não está dark")
-                if data.get("main") and data["main"]["backgroundLuminance"]<180:
-                    failures.append(f"{name}@{width}: main content não está clara ({data['main']['backgroundColor']})")
-                if data["docWidth"]>data["clientWidth"]+1:
-                    failures.append(f"{name}@{width}: body horizontal overflow {data['docWidth']}>{data['clientWidth']}")
-                if data["darkCount"]:
-                    failures.append(f"{name}@{width}: DARK SURFACES OUTSIDE HEADER/SIDEBAR={data['darkCount']} {data['darkSurfaces'][:5]}")
-                if name in SCREENSHOT_ROUTES and width in (1440,390):
-                    filename=f"{name}-{width}-light-workspace.png"
-                    driver.save_screenshot(str(out/filename)); screenshots.append(filename)
-        set_viewport(driver,1440)
-        driver.get(normalize_url(args.base_url,ROUTES["dashboard"])); wait_ready(driver)
-        dashboard=dashboard_section_styles(driver)
-        for item in dashboard:
-            if not item["found"]:
-                failures.append(f"Dashboard section missing: {item['title']}")
-            elif item["panelLuminance"]<180 or item["headerLuminance"]<180:
-                failures.append(f"Dashboard section dark: {item}")
-        active_states=certify_active_states(driver,args.base_url,out,failures,screenshots)
-        modal=open_contract_modal(driver,args.base_url,out)
-        if not modal.get("opened"):
-            failures.append(f"Contracts modal: {modal.get('error')}")
-        else:
-            for key in ("modal","header","footer"):
-                bg=modal.get(key,{}).get("backgroundColor","")
-                rgb=[int(x) for x in re.findall(r'\d+',bg)[:3]]
-                if len(rgb)==3 and (.2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2])<180:
-                    failures.append(f"Contracts modal {key} dark: {bg}")
-            if modal["docWidth"]>modal["clientWidth"]+1:
-                failures.append("Contracts modal creates horizontal overflow")
-        console=relevant_console(driver)
-        if console: failures.append(f"Runtime console errors: {console[:5]}")
-    finally:
-        driver.quit()
-    report={"status":"PASS" if not failures else "FAIL","mode":args.mode,"dark_surfaces_outside_header_sidebar":sum(r.get('darkCount',0) for r in route_results),"route_scenarios":len(route_results),"dashboard_sections":dashboard,"active_states":active_states,"contract_modal":modal,"screenshots":screenshots,"failures":failures}
-    (out/"light-surface-certification-report.json").write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf-8")
-    print(json.dumps(report,ensure_ascii=False,indent=2))
-    return 0 if not failures else 1
+        output_dir = Path(sys.argv[sys.argv.index("--output-dir") + 1])
+        base_url = sys.argv[sys.argv.index("--base-url") + 1]
+    except (ValueError, IndexError):
+        return 2
+    report_path = output_dir / "light-surface-certification-report.json"
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    failures = list(report.get("failures") or [])
+
+    layout_failures: list[str] = []
+    for row in _EXTENDED_LAYOUT:
+        main = row.get("main") or {}
+        workspace = row.get("workspace") or {}
+        width = row.get("width")
+        route = row.get("route")
+        if main.get("maxWidth") not in ("none", None):
+            layout_failures.append(f"{route}@{width}: crm-main max-width={main.get('maxWidth')}")
+        if workspace and workspace.get("maxWidth") not in ("none", None):
+            layout_failures.append(f"{route}@{width}: workspace max-width={workspace.get('maxWidth')}")
+        viewport = float(row.get("viewportWidth") or 0)
+        if main.get("right") is not None and abs(float(main["right"]) - viewport) > 1.5:
+            layout_failures.append(f"{route}@{width}: crm-main não alcança a borda direita ({main.get('right')} vs {viewport})")
+        if workspace and main.get("right") is not None and abs(float(workspace.get("right", 0)) - float(main["right"])) > 1.5:
+            layout_failures.append(f"{route}@{width}: workspace não ocupa 100% do crm-main")
+        if row.get("doubleVerticalScroll"):
+            layout_failures.append(f"{route}@{width}: double vertical scroll detectado")
+
+    account_rows, account_failures, account_screenshots = _account_contract(base_url, output_dir)
+    failures.extend(layout_failures)
+    failures.extend(account_failures)
+    report["extended_viewports"] = FULL_VIEWPORTS
+    report["extended_route_count"] = len(FULL_ROUTES)
+    report["extended_layout"] = _EXTENDED_LAYOUT
+    report["layout_contract_failures"] = layout_failures
+    report["account_menu_contract"] = account_rows
+    report["account_menu_contract_failures"] = account_failures
+    report["screenshots"] = list(report.get("screenshots") or []) + account_screenshots
+    report["failures"] = failures
+    report["status"] = "PASS" if not failures and base_result == 0 else "FAIL"
+    report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(json.dumps({
+        "status": report["status"],
+        "mode": report.get("mode"),
+        "route_scenarios": report.get("route_scenarios"),
+        "extended_viewports": FULL_VIEWPORTS,
+        "layout_failures": layout_failures,
+        "account_menu_failures": account_failures,
+        "failures": failures,
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["status"] == "PASS" else 1
 
 
 if __name__ == "__main__":
