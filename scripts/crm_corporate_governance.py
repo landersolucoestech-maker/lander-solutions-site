@@ -1,6 +1,7 @@
 from __future__ import annotations
 from pathlib import Path
 from crm_legal_materializer_utils import APP, CSS, replace_marked_block, replace_route, replace_css, validate_legal_sidebar, validate_previous_owners, update_cache_version
+from crm_accessibility_semantics import OWNER_STATIC_LABELS, apply_accessible_names
 
 ROOT = Path(__file__).resolve().parents[1]
 CORE = ROOT / "scripts" / "crm_corporate_governance_core.js"
@@ -15,7 +16,7 @@ NEW_ROUTE = "if(path==='/crm/juridico/societario')return crmCorporateGovernanceP
 def apply_crm_corporate_governance() -> int:
     for path in (APP, CSS, CORE, BROWSER, MODULE_CSS, CONSISTENCY_CSS):
         if not path.exists(): raise FileNotFoundError(path)
-    app = APP.read_text(encoding="utf-8"); core = CORE.read_text(encoding="utf-8").strip(); browser = BROWSER.read_text(encoding="utf-8").strip()
+    app = APP.read_text(encoding="utf-8"); core = CORE.read_text(encoding="utf-8").strip(); browser = apply_accessible_names(BROWSER.read_text(encoding="utf-8").strip(), OWNER_STATIC_LABELS["corporate_governance"])
     forbidden = ["createParticipation(", "createPayout(", "createTransaction(", "economicRule.percentage=", "participationAmount=", "payoutAmount="]
     leaked = [x for x in forbidden if x in core]
     if leaked: raise RuntimeError(f"Societário violou separação de ownership: {leaked}")

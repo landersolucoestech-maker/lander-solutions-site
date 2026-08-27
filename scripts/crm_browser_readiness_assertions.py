@@ -50,8 +50,7 @@ def assert_browser_readiness() -> int:
 
     for control_id, label in accessibility.STATIC_LABELS.items():
         tag = _tag_for_id(app, control_id)
-        expected = f'aria-label="{label}"'
-        if expected not in tag and not re.search(r'\b(?:aria-labelledby|title)=', tag, re.I):
+        if not accessibility.has_accessible_name_for_id(app, control_id, label):
             raise RuntimeError(f"Browser readiness: accessible name ausente em {control_id}: {tag}")
 
     for action, label in accessibility.ACTION_LABELS.items():

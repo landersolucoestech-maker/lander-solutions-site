@@ -1,6 +1,7 @@
 from __future__ import annotations
 from pathlib import Path
 from crm_legal_materializer_utils import APP, CSS, replace_marked_block, replace_route, replace_css, validate_legal_sidebar, validate_previous_owners, update_cache_version
+from crm_accessibility_semantics import OWNER_STATIC_LABELS, apply_accessible_names
 
 ROOT = Path(__file__).resolve().parents[1]
 CORE = ROOT / "scripts" / "crm_legal_matters_core.js"
@@ -17,7 +18,7 @@ def apply_crm_legal_matters() -> int:
         if not path.exists(): raise FileNotFoundError(path)
     app = APP.read_text(encoding="utf-8")
     core = CORE.read_text(encoding="utf-8").strip()
-    browser = BROWSER.read_text(encoding="utf-8").strip()
+    browser = apply_accessible_names(BROWSER.read_text(encoding="utf-8").strip(), OWNER_STATIC_LABELS["legal_matters"])
     if any(x in core for x in ["createTransaction(", "createAccounting", "createPayout(", "createParticipation("]):
         raise RuntimeError("Assuntos Jurídicos contém responsabilidade financeira indevida")
     body = core + "\n\n" + browser

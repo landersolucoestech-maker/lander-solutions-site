@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+from crm_accessibility_semantics import OWNER_STATIC_LABELS, apply_accessible_names
 
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
@@ -54,11 +55,9 @@ def apply_crm_business() -> int:
 
     app = APP.read_text(encoding="utf-8")
     core = CORE.read_text(encoding="utf-8").strip()
-    browser = BROWSER.read_text(encoding="utf-8").strip()
+    browser = apply_accessible_names(BROWSER.read_text(encoding="utf-8").strip(), OWNER_STATIC_LABELS["business"])
     _assert_business_code_generator(core, "crm_business_core.js")
 
-    # The Business owner runs after the already-materialized domains so these adapters
-    # patch the final runtime helpers rather than being overwritten by later stages.
     app = re.sub(r"\n*  // VALTREN BUSINESS CATALOG START\n.*?  // VALTREN BUSINESS CATALOG END\n+", "\n", app, flags=re.S)
     block = JS_START + core + "\n\n" + browser + "\n" + JS_END
     anchor = "  function contactPage(query)"
@@ -87,7 +86,6 @@ def apply_crm_business() -> int:
         else:
             raise RuntimeError(f"Rota de Negócios ambígua: placeholder={old_count}, handler={new_count}, rota={new}")
 
-    # Minimal adapters: no workflow/calculation/status code from completed owners is changed.
     adapters = {
         "crmFinanceProducts": "function crmFinanceProducts(){return typeof crmBusinessProductsFeed==='function'?crmBusinessProductsFeed({includeArchived:false}):[];}",
         "crmFinanceProductLabel": "function crmFinanceProductLabel(tx){if(tx.businessDimension==='corporate')return 'Corporativo';if(tx.businessDimension==='product')return typeof crmBusinessDimensionLabel==='function'?crmBusinessDimensionLabel('product',tx.productId):(tx.productId||'Referência não resolvida');if(Array.isArray(tx.allocations)&&tx.allocations.length>1)return `${tx.allocations.length} destinos · Rateado`;return 'Selecionar';}",

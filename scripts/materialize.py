@@ -67,7 +67,9 @@ def _apply_valtren_brand() -> bool:
         from crm_accessibility_semantics import apply_crm_accessibility_semantics
         from crm_product_system_review_runner import apply_crm_product_system_review
         from crm_browser_readiness_assertions import assert_browser_readiness
+        from crm_accessibility_ownership_gate import assert_accessibility_ownership
 
+        assert_accessibility_ownership()
         apply_branding()
         finalize_branding()
         lock_identity()
@@ -130,9 +132,8 @@ def _apply_valtren_brand() -> bool:
         apply_crm_compliance()
         apply_crm_intellectual_property()
         apply_crm_corporate_governance()
-        # Accessibility semantics is a narrow cross-cutting frontend pass. It adds only
-        # explicit accessible names/hit areas to already-owned controls and never mutates
-        # state, persistence, routes, domain rules or ownership.
+        # Accessibility policy remains cross-cutting, but reconstructive owners emit their
+        # own final accessible markup. This pass completes only non-reconstructive/global controls.
         apply_crm_accessibility_semantics()
         # Global product review always runs last. It may consolidate UI and legacy projections,
         # but it must not transfer ownership between domain cores.

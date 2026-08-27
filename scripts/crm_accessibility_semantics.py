@@ -143,6 +143,47 @@ ACTION_LABELS = {
     "crm-acct-mapping": "Mapeamento contábil",
 }
 
+OWNER_STATIC_LABELS = {
+    "business": {key: STATIC_LABELS[key] for key in (
+        "crm-business-product-search", "crm-business-product-owner", "crm-business-product-status",
+        "crm-business-product-category", "crm-business-product-unit", "crm-business-service-search",
+        "crm-business-service-owner", "crm-business-service-status", "crm-business-service-category",
+        "crm-business-service-unit", "crm-business-unit-search", "crm-business-unit-owner",
+        "crm-business-unit-status",
+    )},
+    "legal_matters": {key: STATIC_LABELS[key] for key in (
+        "crm-matter-search", "crm-matter-responsible", "crm-matter-type", "crm-matter-status",
+        "crm-matter-risk", "crm-matter-priority", "crm-matter-product", "crm-matter-service",
+        "crm-matter-unit",
+    )},
+    "compliance": {key: STATIC_LABELS[key] for key in (
+        "crm-compliance-search", "crm-compliance-responsible", "crm-compliance-category",
+        "crm-compliance-status", "crm-compliance-risk", "crm-compliance-type",
+    )},
+    "intellectual_property": {key: STATIC_LABELS[key] for key in (
+        "crm-ip-search", "crm-ip-responsible", "crm-ip-type", "crm-ip-status", "crm-ip-owner",
+    )},
+    "corporate_governance": {key: STATIC_LABELS[key] for key in (
+        "crm-corporate-date", "crm-corporate-entity",
+    )},
+}
+
+OWNED_STATIC_IDS = frozenset(
+    control_id
+    for owner_labels in OWNER_STATIC_LABELS.values()
+    for control_id in owner_labels
+)
+GLOBAL_STATIC_LABELS = {
+    control_id: label
+    for control_id, label in STATIC_LABELS.items()
+    if control_id not in OWNED_STATIC_IDS
+}
+
+if len(OWNED_STATIC_IDS) != sum(len(labels) for labels in OWNER_STATIC_LABELS.values()):
+    raise RuntimeError("Accessible-name owner allowlists possuem IDs duplicados")
+if len(GLOBAL_STATIC_LABELS) + len(OWNED_STATIC_IDS) != len(STATIC_LABELS):
+    raise RuntimeError("Accessible-name owner partition não cobre a política estática integral")
+
 RULE_FILTER_SOURCE = """<label class="crm-ref-search">${icon('search',14)}<input placeholder="Buscar por palavra-chave ou categoria"></label><select><option>Todos os tipos</option><option>Receita</option><option>Despesa</option></select><select><option>Todas as origens</option><option>Sistema</option><option>Personalizada</option></select><select><option>Todos</option><option>Ativas</option><option>Inativas</option></select>"""
 RULE_FILTER_ACCESSIBLE = """<label class="crm-ref-search">${icon('search',14)}<input aria-label="Pesquisar regras de categorização" placeholder="Buscar por palavra-chave ou categoria"></label><select aria-label="Tipo de transação"><option>Todos os tipos</option><option>Receita</option><option>Despesa</option></select><select aria-label="Origem da regra"><option>Todas as origens</option><option>Sistema</option><option>Personalizada</option></select><select aria-label="Status da regra"><option>Todos</option><option>Ativas</option><option>Inativas</option></select>"""
 
@@ -175,17 +216,66 @@ CSS_PATCH = f"""
 """.strip()
 
 
-def _inject_attr_by_id(source: str, control_id: str, label: str) -> str:
+def _visible_wrapping_label(source: str, control_start: int) -> bool:
+    before = source[:control_start]
+    label_open = before.rfind("<label")
+    label_close = before.rfind("</label>")
+    if label_open < 0 or label_close > label_open:
+        return False
+    open_end = source.find(">", label_open, control_start)
+    if open_end < 0:
+        return False
+    prefix = source[open_end + 1:control_start]
+    prefix = re.sub(r"\$\{.*?\}", "", prefix, flags=re.S)
+    prefix = re.sub(r"<[^>]+>", "", prefix)
+    return bool(html.unescape(prefix).strip())
+
+
+def _tag_matches(source: str, control_id: str) -> list[re.Match[str]]:
     pattern = re.compile(rf'<(?:input|select|textarea)\b(?=[^>]*\bid="{re.escape(control_id)}")[^>]*>', re.I)
-    matches = list(pattern.finditer(source))
+    return list(pattern.finditer(source))
+
+
+def has_accessible_name_for_id(source: str, control_id: str, expected_label: str) -> bool:
+    matches = _tag_matches(source, control_id)
+    if len(matches) != 1:
+        return False
+    match = matches[0]
+    tag = match.group(0)
+    aria = re.search(r'\baria-label="([^"]+)"', tag, re.I)
+    if aria:
+        return aria.group(1) == expected_label
+    if re.search(r'\baria-labelledby="[^"]+"', tag, re.I):
+        return True
+    if re.search(r'\btitle="[^"]+"', tag, re.I):
+        return True
+    return _visible_wrapping_label(source, match.start())
+
+
+def _inject_attr_by_id(source: str, control_id: str, label: str) -> str:
+    matches = _tag_matches(source, control_id)
     if len(matches) != 1:
         raise RuntimeError(f"Controle {control_id} divergente: {len(matches)} ocorrência(s)")
     match = matches[0]
     tag = match.group(0)
-    if re.search(r'\b(?:aria-label|aria-labelledby|title)=', tag, re.I):
+    aria = re.search(r'\baria-label="([^"]+)"', tag, re.I)
+    if aria:
+        if aria.group(1) != label:
+            raise RuntimeError(f"Controle {control_id} possui aria-label conflitante: {aria.group(1)!r}")
+        return source
+    if re.search(r'\baria-labelledby="[^"]+"', tag, re.I) or re.search(r'\btitle="[^"]+"', tag, re.I):
+        return source
+    if _visible_wrapping_label(source, match.start()):
         return source
     replacement = tag[:-1] + f' aria-label="{html.escape(label, quote=True)}">'
     return source[:match.start()] + replacement + source[match.end():]
+
+
+def apply_accessible_names(source: str, labels: dict[str, str]) -> str:
+    result = source
+    for control_id, label in labels.items():
+        result = _inject_attr_by_id(result, control_id, label)
+    return result
 
 
 def _inject_attr_by_action(source: str, action: str, label: str) -> str:
@@ -231,8 +321,11 @@ def apply_crm_accessibility_semantics() -> int:
     if not APP.exists() or not CSS.exists():
         raise FileNotFoundError("app.js ou assets/valtren-brand.css ausente")
     app = APP.read_text(encoding="utf-8")
-    for control_id, label in STATIC_LABELS.items():
-        app = _inject_attr_by_id(app, control_id, label)
+    for owner, labels in OWNER_STATIC_LABELS.items():
+        for control_id, label in labels.items():
+            if not has_accessible_name_for_id(app, control_id, label):
+                raise RuntimeError(f"Owner {owner} não materializou accessible name para {control_id}")
+    app = apply_accessible_names(app, GLOBAL_STATIC_LABELS)
     for action, label in ACTION_LABELS.items():
         app = _inject_attr_by_action(app, action, label)
     app = _replace_once_or_confirm(app, RULE_FILTER_SOURCE, RULE_FILTER_ACCESSIBLE, "filtros de Regras de Categorização")
@@ -248,7 +341,10 @@ def apply_crm_accessibility_semantics() -> int:
     if updated != css:
         CSS.write_text(updated, encoding="utf-8")
 
-    print(f"Acessibilidade semântica aplicada: {len(STATIC_LABELS)} controles estáticos, {len(ACTION_LABELS)} controles dinâmicos e targets móveis compartilhados.")
+    print(
+        f"Acessibilidade semântica aplicada: {len(STATIC_LABELS)} controles estáticos, "
+        f"{len(ACTION_LABELS)} controles dinâmicos e targets móveis compartilhados."
+    )
     return 1
 
 
