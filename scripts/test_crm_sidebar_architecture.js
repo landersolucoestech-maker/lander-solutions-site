@@ -97,7 +97,8 @@ if(materialized){
  ['Marketing','Relatórios','Configurações','Negócios','Jurídico','Financeiro'].forEach((token)=>must(block.includes(token),`required sidebar module missing: ${token}`));
  must(app.includes("if(path==='/crm/valtrenchat'||path==='/crm/musicchat')return crmLegacyRoute('#/crm/configuracoes?tab=integracoes',crmCanonicalSettingsPage);"),'ValtrenChat legacy route missing integration redirect');
  must(app.includes("if(path==='/crm/rh')return crmArchitecturePlaceholderPage('','hr','RH'"),'RH compatibility route missing honest placeholder');
- must(app.includes("if(path.startsWith('/crm/marketing'))return crmMarketingUnavailablePage();"),'Marketing route must use unavailable/non-simulated workspace');
+ must(app.includes("if(path.startsWith('/crm/marketing'))return crmMarketingPage(path);"),'Marketing route must use canonical operational workspace');
+ must(app.includes('Nenhuma métrica é simulada'),'Marketing must preserve honest external-metrics boundary');
  must(app.includes("if(path==='/crm/administracao'||path==='/crm/administracao/patrimonio-licencas')return crmArchitecturePlaceholderPage('','admin','Administração'"),'Administration compatibility route missing honest placeholder');
  must(!/function\s+crmRefValtrenChatPage\s*\(/.test(app),'dead ValtrenChat page declaration survived');
  must(!/function\s+crmRefMusicChatPage\s*\(/.test(app),'dead MusicChat alias survived');

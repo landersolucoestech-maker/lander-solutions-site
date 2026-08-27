@@ -18,7 +18,9 @@ def apply_crm_marketing_module() -> int:
             raise FileNotFoundError(path)
     app = APP.read_text(encoding="utf-8")
     app = re.sub(r"\n?  // VALTREN MARKETING MODULE START\n.*?  // VALTREN MARKETING MODULE END\n", "\n", app, flags=re.S)
-    anchor = "  function contactPage(query)"
+    # Stable boundary after Business: unlike contactPage, this anchor is not reused by
+    # earlier domain materializers, so rerunning Business cannot reorder Marketing.
+    anchor = "  // VALTREN LEGAL MATTERS START\n"
     if app.count(anchor) != 1:
         raise RuntimeError(f"Âncora inválida para Marketing: {app.count(anchor)}")
     block = START + JS.read_text(encoding="utf-8").strip() + "\n" + END
