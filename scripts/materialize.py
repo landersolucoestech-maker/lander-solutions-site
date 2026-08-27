@@ -66,6 +66,7 @@ def _apply_valtren_brand() -> bool:
         from crm_compliance import apply_crm_compliance
         from crm_intellectual_property import apply_crm_intellectual_property
         from crm_corporate_governance import apply_crm_corporate_governance
+        from crm_mock_mode import apply_crm_mock_mode
         from crm_accessibility_semantics import apply_crm_accessibility_semantics
         from crm_product_system_review_runner import apply_crm_product_system_review
         from crm_browser_readiness_assertions import assert_browser_readiness
@@ -139,6 +140,9 @@ def _apply_valtren_brand() -> bool:
         apply_crm_compliance()
         apply_crm_intellectual_property()
         apply_crm_corporate_governance()
+        # Mock Mode is a single late hook. Fixtures live exclusively under /mockups and are
+        # loaded only when location.search explicitly contains mock=1.
+        apply_crm_mock_mode()
         # Accessibility policy remains cross-cutting, but reconstructive owners emit their
         # own final accessible markup. This pass completes only non-reconstructive/global controls.
         apply_crm_accessibility_semantics()
