@@ -42,3 +42,5 @@ jobs:
           git add scripts/crm_complete_browser.js
           git commit -m "fix(crm): remove demo data checkbox"
           git push origin HEAD:dev
+
+# trigger
