@@ -10,7 +10,7 @@ DOMAIN_JS = ROOT / "scripts" / "crm_complete_domain.js"
 BROWSER_JS = ROOT / "scripts" / "crm_complete_browser.js"
 HARDENING_JS = ROOT / "scripts" / "crm_complete_hardening.js"
 MODULE_CSS = ROOT / "scripts" / "crm_complete_module.css"
-CACHE_VERSION = "20260827-crm-complete-v5"
+CACHE_VERSION = "20260827-crm-complete-v6"
 JS_START = "  // VALTREN CRM COMPLETE START\n"
 JS_END = "  // VALTREN CRM COMPLETE END\n"
 CONTACTS_CSS_MARKER = "/* VALTREN CRM CONTACTS WORKSPACE */"
@@ -54,10 +54,10 @@ CRM_PAGE_NEW = '''function crmRelationshipsPage(query){
   return `<div class="crm-app-shell crm-full-shell">${crmRelSidebar('relationships')}<main class="crm-main"><header class="crm-topbar crm-relationships-topbar"><div class="crm-relationships-heading"><h1>CRM</h1><p>Gerencie contatos, leads e relacionamentos comerciais.</p></div>${crmHeaderActions(tab)}</header><section class="crm-workspace crm-rel-workspace crm-full-workspace" aria-label="${tab==='leads'?'Leads':'Contatos'}">${content}</section></main></div>`;
 }
 '''
-CONTACTS_ORDER_OLD = "${crmFullKpis([['Total de Contatos',real.length],['Com empresa',withCompany],['Clientes PF',customerPF]])}${crmFullSearchFilters(filters)}"
-CONTACTS_ORDER_NEW = "${crmFullKpis([['Total de Contatos',real.length],['Com empresa',withCompany],['Clientes PF',customerPF]])}${crmFullTabs('contacts')}${crmFullSearchFilters(filters)}"
-LEADS_ORDER_OLD = "${crmFullKpis([['Leads',real.length],['Qualificados',qualified],['Convertidos',converted]])}${crmFullSearchFilters(filters)}"
-LEADS_ORDER_NEW = "${crmFullKpis([['Leads',real.length],['Qualificados',qualified],['Convertidos',converted]])}${crmFullTabs('leads')}${crmFullSearchFilters(filters)}"
+CONTACTS_ORDER_OLD = "${crmFullKpiCards(contactKpis)}${crmFullSearchFilters(filters)}"
+CONTACTS_ORDER_NEW = "${crmFullKpiCards(contactKpis)}${crmFullTabs('contacts')}${crmFullSearchFilters(filters)}"
+LEADS_ORDER_OLD = "${crmFullKpiCards(leadKpis)}${crmFullSearchFilters(filters)}"
+LEADS_ORDER_NEW = "${crmFullKpiCards(leadKpis)}${crmFullTabs('leads')}${crmFullSearchFilters(filters)}"
 
 
 def _replace_once_or_accept(source: str, old: str, new: str, label: str) -> str:

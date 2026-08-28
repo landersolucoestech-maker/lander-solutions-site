@@ -125,6 +125,19 @@ function crmFullHeader(tab){
 }
 function crmFullTabs(tab){return `<nav class="crm-rel-tabs crm-full-tabs" aria-label="Áreas do CRM">${CRM_FULL_TABS.map(([id,label])=>`<a class="${tab===id?'active':''}" href="${crmFullTabHref(id)}">${label}</a>`).join('')}</nav>`;}
 function crmFullKpis(items){return `<div class="crm-full-kpis">${items.map(([label,value])=>`<article><span>${esc(label)}</span><strong>${Number(value)||0}</strong></article>`).join('')}</div>`;}
+function crmFullPercent(value,total,maxFractionDigits=1){
+  const numerator=Number(value),denominator=Number(total);
+  if(!Number.isFinite(numerator)||!Number.isFinite(denominator)||denominator<=0||numerator<=0)return '0%';
+  const percent=(numerator/denominator)*100;
+  return `${new Intl.NumberFormat('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:maxFractionDigits}).format(percent)}%`;
+}
+function crmFullCreatedWithinDays(value,days=30){
+  const createdAt=new Date(value).getTime(),now=Date.now(),windowMs=Number(days)*24*60*60*1000;
+  return Number.isFinite(createdAt)&&Number.isFinite(windowMs)&&windowMs>=0&&createdAt<=now&&createdAt>=now-windowMs;
+}
+function crmFullKpiCards(items){
+  return `<div class="crm-full-kpi-cards">${items.map((item)=>{const value=Number(item?.value);return `<article class="crm-full-kpi-card"><span class="crm-full-kpi-label">${esc(item?.label||'')}</span><strong class="crm-full-kpi-value">${Number.isFinite(value)?value:0}</strong><small class="crm-full-kpi-helper">${esc(item?.helper||'')}</small></article>`;}).join('')}</div>`;
+}
 function crmFullSearchFilters(filters=[]){return `<div class="crm-rel-toolbar crm-full-toolbar"><div class="crm-rel-search"><span>${icon('search',16)}</span><input id="crm-full-search" type="search" placeholder="Buscar no CRM" autocomplete="off"></div>${filters.join('')}</div>`;}
 function crmFullSelectFilter(key,label,options){return `<select data-crm-full-filter="${key}" aria-label="${esc(label)}"><option value="all">${esc(label)}</option>${options.map(([value,text])=>`<option value="${esc(value)}">${esc(text)}</option>`).join('')}</select>`;}
 function crmFullTable(title,description,headers,rows,emptyTitle,emptyDescription){
@@ -135,10 +148,19 @@ function crmFullActions(kind,id,extra=''){return `<div class="crm-rel-actions"><
 
 function crmFullContactsView(){
   const service=crmFullService(),includeDemo=!!state.crmFullUi.includeDemo,rowsData=service.getContacts({includeDemo});
-  const real=service.getContacts({includeDemo:false}),customerPF=real.filter(({person})=>service.hasRole('person',person.id,'customer')).length,withCompany=real.filter(({person})=>service.party.data.personOrganizationRelationships.some((r)=>r.personId===person.id&&r.status!=='inactive')).length;
+  const real=service.getContacts({includeDemo:false}),totalContacts=real.length,relationships=Array.isArray(service.party.data.personOrganizationRelationships)?service.party.data.personOrganizationRelationships:[];
+  const withCompany=real.filter(({person})=>relationships.some((relationship)=>relationship.personId===person.id&&relationship.status!=='inactive'&&!!service.party.getEntity('organization',relationship.organizationId))).length;
+  const activeClients=real.filter(({person,context})=>{const status=ValtrenCrmCore.fold(context?.status||'active');return service.hasRole('person',person.id,'customer')&&context?.active!==false&&!['inactive','inativo','archived','arquivado'].includes(status);}).length;
+  const newContacts=real.filter(({context})=>crmFullCreatedWithinDays(context?.createdAt,30)).length;
+  const contactKpis=[
+    {label:'Total de Contatos',value:totalContacts,helper:totalContacts?`+${newContacts} nos últimos 30 dias`:'Nenhum contato cadastrado'},
+    {label:'Com Empresa',value:withCompany,helper:`${crmFullPercent(withCompany,totalContacts)} dos contatos`},
+    {label:'Clientes Ativos',value:activeClients,helper:`${crmFullPercent(activeClients,totalContacts)} dos contatos`},
+    {label:'Novos Contatos',value:newContacts,helper:'Nos últimos 30 dias'},
+  ];
   const rows=rowsData.map(({person,context})=>{const view=crmFullPartyView('person',person.id),rel=service.party.data.personOrganizationRelationships.find((r)=>r.personId===person.id&&r.status!=='inactive'),org=rel?service.party.getEntity('organization',rel.organizationId):null,last=crmFullLastInteraction({personId:person.id,includeDemo}),roles=service.roles('person',person.id),demo=service.isDemoContext('person',person.id),search=crmFullSearchBlob([view.name,view.email,view.phone,view.document,org?.legalName,org?.tradeName,roles.join(' '),(context.tags||[]).join(' ')]);return `<tr data-crm-full-row data-search="${esc(search)}" data-role="${esc(roles.join(' '))}" data-status="${esc(ValtrenCrmCore.fold(context.status))}" data-responsible="${esc(context.responsibleId||'')}" data-priority="${esc(context.priority||'')}"><td><strong>${esc(view.name)}</strong>${crmFullDemoBadge(demo)}</td><td>${esc(org?.tradeName||org?.legalName||'-')}<small>${esc(rel?.positionTitle||rel?.department||'')}</small></td><td><span>${esc(view.phone||'-')}</span><small>${esc(view.email||'-')}</small></td><td>${crmFullRoleBadges(roles)}</td><td>${esc(crmFullResponsibleName(context.responsibleId))}</td><td><span class="crm-rel-status">${esc(context.status||'Ativo')}</span></td><td>${last?`<span>${esc(crmFullInteractionLabel(last.type))}</span><small>${esc(crmFullDate(last.occurredAt))}</small>`:'<span class="crm-full-muted">Sem interação</span>'}</td><td class="crm-rel-actions-cell">${crmFullActions('contact',person.id)}</td></tr>`;});
   const filters=[crmFullSelectFilter('role','Todos os papéis',[['customer','Cliente'],['prospect','Prospect'],['partner','Parceiro'],['supplier','Fornecedor'],['service_provider','Prestador']]),crmFullSelectFilter('status','Todos os status',[['active','Ativo'],['inactive','Inativo'],['negociando','Negociando']]),crmFullSelectFilter('priority','Todas as prioridades',[['high','Alta'],['medium','Média'],['low','Baixa'],['strategic','Estratégico']])];
-  return `${crmFullKpis([['Total de Contatos',real.length],['Com empresa',withCompany],['Clientes PF',customerPF]])}${crmFullSearchFilters(filters)}${crmFullTable('Lista de Contatos','Pessoas e seus vínculos comerciais',['Nome','Empresa','Contato','Papéis','Responsável','Status','Última interação','Ações'],rows,'Nenhum contato encontrado','Cadastre o primeiro contato para começar.')}`;
+  return `${crmFullKpiCards(contactKpis)}${crmFullSearchFilters(filters)}${crmFullTable('Lista de Contatos','Pessoas e seus vínculos comerciais',['Nome','Empresa','Contato','Papéis','Responsável','Status','Última interação','Ações'],rows,'Nenhum contato encontrado','Cadastre o primeiro contato para começar.')}`;
 }
 function crmFullCompaniesView(){
   const service=crmFullService(),includeDemo=!!state.crmFullUi.includeDemo,rowsData=service.getCompanies({includeDemo}),real=service.getCompanies({includeDemo:false});
@@ -155,10 +177,20 @@ function crmFullCustomersView(){
 }
 function crmFullLeadIdentity(lead){const p=lead.personId?crmFullPartyView('person',lead.personId):null,o=lead.organizationId?crmFullPartyView('organization',lead.organizationId):null;return {person:p,organization:o,name:p?.name||o?.name||'-',company:o?.name||'',email:p?.email||o?.email||'',phone:p?.phone||o?.phone||''};}
 function crmFullLeadsView(){
-  const service=crmFullService(),includeDemo=!!state.crmFullUi.includeDemo,items=service.getLeads({includeDemo}),real=service.getLeads({includeDemo:false}),qualified=real.filter((x)=>x.stage==='qualified').length,converted=real.filter((x)=>x.stage==='converted').length;
+  const service=crmFullService(),includeDemo=!!state.crmFullUi.includeDemo,items=service.getLeads({includeDemo}),real=service.getLeads({includeDemo:false}),totalLeads=real.length;
+  const qualifiedLeads=real.filter((lead)=>lead.stage==='qualified').length;
+  const convertedLeads=real.filter((lead)=>lead.stage==='converted').length;
+  const leadsInProgress=real.filter((lead)=>{const status=ValtrenCrmCore.fold(lead.status||'open');return lead.stage!=='converted'&&!['converted','convertido','lost','perdido','archived','arquivado','inactive','inativo'].includes(status);}).length;
+  const newLeads=real.filter((lead)=>crmFullCreatedWithinDays(lead.createdAt,30)).length;
+  const leadKpis=[
+    {label:'Total de Leads',value:totalLeads,helper:totalLeads?`+${newLeads} nos últimos 30 dias`:'Nenhum lead cadastrado'},
+    {label:'Em Andamento',value:leadsInProgress,helper:`${crmFullPercent(leadsInProgress,totalLeads)} do total`},
+    {label:'Qualificados',value:qualifiedLeads,helper:`${crmFullPercent(qualifiedLeads,totalLeads)} do total`},
+    {label:'Convertidos',value:convertedLeads,helper:`${crmFullPercent(convertedLeads,totalLeads)} de conversão`},
+  ];
   const rows=items.map((lead)=>{const identity=crmFullLeadIdentity(lead),last=crmFullLastInteraction({leadId:lead.id,includeDemo}),search=crmFullSearchBlob([identity.name,identity.company,identity.email,identity.phone,lead.origin,lead.stage,lead.priority,lead.responsibleId,lead.tags?.join(' ')]),convert=lead.stage!=='converted'?`<button type="button" data-action="crm-full-convert" data-id="${esc(lead.id)}">Converter em Cliente</button>`:'';return `<tr data-crm-full-row data-search="${esc(search)}" data-stage="${esc(lead.stage)}" data-source="${esc(ValtrenCrmCore.fold(lead.origin))}" data-responsible="${esc(lead.responsibleId||'')}" data-priority="${esc(lead.priority||'')}" data-status="${esc(lead.status||'')}"><td><strong>${esc(identity.name)}</strong>${crmFullDemoBadge(service.isDemoLead(lead))}<small>${esc(identity.company||'')}</small></td><td><span>${esc(identity.phone||'-')}</span><small>${esc(identity.email||'-')}</small></td><td>${esc(lead.origin||'-')}</td><td>${esc(crmFullResponsibleName(lead.responsibleId))}</td><td><span class="crm-full-stage ${lead.stage}">${esc(crmFullStageLabel(lead.stage))}</span></td><td>${esc(lead.priority||'-')}</td><td>${last?`<span>${esc(crmFullInteractionLabel(last.type))}</span><small>${esc(crmFullDate(last.occurredAt))}</small>`:'<span class="crm-full-muted">Sem interação</span>'}</td><td class="crm-rel-actions-cell">${crmFullActions('lead',lead.id,convert)}</td></tr>`;});
   const sources=Array.from(new Set(items.map((x)=>x.origin).filter(Boolean))).sort().map((x)=>[ValtrenCrmCore.fold(x),x]);const filters=[crmFullSelectFilter('stage','Todas as etapas',ValtrenCrmCore.STAGES.map((x)=>[x,crmFullStageLabel(x)])),crmFullSelectFilter('source','Todas as origens',sources),crmFullSelectFilter('priority','Todas as prioridades',[['high','Alta'],['medium','Média'],['low','Baixa'],['alta','Alta'],['média','Média'],['baixa','Baixa']])];
-  return `${crmFullKpis([['Leads',real.length],['Qualificados',qualified],['Convertidos',converted]])}${crmFullSearchFilters(filters)}${crmFullTable('Leads','Pipeline comercial vinculado à identidade canônica',['Lead','Contato','Origem','Responsável','Etapa','Prioridade','Última interação','Ações'],rows,'Nenhum lead encontrado','Cadastre o primeiro lead para iniciar o pipeline.')}`;
+  return `${crmFullKpiCards(leadKpis)}${crmFullSearchFilters(filters)}${crmFullTable('Leads','Pipeline comercial vinculado à identidade canônica',['Lead','Contato','Origem','Responsável','Etapa','Prioridade','Última interação','Ações'],rows,'Nenhum lead encontrado','Cadastre o primeiro lead para iniciar o pipeline.')}`;
 }
 function crmFullInteractionTargetLabel(item){if(item.leadId){const lead=crmFullService().data.leads.find((x)=>x.id===item.leadId);return lead?`Lead · ${crmFullLeadIdentity(lead).name}`:'Lead';}if(item.personId)return crmFullPartyView('person',item.personId)?.name||'Pessoa';if(item.organizationId)return crmFullPartyView('organization',item.organizationId)?.name||'Empresa';if(item.customerEntityId)return `Cliente · ${crmFullPartyView(item.customerEntityType,item.customerEntityId)?.name||'-'}`;return '-';}
 function crmFullInteractionsView(){
