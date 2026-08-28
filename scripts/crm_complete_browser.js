@@ -125,8 +125,7 @@ function crmFullHeader(tab){
 }
 function crmFullTabs(tab){return `<nav class="crm-rel-tabs crm-full-tabs" aria-label="Áreas do CRM">${CRM_FULL_TABS.map(([id,label])=>`<a class="${tab===id?'active':''}" href="${crmFullTabHref(id)}">${label}</a>`).join('')}</nav>`;}
 function crmFullKpis(items){return `<div class="crm-full-kpis">${items.map(([label,value])=>`<article><span>${esc(label)}</span><strong>${Number(value)||0}</strong></article>`).join('')}</div>`;}
-function crmFullDemoToggle(){return `<label class="crm-full-demo-toggle"><input type="checkbox" data-action="crm-full-toggle-demo" ${state.crmFullUi?.includeDemo?'checked':''}> Mostrar dados de demonstração</label>`;}
-function crmFullSearchFilters(filters=[]){return `<div class="crm-rel-toolbar crm-full-toolbar"><div class="crm-rel-search"><span>${icon('search',16)}</span><input id="crm-full-search" type="search" placeholder="Buscar no CRM" autocomplete="off"></div>${filters.join('')}${crmFullDemoToggle()}</div>`;}
+function crmFullSearchFilters(filters=[]){return `<div class="crm-rel-toolbar crm-full-toolbar"><div class="crm-rel-search"><span>${icon('search',16)}</span><input id="crm-full-search" type="search" placeholder="Buscar no CRM" autocomplete="off"></div>${filters.join('')}</div>`;}
 function crmFullSelectFilter(key,label,options){return `<select data-crm-full-filter="${key}" aria-label="${esc(label)}"><option value="all">${esc(label)}</option>${options.map(([value,text])=>`<option value="${esc(value)}">${esc(text)}</option>`).join('')}</select>`;}
 function crmFullTable(title,description,headers,rows,emptyTitle,emptyDescription){
   if(!rows.length)return `<section class="crm-rel-table-card"><div class="crm-rel-list-header"><div><h3>${title}</h3><p>${description}</p></div></div>${crmFullEmpty(emptyTitle,emptyDescription)}</section>`;
