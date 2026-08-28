@@ -103,8 +103,9 @@ jobs:
         run: |
           node --check scripts/crm_complete_browser.js
           node --check scripts/crm_complete_domain.js
-          python scripts/crm_complete_module.py
-          node scripts/test_crm_complete.js
+          python scripts/materialize.py
+          node --check app.js
+          node scripts/test_crm_complete.js --materialized
 
       - name: Commit KPI refinement
         run: |
