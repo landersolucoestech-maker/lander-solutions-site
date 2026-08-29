@@ -54,9 +54,11 @@ Os materializadores leem diretamente de `web/src`. Não existe mais ponte ou có
 - CRM: `web/src/modules/crm`, com Pessoas/Organizações e workspace comercial;
 - Financeiro: `web/src/modules/finance` — Transações, Contabilidade, Fiscal, Rateios, Participações e Repasses;
 - Jurídico: `web/src/modules/legal` — Contratos, Assuntos, Compliance, Propriedade Intelectual e Societário;
-- Negócios: `web/src/modules/business` — Produtos, Serviços e Unidades de Negócio;
+- Negócios: `web/src/modules/business` — **Unidades de Negócio e Serviços**. Não existe módulo independente de Produtos; a Unidade de Negócio é a dimensão canônica que representa o produto do negócio;
 - Marketing: `web/src/modules/marketing`;
 - Communications, Integrations, Settings e Notifications possuem boundaries explícitas em `web/src/modules` sem backend simulado.
+
+Campos legados como `product` e `productId` podem permanecer temporariamente apenas para compatibilidade com módulos já materializados, mas devem resolver para Unidade de Negócio e não podem originar página, item de menu, cadastro ou catálogo paralelo de Produto.
 
 Os scripts Python continuam como orquestradores temporários de materialização; eles não são o owner final do código de produto.
 
