@@ -1,4 +1,4 @@
-function crmMockModeActive(){return new URLSearchParams(location.search).get('mock')==='1';}
+function crmMockModeActive(){const mock=new URLSearchParams(location.search).get('mock');if(mock==='1')return true;if(mock==='0')return false;return location.hostname===CRM_MOCK_DEFAULT_PREVIEW_HOST&&location.pathname.startsWith(CRM_MOCK_DEFAULT_PREVIEW_PATH);}
 function crmMockSafeClone(value){return value==null?value:JSON.parse(JSON.stringify(value));}
 function crmMockSafeObject(raw){try{const parsed=JSON.parse(raw);return parsed&&typeof parsed==='object'&&!Array.isArray(parsed)?parsed:null;}catch(_){return null;}}
 function crmMockResetServiceCaches(){for(const key of ['__crmCanonicalPartyService','__crmFullService','__crmFinanceService','__crmAccountingService','__crmFiscalService','__crmCostAllocationService','__crmLegalContractService','__crmParticipationService','__crmPayoutService','__crmBusinessService','__crmLegalMatterService','__crmComplianceService','__crmIPService','__crmCorporateService'])delete state[key];}
