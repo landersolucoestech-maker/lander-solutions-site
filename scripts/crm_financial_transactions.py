@@ -102,17 +102,19 @@ def apply_crm_financial_transactions() -> int:
         raise RuntimeError("Bloco canônico de Transações não localizado")
     transaction_block = app[transaction_block_start:transaction_block_end]
 
+    # Origem/Destino e Categoria continuam disponíveis em fluxos internos (modal,
+    # ações em massa e handlers), mas foram explicitamente removidos do TableView.
     for action in ("crm-fin-counterparty", "crm-fin-category"):
         count = _html_action_count(transaction_block, action)
-        if count != 1:
+        if count != 0:
             raise RuntimeError(
-                f"Controle HTML de Transações {action} divergente: esperado=1 atual={count}"
+                f"Controle HTML removido de Transações {action} voltou ao TableView: atual={count}"
             )
         handler = f"target.matches('[data-action=\"{action}\"]')"
         handler_count = transaction_block.count(handler)
         if handler_count != 1:
             raise RuntimeError(
-                f"Handler de Transações {action} divergente: esperado=1 atual={handler_count}"
+                f"Handler interno de Transações {action} divergente: esperado=1 atual={handler_count}"
             )
 
     uniqueness = {
