@@ -6,11 +6,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CORE = ROOT / "scripts" / "crm_payouts_core.js"
-BROWSER = ROOT / "scripts" / "crm_payouts_browser.js"
-MODULE_CSS = ROOT / "scripts" / "crm_payouts.css"
-CONSISTENCY_CSS = ROOT / "scripts" / "crm_payouts_consistency.css"
-CACHE_VERSION = "20260826-payouts-v2"
+MODULE_DIR = ROOT / "src" / "modules" / "finance" / "payouts"
+CORE = MODULE_DIR / "core.js"
+BROWSER = MODULE_DIR / "browser.js"
+MODULE_CSS = MODULE_DIR / "styles.css"
+CONSISTENCY_CSS = MODULE_DIR / "consistency.css"
+CACHE_VERSION = "20260829-finance-payouts-module-v1"
 JS_START = "  // VALTREN PAYOUTS START\n"
 JS_END = "  // VALTREN PAYOUTS END\n"
 
@@ -93,7 +94,7 @@ def apply_crm_payouts() -> int:
         value = re.sub(r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?", f"valtren-brand.css?v={CACHE_VERSION}", value)
         path.write_text(value, encoding="utf-8")
 
-    print("Financeiro → Repasses materializado como camada canônica de liquidação/conciliação; escala visual normalizada; nenhuma Participação ou Transação é recriada.")
+    print("Financeiro → Repasses materializado a partir de src/modules/finance/payouts; Participações e Transações permanecem owners de origem.")
     return 1
 
 
