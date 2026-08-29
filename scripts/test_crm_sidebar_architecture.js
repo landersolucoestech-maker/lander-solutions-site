@@ -18,6 +18,7 @@ const review=read('crm_product_system_review.py');
 const payouts=read('crm_payouts.py');
 const business=read('crm_business.py');
 const legalUtils=read('crm_legal_materializer_utils.py');
+const marketing=fs.readFileSync(path.join(root,'web','src','modules','marketing','module.js'),'utf8');
 const ownsSidebar=(source)=>/^[ \t]*function[ \t]+crmRelSidebar[ \t]*[(]/m.test(source);
 const ownerPayloadMatch=owner.match(/JS_BLOCK = r'''([^]*?)'''\n\nCSS_PATCH/);
 must(ownerPayloadMatch,'sidebar owner payload must be statically identifiable');
@@ -47,7 +48,18 @@ for(const [name,source] of [['Payouts',payouts],['Business',business],['Legal sh
   must(!source.includes('app.rfind("function crmRelSidebar")'),`${name} still depends on legacy crmRelSidebar boundary`);
   must(!source.includes('app.find("function crmReferenceRoute", sidebar_start)'),`${name} still depends on legacy crmReferenceRoute boundary`);
 }
-must(ownerPayload.includes("nav('#/crm/marketing','Marketing'"),'Marketing must remain first-level');
+must(ownerPayload.includes("subgroup('marketing','Marketing','globe',marketing)"),'Marketing must be an expandable sidebar module');
+must(!ownerPayload.includes("nav('#/crm/marketing','Marketing'"),'Marketing must not remain a first-level direct link');
+for(const [id,label,href] of [
+  ['overview','Visão Geral','#/crm/marketing'],
+  ['campaigns','Campanhas','#/crm/marketing/campaigns'],
+  ['calendar','Calendário','#/crm/marketing/calendar'],
+  ['metrics','Métricas','#/crm/marketing/metrics'],
+  ['briefings','Briefing','#/crm/marketing/briefings'],
+  ['tasks','Tarefas','#/crm/marketing/tasks']
+]) must(ownerPayload.includes(`['${id}','${label}','${href}']`),`Marketing sidebar submenu missing: ${label}`);
+must(!marketing.includes('crmMarketingTabs('),'Marketing page must not render internal tabs');
+must(!marketing.includes('crm-marketing-tabs'),'Marketing page must not contain tab navigation markup');
 must(ownerPayload.includes("nav('#/crm/relatorios','Relatórios'"),'Reports must remain');
 ['ValtrenChat','MusicChat',"nav('#/crm/rh'",'Administração'].forEach((token)=>must(!ownerPayload.includes(token),`sidebar payload still contains removed module: ${token}`));
 for(const label of ['Assuntos Jurídicos','Contratos','Compliance e Políticas','Propriedade Intelectual','Societário'])must(ownerPayload.includes(label),`Legal canonical item missing: ${label}`);
@@ -79,11 +91,13 @@ if(materialized){
  const e=app.indexOf('VALTREN SIDEBAR ARCHITECTURE END',s);
  const block=app.slice(s,e);
  ['ValtrenChat','MusicChat','>RH<','Administração','#/crm/juridico/contratos/templates','#/crm/juridico/contratos/variaveis'].forEach((token)=>must(!block.includes(token),`removed module/subroute leaked into materialized sidebar: ${token}`));
- ['Marketing','Relatórios','Configurações','Negócios','Jurídico','Financeiro','Assuntos Jurídicos','Contratos','Compliance e Políticas','Propriedade Intelectual','Societário'].forEach((token)=>must(block.includes(token),`required sidebar module missing: ${token}`));
+ ['Marketing','Visão Geral','Campanhas','Calendário','Métricas','Briefing','Tarefas','Relatórios','Configurações','Negócios','Jurídico','Financeiro','Assuntos Jurídicos','Contratos','Compliance e Políticas','Propriedade Intelectual','Societário'].forEach((token)=>must(block.includes(token),`required sidebar module missing: ${token}`));
  must(app.includes("if(path==='/crm/valtrenchat'||path==='/crm/musicchat')return crmLegacyRoute('#/crm/configuracoes?tab=integracoes',crmCanonicalSettingsPage);"),'ValtrenChat legacy route missing integration redirect');
  must(app.includes("if(path==='/crm/rh')return crmArchitecturePlaceholderPage('','hr','RH'"),'RH compatibility route missing honest placeholder');
  must(app.includes("if(path.startsWith('/crm/marketing'))return crmMarketingPage(path);"),'Marketing route must use canonical operational workspace');
  must(app.includes('Nenhuma métrica é simulada'),'Marketing must preserve honest external-metrics boundary');
+ must(!app.includes('crmMarketingTabs('),'Materialized Marketing page must not render internal tabs');
+ must(!app.includes('crm-marketing-tabs'),'Materialized Marketing page must not contain tab navigation markup');
  must(app.includes("if(path==='/crm/administracao'||path==='/crm/administracao/patrimonio-licencas')return crmArchitecturePlaceholderPage('','admin','Administração'"),'Administration compatibility route missing honest placeholder');
  must(!/function\s+crmRefValtrenChatPage\s*\(/.test(app),'dead ValtrenChat page declaration survived');
  must(!/function\s+crmRefMusicChatPage\s*\(/.test(app),'dead MusicChat alias survived');
