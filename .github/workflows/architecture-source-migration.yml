@@ -1,0 +1,47 @@
+name: Architecture Source Migration
+
+on:
+  push:
+    branches:
+      - dev
+
+permissions:
+  contents: write
+
+concurrency:
+  group: architecture-source-migration
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    if: ${{ !contains(github.event.head_commit.message, '[web-source-migrated]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout dev
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Apply canonical web source path migration
+        run: python scripts/migrate_web_source_paths.py
+
+      - name: Verify migration removed root-source references
+        run: |
+          test ! -e scripts/migrate_web_source_paths.py
+          test ! -e .github/workflows/architecture-source-migration.yml
+          ! grep -R --line-number --exclude=materialize.py --exclude=structure_gate.py --exclude-dir=.git 'ROOT / "src"' scripts
+          ! grep -R --line-number --exclude-dir=.git "../src/modules/" scripts docs .github || true
+
+      - name: Commit migration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No migration changes required."
+            exit 0
+          fi
+          git commit -m "refactor: migrate consumers to web source [web-source-migrated]"
+          git push origin HEAD:dev
