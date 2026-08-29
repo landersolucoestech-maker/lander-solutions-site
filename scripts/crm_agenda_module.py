@@ -5,13 +5,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 HERE = Path(__file__).resolve().parent
+PARTS_DIR = HERE / "parts" / "agenda"
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
 CACHE_VERSION = "20260827-crm-agenda-events-v5"
 
 
 def _parts(prefix: str) -> str:
-    files = sorted(HERE.glob(prefix))
+    files = sorted(PARTS_DIR.glob(prefix))
     if not files:
         raise RuntimeError(f"Partes ausentes: {prefix}")
     return "".join(path.read_text(encoding="utf-8") for path in files)
@@ -47,9 +48,6 @@ def apply_crm_agenda_module() -> int:
     )
     app = app.replace("\n    else if (path === '/crm/agenda') app.innerHTML = crmAgendaPage(query);", '')
 
-    # Agenda é consumer da navegação e do header compartilhados. Ela não cria,
-    # adiciona, remove ou reescreve itens de crmRelSidebar. O gate valida semântica,
-    # não espaçamento incidental do JavaScript gerado.
     if app.count("  function crmHeaderActions(context=''){") != 1:
         raise RuntimeError("Header compartilhado contextual não encontrado para Agenda")
     if not re.search(r"context\s*===\s*['\"]agenda['\"]", app):

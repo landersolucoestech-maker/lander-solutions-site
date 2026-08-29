@@ -5,13 +5,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 HERE = Path(__file__).resolve().parent
+PARTS_DIR = HERE / "parts" / "reference_fidelity"
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
 CACHE_VERSION = "20260825-crm-reference-fidelity-v3"
 
 
 def _parts(prefix: str) -> str:
-    files = sorted(HERE.glob(prefix))
+    files = sorted(PARTS_DIR.glob(prefix))
     if not files:
         raise RuntimeError(f"Partes ausentes: {prefix}")
     return "".join(path.read_text(encoding="utf-8") for path in files)
@@ -32,70 +33,31 @@ def apply_crm_reference_fidelity_fix() -> int:
     app = APP.read_text(encoding="utf-8")
     js_block = _parts("crm_reference_fidelity_fix.js.part*")
     css_block = _parts("crm_reference_fidelity_fix.css.part*")
-
-    # Normalize the published fidelity source before it is injected into app.js.
-    # Financeiro remains the parent menu; the first child is named Transações.
     js_block = js_block.replace("[['finance','Financeiro']", "[['finance','Transações']")
-
-    # Regras de Categorização: Transações must appear immediately to the left of Nova Regra.
     rules_old = "const actions=`<button class=\"primary\" data-action=\"crm-ref-open\" data-kind=\"categorization-rule\">${crmRefIcon('plus')} Nova Regra</button>`;"
     rules_new = "const actions=`<a class=\"secondary crm-ref-transactions-button\" href=\"#/crm/financeiro\">${crmRefIcon('database')} Transações</a><button class=\"primary\" data-action=\"crm-ref-open\" data-kind=\"categorization-rule\">${crmRefIcon('plus')} Nova Regra</button>`;"
     js_block = js_block.replace(rules_old, rules_new)
-
-    # Categorias Financeiras: replace the old back button with a Transactions button,
-    # including a left-side icon so it follows the same visual pattern as Criar.
     categories_old = '<a class="secondary" href="#/crm/financeiro">← Voltar ao Financeiro</a><button class="primary" data-action="crm-ref-open" data-kind="category">${crmRefIcon(\'plus\')} Criar</button>'
     categories_new = '<a class="secondary crm-ref-transactions-button" href="#/crm/financeiro">${crmRefIcon(\'database\')} Transações</a><button class="primary" data-action="crm-ref-open" data-kind="category">${crmRefIcon(\'plus\')} Criar</button>'
     js_block = js_block.replace(categories_old, categories_new)
-
-    # Contabilidade: não existe P&L por projetos nem P&L por artistas.
-    # Mantemos somente a estrutura geral e P&L Empresa até a próxima definição funcional.
     accounting_page = r'''  function crmRefAccountingPage(){const rawTab=state.crmRefAccountingTab||'all';const tab=rawTab==='company'?'company':'all';const tabs=[['all','Todos'],['company','P&L Empresa']];const k=`<div class="crm-ref-kpis four">${crmRefKpi('Receita Total',crmRefMoney(0),'','success')}${crmRefKpi('Despesa Total',crmRefMoney(0),'','danger')}${crmRefKpi('Lucro Líquido',crmRefMoney(0),'','success')}${crmRefKpi('Margem Líquida','0.0%')}</div>`;const filters=crmRefToolbar(`<input type="date" aria-label="Data início"><input type="date" aria-label="Data fim"><label class="crm-ref-search">${icon('search',14)}<input placeholder="Buscar por descrição ou categoria…"></label><select><option>Todos</option><option>Receitas</option><option>Despesas</option><option>Lucro</option></select>`);const tabnav=`<nav class="crm-ref-ai-tabs crm-fidelity-local-tabs">${tabs.map(([id,l])=>`<button class="${tab===id?'active':''}" data-action="crm-ref-accounting-tab" data-tab="${id}">${l}</button>`).join('')}</nav>`;let body='';if(tab==='company'||tab==='all')body+=crmFidelityTable('Demonstrativo de Resultado (P&L)','Receitas e despesas por categoria no período',['Categoria','Valor','% Receita'],'Nenhum dado contábil disponível');return crmFidelityPage('accounting','accounting','Contabilidade','', '',`${filters}${k}${tabnav}${body}`);}
 '''
-    js_block, accounting_count = re.subn(
-        r"  function crmRefAccountingPage\(\)\{[^\n]*\}\n",
-        accounting_page,
-        js_block,
-        count=1,
-    )
+    js_block, accounting_count = re.subn(r"  function crmRefAccountingPage\(\)\{[^\n]*\}\n", accounting_page, js_block, count=1)
     if accounting_count != 1:
         raise RuntimeError("crmRefAccountingPage não encontrada para remover P&L Projetos/Artistas")
-
-    app = re.sub(
-        r"\n?  // VALTREN CRM REFERENCE FIDELITY FIX START\n.*?  // VALTREN CRM REFERENCE FIDELITY FIX END\n",
-        "\n",
-        app,
-        flags=re.S,
-    )
-
-    # AI Criativa was explicitly removed from the final Marketing module.
-    # The legacy URL remains only as an invisible redirect to Marketing.
-    app = app.replace(",[\'ai\',\'IA Criativa\']", "")
-    app = app.replace(',["ai","IA Criativa"]', "")
-    app = app.replace('<a href="#/crm/marketing/ai">IA Criativa</a>', '')
+    app = re.sub(r"\n?  // VALTREN CRM REFERENCE FIDELITY FIX START\n.*?  // VALTREN CRM REFERENCE FIDELITY FIX END\n", "\n", app, flags=re.S)
+    app = app.replace(",[\'ai\',\'IA Criativa\']", "").replace(',["ai","IA Criativa"]', "").replace('<a href="#/crm/marketing/ai">IA Criativa</a>', '')
     app = re.sub(r"\n  function crmRefAIPage\(\)\{[^\n]*\}\n", "\n", app)
     app = app.replace("IA Criativa e análise avançada", "Análise avançada")
-
-    # The visible support module is ValtrenChat. Remove the old generic page and
-    # the unrelated New Conversation action that is not rendered by the source page.
     app = re.sub(r"\n  function crmRefMusicChatPage\(\)\{[^\n]*\}\n", "\n", app)
     app = re.sub(r"\n  function crmRefConversationModal\(\)\{[^\n]*\}\n", "\n", app)
-
-    app = app.replace(
-        "path === '/crm/musicchat' || path === '/crm/relatorios'",
-        "(path === '/crm/musicchat' || path === '/crm/valtrenchat') || path === '/crm/relatorios'",
-    )
-
+    app = app.replace("path === '/crm/musicchat' || path === '/crm/relatorios'", "(path === '/crm/musicchat' || path === '/crm/valtrenchat') || path === '/crm/relatorios'")
     anchor = "  function contactPage(query)"
     if anchor not in app:
         raise RuntimeError("Âncora contactPage ausente para aplicar fidelidade dos módulos")
     app = app.replace(anchor, js_block.rstrip() + "\n\n" + anchor, 1)
-
-    # Reports is backend-driven and the attached ImportDialog accepts XLSX only.
-    app = app.replace("Arraste ou clique para escolher XLSX/CSV", "XLSX")
-    app = app.replace('accept=".xlsx,.csv"', 'accept=".xlsx"')
+    app = app.replace("Arraste ou clique para escolher XLSX/CSV", "XLSX").replace('accept=".xlsx,.csv"', 'accept=".xlsx"')
     APP.write_text(app, encoding="utf-8")
-
     css = CSS.read_text(encoding="utf-8")
     css = re.sub(r"\n?/\* VALTREN CRM REFERENCE FIDELITY FIX \*/.*\Z", "", css, flags=re.S)
     CSS.write_text(css.rstrip() + "\n\n" + css_block.strip() + "\n", encoding="utf-8")

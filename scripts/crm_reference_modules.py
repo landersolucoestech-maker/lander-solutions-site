@@ -4,6 +4,7 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 HERE=Path(__file__).resolve().parent
+PARTS_DIR=HERE/'parts'/'reference_modules'
 APP=ROOT/'app.js'
 CSS=ROOT/'assets'/'valtren-brand.css'
 CONSISTENCY_CSS=HERE/'crm_reference_modules_consistency.css'
@@ -12,24 +13,15 @@ CSS_MARKER='/* VALTREN CRM REFERENCE MODULES */'
 
 
 def _parts(prefix:str)->str:
-    files=sorted(HERE.glob(prefix))
+    files=sorted(PARTS_DIR.glob(prefix))
     if not files: raise RuntimeError(f'Partes ausentes: {prefix}')
     return ''.join(p.read_text(encoding='utf-8') for p in files)
 
 
 def _assert_no_sidebar_css(css_block:str)->str:
-    # Reference Modules is a navigation consumer. Structural Sidebar CSS must
-    # already be absent at source and belongs exclusively to
-    # crm_sidebar_architecture.py. Never strip it silently here.
     forbidden=(
-        '.crm-sidebar',
-        '.crm-sidebar-head',
-        '.crm-brand',
-        '.crm-nav{',
-        '.crm-nav>',
-        '.crm-nav-group',
-        '.crm-nav-subgroup',
-        '.crm-sidebar-overlay',
+        '.crm-sidebar','.crm-sidebar-head','.crm-brand','.crm-nav{','.crm-nav>',
+        '.crm-nav-group','.crm-nav-subgroup','.crm-sidebar-overlay',
     )
     found=[selector for selector in forbidden if selector in css_block]
     if found:
@@ -38,30 +30,22 @@ def _assert_no_sidebar_css(css_block:str)->str:
 
 
 def _replace_css_block(css:str, block:str)->str:
-    desired=block.strip()
-    marker_at=css.find(CSS_MARKER)
-    if marker_at<0:
-        return css.rstrip()+'\n\n'+desired+'\n'
-    next_marker=css.find('\n/* ',marker_at+len(CSS_MARKER))
-    end=len(css) if next_marker<0 else next_marker+1
+    desired=block.strip(); marker_at=css.find(CSS_MARKER)
+    if marker_at<0: return css.rstrip()+'\n\n'+desired+'\n'
+    next_marker=css.find('\n/* ',marker_at+len(CSS_MARKER)); end=len(css) if next_marker<0 else next_marker+1
     current=css[marker_at:end].strip()
-    if current==desired:
-        return css
-    prefix=css[:marker_at].rstrip()
-    suffix=css[end:].lstrip('\n')
+    if current==desired: return css
+    prefix=css[:marker_at].rstrip(); suffix=css[end:].lstrip('\n')
     return prefix+'\n\n'+desired+'\n'+(('\n'+suffix) if suffix else '')
 
 
 def apply_crm_reference_modules()->int:
     app=APP.read_text(encoding='utf-8')
     js_block=_parts('crm_reference_modules.js.part*')
-    if not CONSISTENCY_CSS.exists():
-        raise FileNotFoundError(CONSISTENCY_CSS)
+    if not CONSISTENCY_CSS.exists(): raise FileNotFoundError(CONSISTENCY_CSS)
     base_css=_parts('crm_reference_modules.css.part*')
     consistency_css=CONSISTENCY_CSS.read_text(encoding='utf-8')
     css_block=_assert_no_sidebar_css(base_css+'\n'+consistency_css)
-    # Keep only shared primitives/runtime. Page/navigation ownership belongs to
-    # definitive/domain materializers and the dedicated Sidebar owner.
     js_block = re.sub(r"\n  const CRM_REF_MARKETING_SUB=.*?;\n", "\n", js_block, count=1)
     js_block = re.sub(r"\n    if\(!state\.crmRefMusicChat\)\{.*?\}\n", "\n", js_block, count=1)
     for start_anchor,end_anchor,label in [
@@ -71,52 +55,33 @@ def apply_crm_reference_modules()->int:
         ("\n  function crmRefSettingsPage", "\n  function crmRefUserModal", "legacy settings pages"),
         ("\n  function crmReferenceRoute(path){", "\n  // VALTREN CRM REFERENCE MODULES END", "legacy reference router"),
     ]:
-        start=js_block.find(start_anchor)
-        end=js_block.find(end_anchor,start+1) if start>=0 else -1
-        if start<0 or end<0:
-            raise RuntimeError(f"Reference Modules boundary ausente: {label}")
+        start=js_block.find(start_anchor); end=js_block.find(end_anchor,start+1) if start>=0 else -1
+        if start<0 or end<0: raise RuntimeError(f"Reference Modules boundary ausente: {label}")
         js_block=js_block[:start]+js_block[end:]
-
     app=re.sub(r"\n?  // VALTREN CRM REFERENCE MODULES START\n.*?  // VALTREN CRM REFERENCE MODULES END\n",'\n',app,flags=re.S)
-
-    # Dashboard pertence ao seu próprio materializador e já consome o sidebar
-    # compartilhado. Reference Modules não deve procurar/regravar markup inline.
     if app.count("${crmRelSidebar('dashboard','dashboard')}") != 1 and app.count("${crmRelSidebar('dashboard')}") != 1:
         raise RuntimeError('Dashboard não consome crmRelSidebar compartilhado')
-
     anchor='  function contactPage(query)'
-    if app.count(anchor)!=1:
-        raise RuntimeError(f'âncora contactPage divergente: {app.count(anchor)}')
+    if app.count(anchor)!=1: raise RuntimeError(f'âncora contactPage divergente: {app.count(anchor)}')
     app=app.replace(anchor,js_block+'\n'+anchor,1)
-
     route_anchor="    else if (path === '/crm/agenda') app.innerHTML = crmAgendaPage(query);"
     route_line="    else if (path.startsWith('/crm/financeiro') || path.startsWith('/crm/marketing') || path === '/crm/musicchat' || path === '/crm/relatorios' || path.startsWith('/crm/configuracoes')) app.innerHTML = crmReferenceRoute(path);"
     if route_line not in app:
         count=app.count(route_anchor)
-        if count<1:
-            raise RuntimeError('rota canônica da Agenda ausente para registrar Reference Modules')
-        # O runtime atual possui um renderer canônico. Não exigir ou recriar a
-        # topologia histórica de duas renderizações apenas para registrar rotas.
+        if count<1: raise RuntimeError('rota canônica da Agenda ausente para registrar Reference Modules')
         app=app.replace(route_anchor,route_anchor+'\n'+route_line)
     APP.write_text(app,encoding='utf-8')
-
-    css=CSS.read_text(encoding='utf-8')
-    updated_css=_replace_css_block(css,css_block)
-    if updated_css!=css:
-        CSS.write_text(updated_css,encoding='utf-8')
-
+    css=CSS.read_text(encoding='utf-8'); updated_css=_replace_css_block(css,css_block)
+    if updated_css!=css: CSS.write_text(updated_css,encoding='utf-8')
     for p in ROOT.rglob('*.html'):
         rel=p.relative_to(ROOT)
-        if any(x in {'.git','.bootstrap','node_modules','scripts'} for x in rel.parts):
-            continue
+        if any(x in {'.git','.bootstrap','node_modules','scripts'} for x in rel.parts): continue
         t=p.read_text(encoding='utf-8')
         t=re.sub(r'app\.js(?:\?v=[A-Za-z0-9._-]+)?',f'app.js?v={CACHE_VERSION}',t)
         t=re.sub(r'valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?',f'valtren-brand.css?v={CACHE_VERSION}',t)
         p.write_text(t,encoding='utf-8')
-
     print('Módulos de referência materializados como consumers da navegação canônica e do renderer único; primitives visuais normalizados e CSS estrutural da sidebar ausente neste owner.')
     return 1
 
 
-if __name__=='__main__':
-    apply_crm_reference_modules()
+if __name__=='__main__': apply_crm_reference_modules()
