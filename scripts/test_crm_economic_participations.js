@@ -9,6 +9,11 @@ const __canonicalCore="require('../web/src/modules/finance/participations/core.j
 const __coreRefs=__partSource.split(__legacyCore).length-1;
 if(__coreRefs!==1)throw new Error(`Referência legacy do core de Participações esperada exatamente 1 vez; encontrada ${__coreRefs}`);
 __partSource=__partSource.replace(__legacyCore,__canonicalCore);
+const __legacyCoreFile="__filename.replace('test_crm_economic_participations.js','crm_economic_participations_core.js')";
+const __canonicalCoreFile="__partPath.resolve(__dirname,'..','web','src','modules','finance','participations','core.js')";
+const __coreFileRefs=__partSource.split(__legacyCoreFile).length-1;
+if(__coreFileRefs!==3)throw new Error(`Leituras legacy do core de Participações esperadas 3 vezes; encontradas ${__coreFileRefs}`);
+__partSource=__partSource.split(__legacyCoreFile).join(__canonicalCoreFile);
 if(process.argv.includes('--materialized')){
   const oldAdministration=`test('Administração mantém dois itens canônicos atuais',()=>{const start=app.lastIndexOf('const administration=['),end=app.indexOf('];',start),admin=app.slice(start,end);for(const item of ["['structure','Estrutura Organizacional','#/crm/administracao']","['assets','Patrimônio e Licenças','#/crm/administracao/patrimonio-licencas']"])assert(admin.includes(item));assert(!admin.includes('Auditoria'));});`;
   const newAdministration=String.raw`test('Administração legacy preservada fora da Sidebar',()=>{const start=app.indexOf('// VALTREN SIDEBAR ARCHITECTURE START'),end=app.indexOf('// VALTREN SIDEBAR ARCHITECTURE END',start),sidebar=app.slice(start,end),compact=app.replace(/\s+/g,'');assert(start>=0&&end>start);for(const label of ['Administração','Estrutura Organizacional','Patrimônio e Licenças'])assert(!sidebar.includes(label));assert(compact.includes("path==='/crm/administracao'||path==='/crm/administracao/patrimonio-licencas'"));assert(compact.includes('Áreaadministrativaaindanãoimplementadacomodomíniooperacional.'));});`;
@@ -16,4 +21,4 @@ if(process.argv.includes('--materialized')){
   if(occurrences!==1)throw new Error(`Assertion materializada histórica de Administração esperada exatamente 1 vez em Participações; encontrada ${occurrences}`);
   __partSource=__partSource.replace(oldAdministration,newAdministration);
 }
-new Function('require','__dirname','__filename',__partSource)(require,__dirname,__filename);
+new Function('require','__dirname','__filename','__partPath',__partSource)(require,__dirname,__filename,__partPath);
