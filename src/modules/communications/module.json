@@ -1,0 +1,13 @@
+{
+  "id": "communications",
+  "legacyRoutes": ["/crm/valtrenchat", "/crm/musicchat"],
+  "owner": "communications",
+  "status": "integration-dependent",
+  "runtimeOwner": "scripts/crm_definitive_architecture.py",
+  "currentBehavior": "redirect-to-integrations-settings",
+  "constraints": [
+    "no-fake-conversations",
+    "no-fake-connected-channel",
+    "messages-require-real-provider-integration"
+  ]
+}
