@@ -6,11 +6,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CORE = ROOT / "scripts" / "crm_fiscal_documents_core.js"
-BROWSER = ROOT / "scripts" / "crm_fiscal_documents_browser.js"
-MODULE_CSS = ROOT / "scripts" / "crm_fiscal_documents.css"
-CONSISTENCY_CSS = ROOT / "scripts" / "crm_fiscal_documents_consistency.css"
-CACHE_VERSION = "20260826-fiscal-documents-v2"
+MODULE_DIR = ROOT / "src" / "modules" / "finance" / "fiscal"
+CORE = MODULE_DIR / "core.js"
+BROWSER = MODULE_DIR / "browser.js"
+MODULE_CSS = MODULE_DIR / "styles.css"
+CONSISTENCY_CSS = MODULE_DIR / "consistency.css"
+CACHE_VERSION = "20260829-finance-fiscal-module-v1"
 JS_START = "  // VALTREN FISCAL DOCUMENTS START\n"
 JS_END = "  // VALTREN FISCAL DOCUMENTS END\n"
 
@@ -90,7 +91,7 @@ def apply_crm_fiscal_documents() -> int:
         text = re.sub(r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?", f"valtren-brand.css?v={CACHE_VERSION}", text)
         path.write_text(text, encoding="utf-8")
 
-    print("Financeiro → Notas Fiscais materializado como fonte fiscal canônica; escala visual normalizada; Invoice legado neutralizado; Transações, Contabilidade e sidebar preservados.")
+    print("Financeiro → Notas Fiscais materializado a partir de src/modules/finance/fiscal; Invoice legado neutralizado e dependências financeiras preservadas.")
     return 1
 
 
