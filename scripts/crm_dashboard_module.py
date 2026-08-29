@@ -137,6 +137,7 @@ def _materialize_route(app: str) -> str:
     legacy_patterns = (
         "    else if (path === '/crm/dashboard' || path === '/crm') app.innerHTML = crmDashboardPage();",
         "    else if (path === '/crm/dashboard' || path === '/crm') app.innerHTML = crmDashboardPage(query);",
+        "    else if (path === '/crm/dashboard' || path === '/crm') app.innerHTML = crmDashboardPage(query); // legacy compatibility",
         "    else if (path === '/dashboard') app.innerHTML = crmDashboardPage(query);",
     )
     for route in legacy_patterns:
