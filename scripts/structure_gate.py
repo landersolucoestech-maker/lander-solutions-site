@@ -5,7 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-ALLOWED_ROOT_DIRS = {".bootstrap", ".github", "assets", "docs", "mockups", "scripts", "src"}
+ALLOWED_ROOT_DIRS = {".bootstrap", ".github", "api", "assets", "docs", "mockups", "scripts", "src", "web"}
 ALLOWED_ROOT_FILES = {".gitignore", "CONFIGURAR-PROJETO.bat", "README.md"}
 
 CANONICAL_MODULES = {
@@ -57,6 +57,16 @@ def main() -> int:
     )
     if unexpected_root:
         fail("entradas inesperadas na raiz: " + ", ".join(unexpected_root))
+
+    web_dir = ROOT / "web"
+    api_dir = ROOT / "api"
+    api_contracts_dir = api_dir / "contracts"
+    for required in (web_dir, api_dir, api_contracts_dir):
+        if not required.is_dir():
+            fail(f"boundary arquitetural ausente: {required.relative_to(ROOT)}")
+    for required_file in (web_dir / "README.md", api_dir / "README.md", api_contracts_dir / "README.md"):
+        if not required_file.is_file():
+            fail(f"contrato de boundary ausente: {required_file.relative_to(ROOT)}")
 
     src_dir = ROOT / "src"
     modules_dir = src_dir / "modules"
@@ -120,7 +130,7 @@ def main() -> int:
     if not sorted((ROOT / ".bootstrap").glob("chunk-*")):
         fail("payload .bootstrap/chunk-* ausente")
 
-    print("STRUCTURE GATE: arquitetura funcional, owners canônicos e boundaries sem backend validados.")
+    print("STRUCTURE GATE: web/api boundaries, arquitetura funcional, owners canônicos e boundaries sem backend validados.")
     return 0
 
 
