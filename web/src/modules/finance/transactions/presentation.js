@@ -7,10 +7,11 @@ function crmFinanceSignedMoney(tx){
   return crmFinanceMoney(tx?.direction==='outflow'?-amount:amount,tx?.currency||'BRL');
 }
 
-const crmFinanceAccountCardsWithSource=crmFinanceAccountCards;
-crmFinanceAccountCards=function(){
-  return crmFinanceAccountCardsWithSource().replace(/ · Manual/g,'').replace(/Cadastro manual/g,'Cadastro');
-};
+function crmFinanceAccountCards(){
+  const service=crmFinanceService(),filters=crmFinanceCurrentFilters(),all=service.allAccountsSummary();
+  const card=(id,name,summary)=>`<button type="button" class="crm-fin-account-card ${filters.accountId===id?'active':''}" data-action="crm-fin-select-account" data-id="${esc(id)}"><span>${esc(name)}</span><strong>${summary.currentBalance==null?'Saldo não informado':crmFinanceMoney(summary.currentBalance)}</strong></button>`;
+  return `<div class="crm-fin-account-strip">${card('all','Todas as contas',all)}${service.data.accounts.filter((a)=>a.status!=='inactive'&&!a.isDemo).map((a)=>card(a.id,a.name,service.accountSummary(a.id))).join('')}<button type="button" class="crm-fin-account-add" data-action="crm-fin-add-account">${icon('plus',18)}<span>Adicionar conta</span><small>Cadastro</small></button></div>`;
+}
 
 crmFinanceToolbar=function(){
   const service=crmFinanceService(),filters=crmFinanceCurrentFilters(),products=crmFinanceProducts();
