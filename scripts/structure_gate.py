@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import sys
 from pathlib import Path
 
@@ -45,6 +46,10 @@ FORBIDDEN_SUFFIXES = {".pyc", ".pyo", ".log", ".tmp", ".bak"}
 def fail(message: str) -> None:
     print(f"STRUCTURE GATE: {message}", file=sys.stderr)
     raise SystemExit(1)
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def main() -> int:
@@ -137,6 +142,31 @@ def main() -> int:
         if not (web_assets / asset).is_file():
             fail(f"asset público canônico ausente: web/public/assets/{asset}")
 
+    scripts_dir = ROOT / "scripts"
+
+    # Product source ownership is one-way: web/src may feed materializers, but no
+    # JavaScript/CSS file directly under scripts may duplicate committed product
+    # source byte-for-byte. This prevents the old dual-owner architecture from
+    # silently returning.
+    web_source_by_hash: dict[str, list[str]] = {}
+    for path in web_src.rglob("*"):
+        if path.is_file() and path.suffix in {".js", ".css"}:
+            web_source_by_hash.setdefault(_sha256(path), []).append(str(path.relative_to(ROOT)))
+    duplicate_product_sources: list[str] = []
+    for path in scripts_dir.iterdir():
+        if not path.is_file() or path.suffix not in {".js", ".css"}:
+            continue
+        owners = web_source_by_hash.get(_sha256(path))
+        if owners:
+            duplicate_product_sources.append(
+                f"{path.relative_to(ROOT)} == {' | '.join(sorted(owners))}"
+            )
+    if duplicate_product_sources:
+        fail(
+            "source de produto duplicado em scripts/; web/src deve ser owner único: "
+            + "; ".join(sorted(duplicate_product_sources)[:20])
+        )
+
     committed_generated = sorted(name for name in FORBIDDEN_GENERATED_ROOT_FILES if (ROOT / name).exists())
     if committed_generated:
         fail("saída materializada presente no checkout limpo: " + ", ".join(committed_generated))
@@ -153,7 +183,6 @@ def main() -> int:
     if forbidden_paths:
         fail("artefatos locais/gerados versionados ou presentes no checkout: " + ", ".join(sorted(forbidden_paths)[:20]))
 
-    scripts_dir = ROOT / "scripts"
     stray_parts = sorted(path.name for path in scripts_dir.iterdir() if path.is_file() and ".part" in path.name)
     if stray_parts:
         fail("fragmentos .part* não podem ficar diretamente em scripts/: " + ", ".join(stray_parts[:20]))
@@ -162,7 +191,7 @@ def main() -> int:
     if not sorted((ROOT / ".bootstrap").glob("chunk-*")):
         fail("payload .bootstrap/chunk-* ausente")
 
-    print("STRUCTURE GATE: monorepo web/api, frontend owner único, assets públicos canônicos e boundaries sem backend validados.")
+    print("STRUCTURE GATE: monorepo web/api, frontend owner único, assets públicos canônicos, source de produto não duplicado e boundaries sem backend validados.")
     return 0
 
 
