@@ -10,4 +10,4 @@
 
 Global modules such as Dashboard and Agenda remain top-level modules. CRM owns only relationship/commercial concerns. Product source must not be reintroduced under root-level `src/` or under `scripts/`.
 
-The deterministic materializer still exists as transitional tooling. It may create temporary compatibility paths at runtime, but committed frontend ownership remains exclusively under `web/`.
+The deterministic materializer remains transitional tooling, but it now reads frontend source directly from `web/src`. It no longer creates a root-level `src/` compatibility tree. Only generated runtime output such as root `assets/`, `app.js` and `index.html` may exist during materialization.
