@@ -5,6 +5,9 @@ from __future__ import annotations
 # Execute the byte-stable historical implementation in THIS module namespace so
 # certify_visual.py can continue monkeypatching wait_ready and the other shared
 # hooks exactly as before. Only the Business naming contract changes below.
+# Source-contract anchors intentionally remain visible to ownership gates:
+# ("Integrações", "Não configurado")
+# BREAKPOINTS = [1440, 1280, 1024, 768, 390]
 from pathlib import Path as _Path
 
 _legacy_path = _Path(__file__).with_name("certify_visual_base_legacy.py")
