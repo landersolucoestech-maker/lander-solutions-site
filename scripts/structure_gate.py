@@ -12,12 +12,27 @@ ALLOWED_ROOT_DIRS = {
     "docs",
     "mockups",
     "scripts",
+    "src",
 }
 
 ALLOWED_ROOT_FILES = {
     ".gitignore",
     "CONFIGURAR-PROJETO.bat",
     "README.md",
+}
+
+CANONICAL_MODULES = {
+    "dashboard",
+    "agenda",
+    "crm",
+    "finance",
+    "legal",
+    "business",
+    "marketing",
+    "communications",
+    "integrations",
+    "settings",
+    "notifications",
 }
 
 FORBIDDEN_GENERATED_ROOT_FILES = {
@@ -66,6 +81,23 @@ def main() -> int:
     if unexpected_root:
         fail("entradas inesperadas na raiz: " + ", ".join(unexpected_root))
 
+    src_dir = ROOT / "src"
+    modules_dir = src_dir / "modules"
+    shared_dir = src_dir / "shared"
+    app_dir = src_dir / "app"
+    for required in (src_dir, modules_dir, shared_dir, app_dir):
+        if not required.is_dir():
+            fail(f"estrutura fonte ausente: {required.relative_to(ROOT)}")
+
+    missing_modules = sorted(name for name in CANONICAL_MODULES if not (modules_dir / name).is_dir())
+    if missing_modules:
+        fail("módulos canônicos ausentes em src/modules: " + ", ".join(missing_modules))
+
+    # Agenda and Dashboard are global first-level modules and must never be nested in CRM.
+    for forbidden in (modules_dir / "crm" / "agenda", modules_dir / "crm" / "dashboard"):
+        if forbidden.exists():
+            fail(f"ownership inválido: {forbidden.relative_to(ROOT)}")
+
     committed_generated = sorted(
         name for name in FORBIDDEN_GENERATED_ROOT_FILES if (ROOT / name).exists()
     )
@@ -103,12 +135,7 @@ def main() -> int:
         fail(
             "fragmentos .part* não podem ficar diretamente em scripts/: "
             + ", ".join(stray_parts[:20])
-            + "; mova-os para scripts/parts/<owner>/"
         )
-
-    parts_dir = scripts_dir / "parts"
-    if not parts_dir.is_dir():
-        fail("scripts/parts ausente; fragmentos auxiliares devem ter namespace próprio")
 
     materializer = scripts_dir / "materialize.py"
     if not materializer.is_file():
@@ -118,7 +145,7 @@ def main() -> int:
     if not bootstrap_chunks:
         fail("payload .bootstrap/chunk-* ausente")
 
-    print("STRUCTURE GATE: estrutura canônica do repositório validada.")
+    print("STRUCTURE GATE: src/app + src/modules + src/shared e ownership funcional validados.")
     return 0
 
 
