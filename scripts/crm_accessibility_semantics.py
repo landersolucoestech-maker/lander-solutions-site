@@ -67,7 +67,7 @@ STATIC_LABELS = {
     "crm-legal-unit": "Unidade de negócio",
     "crm-legal-template-search": "Pesquisar templates",
     "crm-legal-template-category": "Categoria do template",
-    "crm-legal-template-type": "Categoria do template",
+    "crm-legal-template-type": "Tipo de template",
     "crm-legal-template-status": "Status do template",
     "crm-legal-variable-search": "Pesquisar variáveis",
     "crm-legal-variable-scope": "Escopo da variável",
