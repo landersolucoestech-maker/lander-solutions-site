@@ -8,15 +8,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CORE = ROOT / "scripts" / "crm_dashboard_core.js"
-PARTICIPATION_CORE = ROOT / "scripts" / "crm_dashboard_participation_core.js"
-BROWSER = ROOT / "scripts" / "crm_dashboard_browser.js"
-MODULE_CSS = ROOT / "scripts" / "crm_dashboard.css"
+MODULE_DIR = ROOT / "src" / "modules" / "dashboard"
+CORE = MODULE_DIR / "core.js"
+PARTICIPATION_CORE = MODULE_DIR / "participation-core.js"
+BROWSER = MODULE_DIR / "browser.js"
+MODULE_CSS = MODULE_DIR / "styles.css"
 DASHBOARD_START = "  // VALTREN CRM DASHBOARD START\n"
 DASHBOARD_END = "  // VALTREN CRM DASHBOARD END\n"
 CSS_MARKER = "/* VALTREN EXECUTIVE DASHBOARD */"
 LEGACY_CSS_MARKER = "/* VALTREN CRM INTEGRATED */"
-CACHE_VERSION = "20260827-executive-dashboard-v5"
+CACHE_VERSION = "20260829-dashboard-module-v1"
 
 LEGACY_DASHBOARD_TOKENS = [
     "kpi('Contatos'",
@@ -131,21 +132,22 @@ def _materialize_dashboard(app: str) -> str:
 
 
 def _materialize_route(app: str) -> str:
-    old_route = "    else if (path === '/crm/dashboard' || path === '/crm') app.innerHTML = crmDashboardPage();"
-    canonical_route = "    else if (path === '/crm/dashboard' || path === '/crm') app.innerHTML = crmDashboardPage(query);"
-    if old_route in app:
-        app = app.replace(old_route, canonical_route)
-    if canonical_route in app:
-        return app
-    # O bootstrap histórico possui mais de uma forma válida de rotear o Dashboard.
-    # crmDashboardPage aceita query opcional, então qualquer rota já existente para
-    # /crm/dashboard deve ser preservada em vez de depender de uma âncora fixa.
-    if "path === '/crm/dashboard'" in app or "path==='/crm/dashboard'" in app:
-        return app
+    # Dashboard is a global top-level module. Historical CRM URLs remain aliases
+    # until callers and bookmarks are fully migrated.
+    legacy_patterns = (
+        "    else if (path === '/crm/dashboard' || path === '/crm') app.innerHTML = crmDashboardPage();",
+        "    else if (path === '/crm/dashboard' || path === '/crm') app.innerHTML = crmDashboardPage(query);",
+        "    else if (path === '/dashboard') app.innerHTML = crmDashboardPage(query);",
+    )
+    for route in legacy_patterns:
+        app = app.replace(route + "\n", "").replace(route, "")
+
+    canonical_route = "    else if (path === '/dashboard') app.innerHTML = crmDashboardPage(query);"
+    compatibility_route = "    else if (path === '/crm/dashboard' || path === '/crm') app.innerHTML = crmDashboardPage(query); // legacy compatibility"
     anchor = "    else if (path === '/contato') app.innerHTML = contactPage(query);"
     if app.count(anchor) < 1:
-        raise RuntimeError("Rota do Dashboard ausente e âncora de compatibilidade não encontrada")
-    return app.replace(anchor, canonical_route + "\n" + anchor, 1)
+        raise RuntimeError("Âncora de compatibilidade não encontrada para registrar Dashboard global")
+    return app.replace(anchor, canonical_route + "\n" + compatibility_route + "\n" + anchor, 1)
 
 
 def _replace_css_block(css: str) -> str:
@@ -173,9 +175,9 @@ def _validate_sources() -> None:
     participation_core = PARTICIPATION_CORE.read_text(encoding="utf-8")
     browser = BROWSER.read_text(encoding="utf-8")
     rendered_browser = _dashboard_browser_source()
-    _assert_js_syntax(core, "crm_dashboard_core.js")
-    _assert_js_syntax(participation_core, "crm_dashboard_participation_core.js")
-    _assert_js_syntax(rendered_browser, "crm_dashboard_browser.js normalizado")
+    _assert_js_syntax(core, "src/modules/dashboard/core.js")
+    _assert_js_syntax(participation_core, "src/modules/dashboard/participation-core.js")
+    _assert_js_syntax(rendered_browser, "src/modules/dashboard/browser.js normalizado")
     missing_core = [name for name in REQUIRED_CORE_FUNCTIONS if name not in core]
     missing_participation = [name for name in REQUIRED_PARTICIPATION_CORE_FUNCTIONS if name not in participation_core]
     missing_browser = [name for name in REQUIRED_BROWSER_COMPONENTS if name not in rendered_browser]
@@ -223,6 +225,8 @@ def apply_crm_dashboard() -> int:
         raise RuntimeError("Dashboard executivo não ficou materializado exatamente uma vez")
     if app.count("ValtrenDashboardParticipationCore") < 1 or app.count("__participationIntegrityWrapped") < 1:
         raise RuntimeError("Núcleo de integridade das Participações não foi materializado")
+    if app.count("path === '/dashboard'") != 1:
+        raise RuntimeError("Rota canônica /dashboard não ficou materializada exatamente uma vez")
     dashboard_block = app[app.index(DASHBOARD_START):app.index(DASHBOARD_END)]
     for token in LEGACY_DASHBOARD_TOKENS:
         if token in dashboard_block:
@@ -241,12 +245,10 @@ def apply_crm_dashboard() -> int:
     if css_changed:
         CSS.write_text(updated_css, encoding="utf-8")
 
-    # Cache-busters pertencem à mudança material. Em um rerun byte-stable do owner,
-    # não rebaixamos a versão final definida por materializadores transversais posteriores.
     if app_changed or css_changed:
         _update_cache_busters()
 
-    print("Dashboard executivo materializado com hierarquia simplificada: header sem eyebrow redundante, KPIs no início do workspace e arquitetura financeira preservada sem dados fictícios.")
+    print("Dashboard materializado como módulo global em /dashboard; rotas /crm e /crm/dashboard preservadas apenas como compatibilidade temporária.")
     return 1
 
 
