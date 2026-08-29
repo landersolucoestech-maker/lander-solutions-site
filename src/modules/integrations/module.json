@@ -1,0 +1,12 @@
+{
+  "id": "integrations",
+  "canonicalSurface": "/crm/configuracoes?tab=integracoes",
+  "owner": "integrations",
+  "status": "not-configured",
+  "runtimeOwner": "scripts/crm_definitive_architecture.py",
+  "constraints": [
+    "integration-is-connected-only-after-real-validation",
+    "credentials-never-live-in-browser-source",
+    "no-simulated-provider-status"
+  ]
+}
