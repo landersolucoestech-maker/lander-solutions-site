@@ -2,7 +2,7 @@
 const assert=require('assert');
 const fs=require('fs');
 const path=require('path');
-const dashboardDir=path.resolve(__dirname,'..','src','modules','dashboard');
+const dashboardDir=path.resolve(__dirname,'..','web','src','modules','dashboard');
 const browser=fs.readFileSync(path.join(dashboardDir,'browser.js'),'utf8');
 const css=fs.readFileSync(path.join(dashboardDir,'styles.css'),'utf8');
 const materializer=fs.readFileSync(path.resolve(__dirname,'crm_dashboard_module.py'),'utf8');
@@ -20,7 +20,7 @@ assert(css.includes('@media(max-width:1200px)'),'tablet KPI adaptation missing')
 assert(css.includes('@media(max-width:460px)'),'mobile adaptation missing');
 assert(!css.includes('zoom:'),'dashboard CSS must not use zoom');
 assert(!css.includes('transform:scale('),'dashboard CSS must not use scale hacks');
-assert(materializer.includes('src" / "modules" / "dashboard'));
+assert(materializer.includes('"web" / "src" / "modules" / "dashboard"'));
 assert(materializer.includes('CORE = MODULE_DIR / "core.js"'));
 assert(materializer.includes('BROWSER = MODULE_DIR / "browser.js"'));
 assert(materializer.includes('MODULE_CSS = MODULE_DIR / "styles.css"'));
