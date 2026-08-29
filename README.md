@@ -38,14 +38,14 @@ Projeto da **Valtren Solutions** organizado como monorepo com aplicação fronte
 
 ## Materialização
 
-Enquanto o bundle legado ainda existir, a aplicação final é reconstruída a partir de `.bootstrap` e dos materializadores em `scripts/`:
+Enquanto o bundle legado ainda existir, a aplicação final é reconstruída a partir de `.bootstrap`, dos owners em `web/src` e dos orquestradores em `scripts/`:
 
 ```bash
 python scripts/materialize.py
 python -m http.server 4173
 ```
 
-`scripts/materialize.py` cria temporariamente uma cópia de compatibilidade `src/` a partir de `web/src` para materializadores históricos e a remove ao terminar. Essa ponte não é owner arquitetural.
+Os materializadores leem diretamente de `web/src`. Não existe mais ponte ou cópia temporária `src/` na raiz. Durante a materialização, `web/public/assets` é preparado em `assets/` porque o bundle legado ainda espera os assets públicos nesse caminho de saída.
 
 ## Ownership funcional
 
@@ -62,11 +62,13 @@ Os scripts Python continuam como orquestradores temporários de materialização
 
 ## API futura
 
-`api/` existe para evitar uma futura reorganização destrutiva quando o backend for implementado. Nesta fase não existem endpoints, persistência, autenticação, filas, jobs ou provedores reais. `api/contracts/` é a única área preparada para contratos estáveis entre frontend e backend.
+`api/` existe para evitar uma futura reorganização destrutiva quando o backend for implementado. Nesta fase não existem endpoints, persistência, autenticação, filas, jobs ou provedores reais. `api/contracts/` é a área preparada para contratos estáveis entre frontend e backend.
 
 ## Certificação
 
 Pipeline verde isolado não certifica interface. A saída da `dev` precisa passar por testes de source e materialized, idempotência, ownership, hashes do artifact, certificação visual e verificação da URL pública.
+
+O artifact do GitHub Pages contém somente a saída materializada do site. `web/`, `api/`, `scripts/`, `docs/` e demais fontes/tooling não são publicados.
 
 ## Integrações e autenticação
 
