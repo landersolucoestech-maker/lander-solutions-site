@@ -23,8 +23,6 @@ STATIC_LABELS = {
     "crm-fin-type": "Tipo de transação",
     "crm-fin-dimension": "Produto ou sistema",
     "crm-fin-account-filter": "Conta financeira",
-    "crm-fin-category": "Categoria financeira",
-    "crm-fin-recon": "Status de conciliação",
     "crm-fin-bulk-category": "Categoria financeira em massa",
     "crm-fin-bulk-business": "Produto ou sistema em massa",
     "crm-fin-bulk-counterparty": "Origem ou destino em massa",
