@@ -56,10 +56,29 @@ const sourceRewrites={
   ],
 };
 
+const materializedRewrites={
+  'test_crm_fiscal_documents_ui.js':[
+    [
+      "assert(app.includes('function crmTransactionsPage()'));assert(app.includes('function crmAccountingPage()'));",
+      "assert(app.includes('function crmTransactionsPage()')||app.includes('crmTransactionsPage=function()'));assert(app.includes('function crmAccountingPage()'));",
+      1,
+    ],
+  ],
+};
+
 function rewriteSources(source,targetName){
   for(const [legacy,canonical] of sourceRewrites[targetName]||[]){
     const occurrences=source.split(legacy).length-1;
     if(occurrences<1)throw new Error(`Source histórico esperado em ${targetName}: ${legacy}`);
+    source=source.split(legacy).join(canonical);
+  }
+  return source;
+}
+
+function rewriteMaterializedContracts(source,targetName){
+  for(const [legacy,canonical,expected] of materializedRewrites[targetName]||[]){
+    const occurrences=source.split(legacy).length-1;
+    if(occurrences!==expected)throw new Error(`Contrato materializado histórico esperado ${expected} vez(es) em ${targetName}; encontrado ${occurrences}: ${legacy}`);
     source=source.split(legacy).join(canonical);
   }
   return source;
@@ -70,7 +89,8 @@ function transform(source,targetName){
   if(!spec)throw new Error(`Teste-base sem boundary materializado mapeado: ${targetName}`);
   const occurrences=source.split(spec.old).length-1;
   if(occurrences!==spec.expected)throw new Error(`Boundary materializado histórico esperado ${spec.expected} vez(es) em ${targetName}; encontrado ${occurrences}`);
-  return source.split(spec.old).join(spec.replacement);
+  source=source.split(spec.old).join(spec.replacement);
+  return rewriteMaterializedContracts(source,targetName);
 }
 
 function execute(source,targetPath){
