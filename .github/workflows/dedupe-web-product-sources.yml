@@ -1,0 +1,41 @@
+name: Dedupe Web Product Sources
+
+on:
+  push:
+    branches:
+      - dev
+
+permissions:
+  contents: write
+
+jobs:
+  dedupe:
+    if: ${{ !contains(github.event.head_commit.message, '[product-sources-deduped]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deduplicate product sources
+        run: python scripts/dedupe_web_product_sources.py
+
+      - name: Validate source tree after dedupe
+        run: |
+          python scripts/structure_gate.py
+          test ! -e scripts/dedupe_web_product_sources.py
+          test ! -e .github/workflows/dedupe-web-product-sources.yml
+
+      - name: Commit deduplication
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No duplicate product sources required cleanup."
+            exit 0
+          fi
+          git commit -m "refactor: remove duplicate product sources [product-sources-deduped]"
+          git push origin HEAD:dev
