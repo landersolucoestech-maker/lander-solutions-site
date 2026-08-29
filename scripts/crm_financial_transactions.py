@@ -51,6 +51,15 @@ def apply_crm_financial_transactions() -> int:
     browser = _remove_overridden_function(browser, "function crmFinanceTable()", "function crmTransactionsPage()")
     browser = _remove_overridden_function(browser, "function crmTransactionsPage()", "function crmFinanceMountOverlay")
 
+    # Validate the final presentation itself, not helper definitions that remain in
+    # the browser module for status logic and backwards-compatible internal APIs.
+    if "crmFinanceStatusTabs()" in presentation:
+        raise RuntimeError("Cards Pendentes/Lançadas/Excluídas ainda renderizados na apresentação final de Transações")
+    if '<th class="right">Saída</th>' in presentation or '<th class="right">Entrada</th>' in presentation:
+        raise RuntimeError("Colunas Saída/Entrada ainda existem separadamente na apresentação final de Transações")
+    if presentation.count('<th class="right">Valor</th>') != 1:
+        raise RuntimeError("Apresentação final de Transações precisa possuir exatamente uma coluna Valor")
+
     block = JS_START + domain + "\n\n" + browser + "\n\n" + presentation + "\n" + JS_END
 
     app = re.sub(
@@ -115,11 +124,6 @@ def apply_crm_financial_transactions() -> int:
         count = transaction_block.count(token)
         if count != expected:
             raise RuntimeError(f"Transações materializadas duplicadas para {token}: esperado={expected} atual={count}")
-
-    if "crmFinanceStatusTabs()" in transaction_block:
-        raise RuntimeError("Cards Pendentes/Lançadas/Excluídas ainda renderizados na apresentação final de Transações")
-    if '<th class="right">Saída</th>' in transaction_block or '<th class="right">Entrada</th>' in transaction_block:
-        raise RuntimeError("Colunas Saída/Entrada ainda existem separadamente na apresentação final de Transações")
 
     if "if(path==='/crm/financeiro')return crmTransactionsPage();" not in app:
         raise RuntimeError("Rota Financeiro não aponta para Transações canônicas")
