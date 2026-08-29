@@ -5,12 +5,13 @@ const materialized=process.argv.includes('--materialized');
 const fail=(m)=>{throw new Error(m)};
 const must=(c,m)=>{if(!c)fail(m)};
 const read=(name)=>fs.readFileSync(path.join(__dirname,name),'utf8');
+const readPart=(...parts)=>fs.readFileSync(path.join(__dirname,'parts',...parts),'utf8');
 const owner=read('crm_sidebar_architecture.py');
 const relationships=read('crm_relationships_module.py');
-const fidelity=read('crm_reference_fidelity_fix.js.part01')+read('crm_reference_fidelity_fix.js.part02')+read('crm_reference_fidelity_fix.js.part03')+read('crm_reference_fidelity_fix.js.part04');
+const fidelity=readPart('reference_fidelity','crm_reference_fidelity_fix.js.part01')+readPart('reference_fidelity','crm_reference_fidelity_fix.js.part02')+readPart('reference_fidelity','crm_reference_fidelity_fix.js.part03')+readPart('reference_fidelity','crm_reference_fidelity_fix.js.part04');
 const definitive=read('crm_definitive_architecture.py');
 const reference=read('crm_reference_modules.py');
-const rawReferenceCss=read('crm_reference_modules.css.part01')+read('crm_reference_modules.css.part02');
+const rawReferenceCss=readPart('reference_modules','crm_reference_modules.css.part01')+readPart('reference_modules','crm_reference_modules.css.part02');
 const materialize=read('materialize.py');
 const header=read('crm_global_header.py');
 const review=read('crm_product_system_review.py');
@@ -61,29 +62,7 @@ must(header.includes('@media(max-width:980px){.crm-account-copy{display:none}'),
 must(!review.includes('.crm-sidebar{position:'),'global review still positions Sidebar');
 must(!review.includes('.crm-account-menu>summary'),'global review still styles Account Menu');
 [
-  ['.crm-sidebar{','sidebar structural container missing'],
-  ['width:250px','desktop canonical sidebar width missing'],
-  ['.crm-sidebar-head{','sidebar header layout missing'],
-  ['.crm-brand{','sidebar brand composition missing'],
-  ['.crm-brand img{','sidebar brand image sizing missing'],
-  ['width:34px!important','sidebar brand explicit width missing'],
-  ['height:34px!important','sidebar brand explicit height missing'],
-  ['.crm-brand>span{','sidebar brand text stack missing'],
-  ['flex-direction:column','sidebar vertical flex direction missing'],
-  ['.crm-nav{','sidebar nav container missing'],
-  ['.crm-nav>a,.crm-nav-group>summary{','sidebar main-row rule missing'],
-  ['width:100%','sidebar full-width row rule missing'],
-  ['.crm-nav svg,.crm-nav-group>summary svg{','sidebar icon sizing rule missing'],
-  ['flex:0 0 18px','sidebar icon shrink protection missing'],
-  ['.crm-nav>a.active{','sidebar active main state missing'],
-  ['box-shadow:inset 3px 0 0 #D4AF37','sidebar active indicator missing'],
-  ['.crm-nav-group>div{','sidebar submenu layout missing'],
-  ['outline:2px solid #D4AF37','sidebar focus-visible state missing'],
-  ['padding-left:232px','tablet content offset missing'],
-  ['.crm-sidebar{width:232px','tablet readable sidebar width missing'],
-  ['transform:translateX(-104%)','mobile drawer closed state missing'],
-  ['.crm-sidebar.is-open{transform:translateX(0)}','mobile drawer open state missing'],
-  ['html.crm-sidebar-lock,body.crm-sidebar-lock{overflow:hidden}','mobile body lock missing']
+  ['.crm-sidebar{','sidebar structural container missing'],['width:250px','desktop canonical sidebar width missing'],['.crm-sidebar-head{','sidebar header layout missing'],['.crm-brand{','sidebar brand composition missing'],['.crm-brand img{','sidebar brand image sizing missing'],['width:34px!important','sidebar brand explicit width missing'],['height:34px!important','sidebar brand explicit height missing'],['.crm-brand>span{','sidebar brand text stack missing'],['flex-direction:column','sidebar vertical flex direction missing'],['.crm-nav{','sidebar nav container missing'],['.crm-nav>a,.crm-nav-group>summary{','sidebar main-row rule missing'],['width:100%','sidebar full-width row rule missing'],['.crm-nav svg,.crm-nav-group>summary svg{','sidebar icon sizing rule missing'],['flex:0 0 18px','sidebar icon shrink protection missing'],['.crm-nav>a.active{','sidebar active main state missing'],['box-shadow:inset 3px 0 0 #D4AF37','sidebar active indicator missing'],['.crm-nav-group>div{','sidebar submenu layout missing'],['outline:2px solid #D4AF37','sidebar focus-visible state missing'],['padding-left:232px','tablet content offset missing'],['.crm-sidebar{width:232px','tablet readable sidebar width missing'],['transform:translateX(-104%)','mobile drawer closed state missing'],['.crm-sidebar.is-open{transform:translateX(0)}','mobile drawer open state missing'],['html.crm-sidebar-lock,body.crm-sidebar-lock{overflow:hidden}','mobile body lock missing']
 ].forEach(([token,message])=>must(ownerCss.includes(token),message));
 must(!ownerCss.includes('.crm-nav-subgroup'),'dead nested Contracts subgroup CSS must be removed');
 must(!ownerCss.includes('zoom:'),'sidebar owner must not use zoom hack');
