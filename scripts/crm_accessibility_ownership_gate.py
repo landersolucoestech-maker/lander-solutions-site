@@ -16,6 +16,11 @@ OWNER_SPECS = {
     "corporate_governance": ("scripts/crm_corporate_governance.py", "web/src/modules/legal/corporate/browser.js", "VALTREN CORPORATE GOVERNANCE"),
 }
 
+REMOVED_TRANSACTION_DYNAMIC_CONTROLS = frozenset({
+    "crm-fin-counterparty",
+    "crm-fin-category",
+})
+
 
 def _require(condition: bool, message: str) -> None:
     if not condition:
@@ -88,7 +93,9 @@ def assert_accessibility_ownership() -> int:
     _require(all_owned == set(accessibility.OWNED_STATIC_IDS), "Accessibility ownership: union das allowlists diverge de OWNED_STATIC_IDS")
     _require(not (all_owned & set(accessibility.GLOBAL_STATIC_LABELS)), "Accessibility ownership: passe transversal ainda contém IDs owned")
     _require(len(accessibility.STATIC_LABELS) == 119, f"Accessibility ownership: política estática mudou de 119 para {len(accessibility.STATIC_LABELS)}")
-    _require(len(accessibility.ACTION_LABELS) == 7, f"Accessibility ownership: política dinâmica mudou de 7 para {len(accessibility.ACTION_LABELS)}")
+    _require(len(accessibility.ACTION_LABELS) == 5, f"Accessibility ownership: política dinâmica mudou de 5 para {len(accessibility.ACTION_LABELS)}")
+    leaked_transaction_controls = REMOVED_TRANSACTION_DYNAMIC_CONTROLS & set(accessibility.ACTION_LABELS)
+    _require(not leaked_transaction_controls, f"Accessibility ownership: controles removidos de Transações voltaram à política dinâmica: {sorted(leaked_transaction_controls)}")
 
     post_owner = (SCRIPTS / "crm_product_system_review.py").read_text(encoding="utf-8")
     leaked = sorted(control_id for control_id in all_owned if control_id in post_owner)
