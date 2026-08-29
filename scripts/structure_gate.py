@@ -93,7 +93,24 @@ def main() -> int:
         sample = ", ".join(sorted(forbidden_paths)[:20])
         fail("artefatos locais/gerados versionados ou presentes no checkout: " + sample)
 
-    materializer = ROOT / "scripts" / "materialize.py"
+    scripts_dir = ROOT / "scripts"
+    stray_parts = sorted(
+        path.name
+        for path in scripts_dir.iterdir()
+        if path.is_file() and ".part" in path.name
+    )
+    if stray_parts:
+        fail(
+            "fragmentos .part* não podem ficar diretamente em scripts/: "
+            + ", ".join(stray_parts[:20])
+            + "; mova-os para scripts/parts/<owner>/"
+        )
+
+    parts_dir = scripts_dir / "parts"
+    if not parts_dir.is_dir():
+        fail("scripts/parts ausente; fragmentos auxiliares devem ter namespace próprio")
+
+    materializer = scripts_dir / "materialize.py"
     if not materializer.is_file():
         fail("scripts/materialize.py ausente")
 
