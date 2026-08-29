@@ -29,9 +29,14 @@ def main():
  d=webdriver.Chrome(options=opts);failures=[];evidence={'outputDir':str(out)}
  d.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument',{'source':"window.__mockCapturedErrors=[];window.addEventListener('error',e=>window.__mockCapturedErrors.push({type:'error',message:String(e.message||''),stack:String(e.error&&e.error.stack||''),source:String(e.filename||''),line:e.lineno||0,col:e.colno||0}));window.addEventListener('unhandledrejection',e=>window.__mockCapturedErrors.push({type:'rejection',message:String(e.reason&&e.reason.message||e.reason||''),stack:String(e.reason&&e.reason.stack||'')}));"})
  try:
-  url=a.base_url.rstrip('/')+'/?mock=1#/crm/dashboard';d.set_window_size(1440,1200);d.get(url)
+  url=a.base_url.rstrip('/')+'/?mock=1#/dashboard';d.set_window_size(1440,1200);d.get(url)
   if not wait_mock(d,failures,evidence,'initial'):raise RuntimeError('mock bootstrap flag ausente')
-  time.sleep(1);version=d.execute_script('return window.__VALTREN_MOCK_MODE__.version');evidence['version']=version
+  time.sleep(1)
+  app_src=d.execute_script("return Array.from(document.scripts).map(s=>s.src).find(x=>x.includes('/app.js'))||''") or ''
+  evidence['appScriptSrc']=app_src
+  if 'v=20260829-mock-v2' not in app_src:failures.append('app.js do Mock Mode sem cache-buster v2: '+app_src)
+  if '#/dashboard' not in d.current_url:failures.append('Rota canônica /dashboard não permaneceu ativa: '+d.current_url)
+  version=d.execute_script('return window.__VALTREN_MOCK_MODE__.version');evidence['version']=version
   if version!=2:failures.append(f'Mock schema version {version} != 2')
   k=d.execute_script('return window.__VALTREN_MOCK_MODE__.kpis()') or {};evidence['kpis']=k
   for key,val in EXPECTED.items():
@@ -43,10 +48,10 @@ def main():
   if len(calcs)==2 and not close(sum(float(x.get('amount') or 0) for x in calcs),24000):failures.append('Participações não somam 24000')
   keys=d.execute_script('return Object.keys(localStorage)');evidence['storageKeys']=keys;bad=[x for x in keys if not x.startswith('valtren:mock:')]
   if bad:failures.append('Mock contaminou storage normal: '+','.join(bad))
-  body=d.find_element('tag name','body').text;evidence['bodyHasEmptyFinancialState']='Nenhum dado financeiro disponível' in body
+  body=d.find_element('tag name','body').text;evidence['bodyHasEmptyFinancialState']='Nenhum dado financeiro disponível' in body;evidence['bodyLength']=len(body)
+  if not body.strip():failures.append('Dashboard canônico resultou em página branca')
   if evidence['bodyHasEmptyFinancialState']:failures.append('Dashboard Mock permaneceu em empty state financeiro')
   if 'Dados de demonstração' not in body:failures.append('Mock mode bar ausente')
-  # Regression: a same-version but structurally incomplete persisted snapshot must never brick the app.
   d.execute_script("localStorage.setItem('valtren:mock:runtime.v2',JSON.stringify({version:2,state:{}}));")
   d.get(url)
   if not wait_mock(d,failures,evidence,'recovery'):raise RuntimeError('mock recovery bootstrap flag ausente')
@@ -58,6 +63,7 @@ def main():
   if 'Dados de demonstração' not in recovery_body:failures.append('Recovery não restaurou Mock Mode bar')
   logs,errors=browser_errors(d);evidence['console']=logs;evidence['consoleSevere']=errors;evidence['capturedErrors']=js_safe(d,'return window.__mockCapturedErrors||[]')
   if errors:failures.append('Console SEVERE: '+json.dumps(errors,ensure_ascii=False)[:5000])
+  if evidence['capturedErrors']:failures.append('Captured JS error: '+json.dumps(evidence['capturedErrors'],ensure_ascii=False)[:12000])
   d.save_screenshot(str(out/'dashboard-mock-1440.png'));evidence['url']=d.current_url
  except Exception as e:
   if not failures:failures.append(f'BOOTSTRAP: {type(e).__name__}: {e}')
