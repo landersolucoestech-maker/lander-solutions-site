@@ -73,6 +73,7 @@ def _apply_valtren_brand() -> bool:
         from crm_economic_participations import apply_crm_economic_participations
         from crm_payouts import apply_crm_payouts
         from crm_business import apply_crm_business
+        from crm_business_units_consolidation import apply_business_units_consolidation
         from crm_marketing_module import apply_crm_marketing_module
         from crm_legal_matters import apply_crm_legal_matters
         from crm_compliance import apply_crm_compliance
@@ -135,6 +136,7 @@ def _apply_valtren_brand() -> bool:
         apply_crm_mock_mode()
         apply_crm_accessibility_semantics()
         apply_crm_product_system_review()
+        apply_business_units_consolidation()
         assert_browser_readiness()
         return True
     except Exception as error:
