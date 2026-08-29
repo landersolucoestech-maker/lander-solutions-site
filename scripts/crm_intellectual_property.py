@@ -4,7 +4,7 @@ from crm_legal_materializer_utils import APP, CSS, replace_marked_block, replace
 from crm_accessibility_semantics import OWNER_STATIC_LABELS, apply_accessible_names
 
 ROOT = Path(__file__).resolve().parents[1]
-MODULE_DIR = ROOT / "src" / "modules" / "legal" / "intellectual-property"
+MODULE_DIR = ROOT / "web" / "src" / "modules" / "legal" / "intellectual-property"
 CORE = MODULE_DIR / "core.js"
 BROWSER = MODULE_DIR / "browser.js"
 MODULE_CSS = MODULE_DIR / "styles.css"
@@ -29,7 +29,7 @@ def apply_crm_intellectual_property() -> int:
     APP.write_text(app, encoding="utf-8")
     module_css = MODULE_CSS.read_text(encoding="utf-8").rstrip() + "\n" + CONSISTENCY_CSS.read_text(encoding="utf-8")
     CSS.write_text(replace_css(CSS.read_text(encoding="utf-8"), "VALTREN INTELLECTUAL PROPERTY", module_css), encoding="utf-8"); update_cache_version()
-    print("Jurídico → Propriedade Intelectual materializado a partir de src/modules/legal/intellectual-property.")
+    print("Jurídico → Propriedade Intelectual materializado a partir de web/src/modules/legal/intellectual-property.")
     return 1
 
 if __name__ == "__main__": apply_crm_intellectual_property()

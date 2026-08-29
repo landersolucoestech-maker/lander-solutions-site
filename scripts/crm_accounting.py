@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-MODULE_DIR = ROOT / "src" / "modules" / "finance" / "accounting"
+MODULE_DIR = ROOT / "web" / "src" / "modules" / "finance" / "accounting"
 CORE = MODULE_DIR / "core.js"
 BROWSER = MODULE_DIR / "browser.js"
 MODULE_CSS = MODULE_DIR / "styles.css"
@@ -87,7 +87,7 @@ def apply_crm_accounting() -> int:
         text = re.sub(r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?", f"valtren-brand.css?v={CACHE_VERSION}", text)
         path.write_text(text, encoding="utf-8")
 
-    print("Financeiro → Contabilidade materializado a partir de src/modules/finance/accounting; P&L legado neutralizado e sidebar preservado.")
+    print("Financeiro → Contabilidade materializado a partir de web/src/modules/finance/accounting; P&L legado neutralizado e sidebar preservado.")
     return 1
 
 

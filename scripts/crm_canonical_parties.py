@@ -5,7 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
-MODULE_DIR = ROOT / "src" / "modules" / "crm" / "parties"
+MODULE_DIR = ROOT / "web" / "src" / "modules" / "crm" / "parties"
 CORE_JS = MODULE_DIR / "core.js"
 ADAPTER_JS = MODULE_DIR / "adapter.js"
 CACHE_VERSION = "20260829-crm-parties-module-v1"
@@ -102,7 +102,7 @@ def apply_crm_canonical_parties() -> int:
         text = re.sub(r"app\.js(?:\?v=[A-Za-z0-9._-]+)?", f"app.js?v={CACHE_VERSION}", text)
         path.write_text(text, encoding="utf-8")
 
-    print("Infraestrutura canônica de Pessoas e Organizações aplicada a partir de src/modules/crm/parties.")
+    print("Infraestrutura canônica de Pessoas e Organizações aplicada a partir de web/src/modules/crm/parties.")
     return 1
 
 

@@ -7,7 +7,7 @@ from crm_accessibility_semantics import OWNER_STATIC_LABELS, apply_accessible_na
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-MODULE_DIR = ROOT / "src" / "modules" / "business"
+MODULE_DIR = ROOT / "web" / "src" / "modules" / "business"
 CORE = MODULE_DIR / "core.js"
 BROWSER = MODULE_DIR / "browser.js"
 MODULE_CSS = MODULE_DIR / "styles.css"
@@ -59,7 +59,7 @@ def apply_crm_business() -> int:
     app = APP.read_text(encoding="utf-8")
     core = CORE.read_text(encoding="utf-8").strip()
     browser = apply_accessible_names(BROWSER.read_text(encoding="utf-8").strip(), OWNER_STATIC_LABELS["business"])
-    _assert_business_code_generator(core, "src/modules/business/core.js")
+    _assert_business_code_generator(core, "web/src/modules/business/core.js")
 
     app = re.sub(r"\n*  // VALTREN BUSINESS CATALOG START\n.*?  // VALTREN BUSINESS CATALOG END\n+", "\n", app, flags=re.S)
     block = JS_START + core + "\n\n" + browser + "\n" + JS_END
@@ -200,7 +200,7 @@ def apply_crm_business() -> int:
         value = re.sub(r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?", f"valtren-brand.css?v={CACHE_VERSION}", value)
         path.write_text(value, encoding="utf-8")
 
-    print("Negócios → Produtos, Serviços e Unidades de Negócio materializados a partir de src/modules/business como catálogo canônico único.")
+    print("Negócios → Produtos, Serviços e Unidades de Negócio materializados a partir de web/src/modules/business como catálogo canônico único.")
     return 1
 
 

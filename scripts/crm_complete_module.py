@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-MODULE_DIR = ROOT / "src" / "modules" / "crm" / "workspace"
+MODULE_DIR = ROOT / "web" / "src" / "modules" / "crm" / "workspace"
 DOMAIN_JS = MODULE_DIR / "domain.js"
 BROWSER_JS = MODULE_DIR / "browser.js"
 HARDENING_JS = MODULE_DIR / "hardening.js"
@@ -211,7 +211,7 @@ def apply_crm_complete_module() -> int:
         text = re.sub(r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?", f"valtren-brand.css?v={CACHE_VERSION}", text)
         path.write_text(text, encoding="utf-8")
 
-    print("CRM completo aplicado a partir de src/modules/crm/workspace com cabeçalho modular, KPIs e TableView preservados.")
+    print("CRM completo aplicado a partir de web/src/modules/crm/workspace com cabeçalho modular, KPIs e TableView preservados.")
     return 1
 
 

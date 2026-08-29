@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PARTS_DIR = ROOT / "src" / "modules" / "agenda" / "source"
+PARTS_DIR = ROOT / "web" / "src" / "modules" / "agenda" / "source"
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
 CACHE_VERSION = "20260829-agenda-module-v1"
@@ -13,7 +13,7 @@ CACHE_VERSION = "20260829-agenda-module-v1"
 def _parts(prefix: str) -> str:
     files = sorted(PARTS_DIR.glob(prefix))
     if not files:
-        raise RuntimeError(f"Partes ausentes em src/modules/agenda/source: {prefix}")
+        raise RuntimeError(f"Partes ausentes em web/src/modules/agenda/source: {prefix}")
     return "".join(path.read_text(encoding="utf-8") for path in files)
 
 

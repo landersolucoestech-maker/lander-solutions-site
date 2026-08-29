@@ -11,16 +11,16 @@ ASSET_CSS = ROOT / "assets" / "valtren-brand.css"
 APP = ROOT / "app.js"
 
 OWNERS = {
-    "crm_financial_transactions.py": "src/modules/finance/transactions/consistency.css",
-    "crm_accounting.py": "src/modules/finance/accounting/consistency.css",
-    "crm_fiscal_documents.py": "src/modules/finance/fiscal/consistency.css",
-    "crm_economic_participations.py": "src/modules/finance/participations/consistency.css",
-    "crm_payouts.py": "src/modules/finance/payouts/consistency.css",
+    "crm_financial_transactions.py": "web/src/modules/finance/transactions/consistency.css",
+    "crm_accounting.py": "web/src/modules/finance/accounting/consistency.css",
+    "crm_fiscal_documents.py": "web/src/modules/finance/fiscal/consistency.css",
+    "crm_economic_participations.py": "web/src/modules/finance/participations/consistency.css",
+    "crm_payouts.py": "web/src/modules/finance/payouts/consistency.css",
     "crm_reference_modules.py": "scripts/crm_reference_modules_consistency.css",
-    "crm_legal_matters.py": "src/modules/legal/matters/consistency.css",
-    "crm_compliance.py": "src/modules/legal/compliance/consistency.css",
-    "crm_intellectual_property.py": "src/modules/legal/intellectual-property/consistency.css",
-    "crm_corporate_governance.py": "src/modules/legal/corporate/consistency.css",
+    "crm_legal_matters.py": "web/src/modules/legal/matters/consistency.css",
+    "crm_compliance.py": "web/src/modules/legal/compliance/consistency.css",
+    "crm_intellectual_property.py": "web/src/modules/legal/intellectual-property/consistency.css",
+    "crm_corporate_governance.py": "web/src/modules/legal/corporate/consistency.css",
 }
 
 FORBIDDEN_SIDEBAR = (
@@ -55,8 +55,8 @@ def source_checks() -> None:
         owner_text = owner.read_text(encoding="utf-8")
         patch_text = patch.read_text(encoding="utf-8")
         css_name = Path(css_relative).name
-        if css_relative.startswith("src/"):
-            if "MODULE_DIR = ROOT / \"src\"" not in owner_text or "consistency.css" not in owner_text:
+        if css_relative.startswith("web/src/"):
+            if "MODULE_DIR = ROOT / \"web\" / \"src\"" not in owner_text or "consistency.css" not in owner_text:
                 fail(f"{owner_name} does not consume canonical consistency source {css_relative}")
         elif css_name not in owner_text:
             fail(f"{owner_name} does not materialize {css_name}")

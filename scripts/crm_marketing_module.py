@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-MODULE_DIR = ROOT / "src" / "modules" / "marketing"
+MODULE_DIR = ROOT / "web" / "src" / "modules" / "marketing"
 JS = MODULE_DIR / "module.js"
 MODULE_CSS = MODULE_DIR / "styles.css"
 START = "  // VALTREN MARKETING MODULE START\n"
@@ -34,7 +34,7 @@ def apply_crm_marketing_module() -> int:
     css = CSS.read_text(encoding="utf-8")
     css = re.sub(r"\n?/\* VALTREN MARKETING MODULE \*/.*?(?=\n/\*|\Z)", "", css, flags=re.S)
     CSS.write_text(css.rstrip() + "\n\n" + MODULE_CSS.read_text(encoding="utf-8").strip() + "\n", encoding="utf-8")
-    print("Marketing materializado a partir de src/modules/marketing, sem métricas ou integrações simuladas.")
+    print("Marketing materializado a partir de web/src/modules/marketing, sem métricas ou integrações simuladas.")
     return 1
 
 
