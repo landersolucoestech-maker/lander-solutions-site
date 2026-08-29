@@ -4,17 +4,16 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-HERE = Path(__file__).resolve().parent
-PARTS_DIR = HERE / "parts" / "agenda"
+PARTS_DIR = ROOT / "src" / "modules" / "agenda" / "source"
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CACHE_VERSION = "20260827-crm-agenda-events-v5"
+CACHE_VERSION = "20260829-agenda-module-v1"
 
 
 def _parts(prefix: str) -> str:
     files = sorted(PARTS_DIR.glob(prefix))
     if not files:
-        raise RuntimeError(f"Partes ausentes: {prefix}")
+        raise RuntimeError(f"Partes ausentes em src/modules/agenda/source: {prefix}")
     return "".join(path.read_text(encoding="utf-8") for path in files)
 
 
@@ -46,7 +45,14 @@ def apply_crm_agenda_module() -> int:
         app,
         flags=re.S,
     )
-    app = app.replace("\n    else if (path === '/crm/agenda') app.innerHTML = crmAgendaPage(query);", '')
+
+    # Agenda is a top-level functional module. Remove both historical and canonical
+    # route emissions before registering one deterministic route block.
+    for route in (
+        "\n    else if (path === '/crm/agenda') app.innerHTML = crmAgendaPage(query);",
+        "\n    else if (path === '/agenda') app.innerHTML = crmAgendaPage(query);",
+    ):
+        app = app.replace(route, "")
 
     if app.count("  function crmHeaderActions(context=''){") != 1:
         raise RuntimeError("Header compartilhado contextual não encontrado para Agenda")
@@ -59,12 +65,12 @@ def apply_crm_agenda_module() -> int:
     app = app.replace(anchor, js_block + "\n" + anchor, 1)
 
     route_anchor = "    else if (path === '/crm/relationships') app.innerHTML = crmRelationshipsPage(query);"
-    agenda_route = "    else if (path === '/crm/agenda') app.innerHTML = crmAgendaPage(query);"
-    if agenda_route not in app:
-        count = app.count(route_anchor)
-        if count < 1:
-            raise RuntimeError("Rota canônica de CRM Relacionamentos não encontrada para registrar Agenda")
-        app = app.replace(route_anchor, route_anchor + "\n" + agenda_route)
+    canonical_route = "    else if (path === '/agenda') app.innerHTML = crmAgendaPage(query);"
+    compatibility_route = "    else if (path === '/crm/agenda') app.innerHTML = crmAgendaPage(query); // legacy compatibility"
+    count = app.count(route_anchor)
+    if count < 1:
+        raise RuntimeError("Âncora de roteamento não encontrada para registrar Agenda global")
+    app = app.replace(route_anchor, route_anchor + "\n" + canonical_route + "\n" + compatibility_route, 1)
 
     APP.write_text(app, encoding="utf-8")
 
@@ -72,7 +78,7 @@ def apply_crm_agenda_module() -> int:
     css = re.sub(r"\n?/\* VALTREN CRM AGENDA EVENTS \*/.*\Z", "", css, flags=re.S)
     CSS.write_text(css.rstrip() + "\n\n" + css_patch.strip() + "\n", encoding="utf-8")
     _write_cache_version()
-    print("Módulo Agenda & Eventos materializado como consumidor de Header e Sidebar canônicos, sem suposição de renderer duplicado.")
+    print("Agenda materializada como módulo global em /agenda; /crm/agenda preservada apenas como compatibilidade temporária.")
     return 1
 
 
