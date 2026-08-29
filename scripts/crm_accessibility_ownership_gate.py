@@ -20,6 +20,10 @@ REMOVED_TRANSACTION_DYNAMIC_CONTROLS = frozenset({
     "crm-fin-counterparty",
     "crm-fin-category",
 })
+REMOVED_TRANSACTION_STATIC_CONTROLS = frozenset({
+    "crm-fin-category",
+    "crm-fin-recon",
+})
 
 
 def _require(condition: bool, message: str) -> None:
@@ -92,7 +96,9 @@ def assert_accessibility_ownership() -> int:
 
     _require(all_owned == set(accessibility.OWNED_STATIC_IDS), "Accessibility ownership: union das allowlists diverge de OWNED_STATIC_IDS")
     _require(not (all_owned & set(accessibility.GLOBAL_STATIC_LABELS)), "Accessibility ownership: passe transversal ainda contém IDs owned")
-    _require(len(accessibility.STATIC_LABELS) == 119, f"Accessibility ownership: política estática mudou de 119 para {len(accessibility.STATIC_LABELS)}")
+    _require(len(accessibility.STATIC_LABELS) == 117, f"Accessibility ownership: política estática mudou de 117 para {len(accessibility.STATIC_LABELS)}")
+    leaked_static = REMOVED_TRANSACTION_STATIC_CONTROLS & set(accessibility.STATIC_LABELS)
+    _require(not leaked_static, f"Accessibility ownership: filtros removidos de Transações voltaram à política estática: {sorted(leaked_static)}")
     _require(len(accessibility.ACTION_LABELS) == 5, f"Accessibility ownership: política dinâmica mudou de 5 para {len(accessibility.ACTION_LABELS)}")
     leaked_transaction_controls = REMOVED_TRANSACTION_DYNAMIC_CONTROLS & set(accessibility.ACTION_LABELS)
     _require(not leaked_transaction_controls, f"Accessibility ownership: controles removidos de Transações voltaram à política dinâmica: {sorted(leaked_transaction_controls)}")
