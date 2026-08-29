@@ -2,8 +2,8 @@
 const assert=require('assert');
 const fs=require('fs');
 const path=require('path');
-const PartyCore=require('./crm_canonical_parties_core.js');
-const ContractCore=require('./crm_legal_contracts_core.js');
+const PartyCore=require('../web/src/modules/crm/parties/core.js');
+const ContractCore=require('../web/src/modules/legal/contracts/core.js');
 
 let seq=0,clock=0,passed=0;
 const now=()=>`2026-08-25T18:${String(Math.floor(clock/60)).padStart(2,'0')}:${String(clock++%60).padStart(2,'0')}.000Z`;

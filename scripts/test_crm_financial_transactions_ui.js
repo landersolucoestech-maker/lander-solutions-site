@@ -4,8 +4,8 @@ const fs=require('fs');
 const path=require('path');
 let passed=0;
 function test(name,fn){try{fn();passed++;console.log(`PASS ${name}`);}catch(error){console.error(`FAIL ${name}`);throw error;}}
-const browser=fs.readFileSync(path.join(__dirname,'crm_financial_transactions_browser.js'),'utf8');
-const css=fs.readFileSync(path.join(__dirname,'crm_financial_transactions.css'),'utf8');
+const browser=fs.readFileSync(path.join(__dirname,'..','web','src','modules','finance','transactions','browser.js'),'utf8');
+const css=fs.readFileSync(path.join(__dirname,'..','web','src','modules','finance','transactions','styles.css'),'utf8');
 
 test('1 busca inclui contraparte/categoria/produto na resolução',()=>{assert(browser.includes('function crmFinanceSearchBlob'));assert(browser.includes('crmFinanceCounterpartyLabel(tx)'));assert(browser.includes('crmFinanceCategoryLabel(tx.categoryId)'));assert(browser.includes('crmFinanceProductLabel(tx)'));});
 test('2 classificação financeira pode ser alterada inline',()=>{assert(browser.includes('data-action="crm-fin-nature"'));assert(browser.includes("service.setClassification(target.dataset.id,{financialNature:target.value}"));});

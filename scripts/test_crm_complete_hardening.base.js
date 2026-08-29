@@ -3,8 +3,8 @@ const assert=require('assert');
 const fs=require('fs');
 const path=require('path');
 
-const hardening=fs.readFileSync(path.join(__dirname,'crm_complete_hardening.js'),'utf8');
-const browser=fs.readFileSync(path.join(__dirname,'crm_complete_browser.js'),'utf8');
+const hardening=fs.readFileSync(path.join(__dirname,'..','web','src','modules','crm','workspace','hardening.js'),'utf8');
+const browser=fs.readFileSync(path.join(__dirname,'..','web','src','modules','crm','workspace','browser.js'),'utf8');
 const modulePatch=fs.readFileSync(path.join(__dirname,'crm_complete_module.py'),'utf8');
 let passed=0;
 function test(name,fn){try{fn();passed++;console.log(`PASS ${name}`);}catch(error){console.error(`FAIL ${name}`);throw error;}}

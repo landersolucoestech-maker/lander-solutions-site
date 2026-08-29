@@ -2,7 +2,7 @@
 const assert=require('assert');
 const fs=require('fs');
 const path=require('path');
-const Business=require('./crm_business_core.js');
+const Business=require('../web/src/modules/business/core.js');
 let passed=0;function test(name,fn){try{fn();passed++;console.log(`PASS ${passed} ${name}`);}catch(error){console.error(`FAIL ${name}`);throw error;}}
 let tick=0;const now=()=>`2026-08-26T02:${String(tick++).padStart(2,'0')}:00.000Z`;let seq=0;const ids=(prefix)=>`${prefix}_test_${++seq}`;const refs=new Map();const referenceChecker=(kind,id)=>refs.get(`${kind}:${id}`)||[];const store=Business.createState({now});const service=Business.createService(store,{now,idFactory:ids,actorProvider:()=> 'user_admin',referenceChecker});
 

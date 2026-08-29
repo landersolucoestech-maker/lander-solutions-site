@@ -2,7 +2,7 @@
 const assert=require('assert');
 const fs=require('fs');
 const path=require('path');
-const core=require('./crm_canonical_parties_core.js');
+const core=require('../web/src/modules/crm/parties/core.js');
 
 let seq=0;
 const store=core.createState();
@@ -32,7 +32,7 @@ test('18 organização de mesmo nome sem identificador forte permanece separada'
 
 global.ValtrenPartyCore=core;
 global.state={crmUserName:'Tester',crmRelContacts:[{id:'legacy-p1',tipo_pessoa:'pessoa_fisica',name:'Contato Legado',segment:'Cliente',phone:'(11) 95555-1111',email:'legado@example.com',cpf:'123.456.789-00',status:'Ativo',interactions:[]},{id:'legacy-o1',tipo_pessoa:'pessoa_juridica',name:'Empresa Legada Ltda.',company:'Empresa Legada',segment:'Fornecedor',phone:'(11) 94444-2222',email:'contato@legada.example',cnpj:'12.345.678/0001-90',responsible:'Responsável Jurídico',responsibleRole:'Jurídico',status:'Ativo',interactions:[]}],crmRelLeads:[{id:'legacy-l1',name:'Lead Legado',company:'Empresa Prospect Ltda.',email:'lead@prospect.example',phone:'(11) 93333-3333',source:'Site',stage:'Novo',status:'Aberto',priority:'Alta',notes:''}]};
-const adapter=require('./crm_canonical_parties_adapter.js').legacyAdapter;
+const adapter=require('../web/src/modules/crm/parties/adapter.js').legacyAdapter;
 test('19 migration legada preserva IDs e cria identidade canônica',()=>{adapter.crmCanonicalEnsureFromLegacy();const contact=state.crmRelContacts.find((x)=>x.id==='legacy-p1'),orgContact=state.crmRelContacts.find((x)=>x.id==='legacy-o1'),lead=state.crmRelLeads.find((x)=>x.id==='legacy-l1');assert(contact?.canonicalEntityId);assert(orgContact?.canonicalEntityId);assert(lead?.canonicalEntityId);assert.equal(state.crmCanonicalParties.legacyBindings.length,3);const legacyCpf=state.crmCanonicalParties.documents.find((d)=>d.entityId===contact.canonicalEntityId&&d.type==='cpf');assert.equal(legacyCpf.validationStatus,'legacy-unverified');const responsibleRel=state.crmCanonicalParties.personOrganizationRelationships.find((r)=>r.organizationId===orgContact.canonicalEntityId&&r.legalContact);assert(responsibleRel);const leadOrgRel=state.crmCanonicalParties.personOrganizationRelationships.find((r)=>r.personId===lead.canonicalEntityId);assert(leadOrgRel);});
 test('20 exclusão legada remove binding e preserva entidade canônica',()=>{const row=state.crmRelContacts.find((x)=>x.id==='legacy-p1'),canonicalId=row.canonicalEntityId;assert(adapter.crmCanonicalRemoveLegacyRecord('contacts','legacy-p1'));assert(!state.crmRelContacts.some((x)=>x.id==='legacy-p1'));assert(state.crmCanonicalParties.people.some((p)=>p.id===canonicalId));});
 test('21 cadastro CRM novo de organizações homônimas sem ID forte não é fundido',()=>{state.crmCanonicalParties=core.createState();delete state.__crmCanonicalPartyService;state.crmRelContacts=[];state.crmRelLeads=[];state.crmCanonicalParties.metadata.crmLegacyMigrated=true;assert(adapter.crmCanonicalUpsertLegacyRecord('contacts',{id:'n1',tipo_pessoa:'pessoa_juridica',name:'Homônima Ltda',company:'Homônima',segment:'Cliente',email:'a@homonima-a.example',interactions:[]},'create'));assert(adapter.crmCanonicalUpsertLegacyRecord('contacts',{id:'n2',tipo_pessoa:'pessoa_juridica',name:'Homônima Ltda',company:'Homônima',segment:'Fornecedor',email:'b@homonima-b.example',interactions:[]},'create'));assert.equal(state.crmCanonicalParties.organizations.length,2);});

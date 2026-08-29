@@ -2,7 +2,7 @@
 const assert=require('assert');
 const fs=require('fs');
 const path=require('path');
-const Core=require('./crm_payouts_core.js');
+const Core=require('../web/src/modules/finance/payouts/core.js');
 let passed=0;
 function test(name,fn){try{fn();passed++;console.log(`PASS ${passed} ${name}`);}catch(error){console.error(`FAIL ${name}: ${error.message}`);throw error;}}
 const eq=(a,b)=>assert.deepStrictEqual(a,b);
@@ -113,10 +113,10 @@ test('summary agrupa moedas sem converter FX',()=>{const e=makeEnv({participatio
 // Legacy / boundaries / ownership.
 test('legado sem participationCalculationId não migra',()=>{const e=makeEnv();const r=e.service.migrateLegacy([{id:'legacy1',partner:'Sócio',amount:10}]);eq(r.migrated,0);assert(e.state.metadata.legacySkipped.some(x=>x.reason==='insufficient_participation_traceability'));});
 test('legado com participationCalculationId exige sync canônico',()=>{const e=makeEnv();const r=e.service.migrateLegacy([{id:'legacy2',participationCalculationId:'part1',amount:10}]);eq(r.migrated,0);assert(e.state.metadata.legacySkipped.some(x=>x.reason==='legacy_requires_canonical_obligation_sync'));});
-test('core não cria Participação nem recalcula regra econômica',()=>{const src=fs.readFileSync(path.join(__dirname,'crm_payouts_core.js'),'utf8');for(const token of ['createCalculation(','previewEligible(','createBatch(','submitToReview('])assert(!src.includes(token));});
-test('core não cria Transação financeira',()=>{const src=fs.readFileSync(path.join(__dirname,'crm_payouts_core.js'),'utf8');assert(!src.includes('createTransaction('));});
-test('core não mantém percentuais econômicos concorrentes',()=>{const src=fs.readFileSync(path.join(__dirname,'crm_payouts_core.js'),'utf8');for(const token of ['partnerPercentage','manualParticipationRule','productPartnerSplit','shareholderPercentage'])assert(!src.includes(token));});
-test('core não usa Societário como fonte automática',()=>{const src=fs.readFileSync(path.join(__dirname,'crm_payouts_core.js'),'utf8').toLowerCase();for(const token of ['shareholder','equitypercentage','ownershippercentage','quotasociet','societario'])assert(!src.includes(token));});
+test('core não cria Participação nem recalcula regra econômica',()=>{const src=fs.readFileSync(path.join(__dirname,'..','web','src','modules','finance','payouts','core.js'),'utf8');for(const token of ['createCalculation(','previewEligible(','createBatch(','submitToReview('])assert(!src.includes(token));});
+test('core não cria Transação financeira',()=>{const src=fs.readFileSync(path.join(__dirname,'..','web','src','modules','finance','payouts','core.js'),'utf8');assert(!src.includes('createTransaction('));});
+test('core não mantém percentuais econômicos concorrentes',()=>{const src=fs.readFileSync(path.join(__dirname,'..','web','src','modules','finance','payouts','core.js'),'utf8');for(const token of ['partnerPercentage','manualParticipationRule','productPartnerSplit','shareholderPercentage'])assert(!src.includes(token));});
+test('core não usa Societário como fonte automática',()=>{const src=fs.readFileSync(path.join(__dirname,'..','web','src','modules','finance','payouts','core.js'),'utf8').toLowerCase();for(const token of ['shareholder','equitypercentage','ownershippercentage','quotasociet','societario'])assert(!src.includes(token));});
 test('domínio separa status da obrigação e conciliação',()=>{assert(Core.OBLIGATION_STATUSES.includes('paid'));assert(Core.RECONCILIATION_STATUSES.includes('unreconciled'));assert(!Core.OBLIGATION_STATUSES.includes('reconciled'));});
 test('memória preserva obrigação pagamentos links conciliação snapshot histórico',()=>{const e=makeEnv({transactions:[{id:'tx1',amount:1000}]});const o=syncOne(e);e.service.linkPayment(o.id,'tx1');const m=e.service.memory(o.id);assert(m.obligation&&m.payments&&m.transactionLinks&&m.reconciliation&&m.sourceSnapshot&&m.history);});
 

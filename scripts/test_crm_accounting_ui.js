@@ -1,8 +1,8 @@
 const assert=require('assert');
 const fs=require('fs');
 const path=require('path');
-const browser=fs.readFileSync(path.join(__dirname,'crm_accounting_browser.js'),'utf8');
-const css=fs.readFileSync(path.join(__dirname,'crm_accounting.css'),'utf8');
+const browser=fs.readFileSync(path.join(__dirname,'..','web','src','modules','finance','accounting','browser.js'),'utf8');
+const css=fs.readFileSync(path.join(__dirname,'..','web','src','modules','finance','accounting','styles.css'),'utf8');
 let passed=0;
 function test(name,fn){try{fn();passed++;console.log(`PASS ${passed} ${name}`);}catch(error){console.error(`FAIL ${name}: ${error.message}`);throw error;}}
 

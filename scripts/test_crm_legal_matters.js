@@ -1,5 +1,5 @@
 'use strict';
-const assert=require('assert'),fs=require('fs'),path=require('path'),Core=require('./crm_legal_matters_core.js');
+const assert=require('assert'),fs=require('fs'),path=require('path'),Core=require('../web/src/modules/legal/matters/core.js');
 let passed=0;function test(name,fn){try{fn();passed++;console.log(`PASS ${passed} ${name}`);}catch(e){console.error(`FAIL ${name}`);throw e;}}
 let n=0;const now=()=>`2026-08-26T10:${String(n++).padStart(2,'0')}:00.000Z`;let seq=0;const idFactory=p=>`${p}_t_${++seq}`;
 const parties=new Set(['person:p1','person:p2','organization:o1','organization:o2']),business=new Set(['product:prd1','service:srv1','business_unit:bu1']),contracts=new Set(['ct1']);

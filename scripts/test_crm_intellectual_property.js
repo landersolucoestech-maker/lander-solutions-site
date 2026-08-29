@@ -1,5 +1,5 @@
 'use strict';
-const assert=require('assert'),fs=require('fs'),path=require('path'),Core=require('./crm_intellectual_property_core.js');
+const assert=require('assert'),fs=require('fs'),path=require('path'),Core=require('../web/src/modules/legal/intellectual-property/core.js');
 let passed=0;function test(name,fn){try{fn();passed++;console.log(`PASS ${passed} ${name}`);}catch(e){console.error(`FAIL ${name}`);throw e;}}
 let t=0;const now=()=>`2026-08-26T12:${String(t++).padStart(2,'0')}:00.000Z`;let seq=0;const idFactory=p=>`${p}_t_${++seq}`;const parties=new Set(['person:p1','organization:o1','organization:o2']),business=new Set(['product:prd1','service:srv1','business_unit:bu1']),contracts=new Set(['ct1']);
 const store=Core.createState({now}),svc=Core.createService(store,{now,idFactory,actorProvider:()=> 'u1',partyResolver:(k,id)=>parties.has(`${k}:${id}`)?{id}:null,businessResolver:(k,id)=>business.has(`${k}:${id}`)?{id}:null,contractResolver:id=>contracts.has(id)?{id}:null});

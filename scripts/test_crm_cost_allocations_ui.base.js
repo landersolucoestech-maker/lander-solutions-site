@@ -4,10 +4,10 @@ const fs=require('fs');
 const path=require('path');
 let passed=0;
 function test(name,fn){try{fn();passed++;console.log(`PASS ${name}`);}catch(error){console.error(`FAIL ${name}`);throw error;}}
-const browser=fs.readFileSync(path.join(__dirname,'crm_cost_allocations_browser.js'),'utf8');
-const css=fs.readFileSync(path.join(__dirname,'crm_cost_allocations.css'),'utf8');
+const browser=fs.readFileSync(path.join(__dirname,'..','web','src','modules','finance','allocations','browser.js'),'utf8');
+const css=fs.readFileSync(path.join(__dirname,'..','web','src','modules','finance','allocations','styles.css'),'utf8');
 const materializer=fs.readFileSync(path.join(__dirname,'crm_cost_allocations.py'),'utf8');
-const core=fs.readFileSync(path.join(__dirname,'crm_cost_allocations_core.js'),'utf8');
+const core=fs.readFileSync(path.join(__dirname,'..','web','src','modules','finance','allocations','core.js'),'utf8');
 
 test('1 rota principal é Financeiro / Rateios',()=>{assert(materializer.includes("/crm/financeiro/rateios"));assert(browser.includes("label:'Rateios'"));});
 test('2 breadcrumb é Financeiro / Rateios',()=>{assert(browser.includes("label:'Financeiro'"));assert(browser.includes("label:'Rateios'"));});

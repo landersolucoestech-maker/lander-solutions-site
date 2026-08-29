@@ -2,7 +2,7 @@
 const assert=require('assert');
 const fs=require('fs');
 const path=require('path');
-const PartyCore=require('./crm_canonical_parties_core.js');
+const PartyCore=require('../web/src/modules/crm/parties/core.js');
 const FinanceCore=require('./crm_financial_transactions_domain.js');
 
 let seq=0,clock=0,passed=0;
@@ -101,7 +101,7 @@ test('68 mudança de categoria registra histórico operacional',()=>{finance.set
 test('69 rateio registra histórico operacional',()=>{finance.setAllocations(outflow.id,[{dimension:'corporate',percentage:100}]);assert(state.history.some((x)=>x.transactionId===outflow.id&&x.action==='transaction.allocations.changed'));});
 test('70 match registra histórico operacional',()=>{finance.addMatch(outflow.id,{targetType:'payable',targetId:'ap_001'});assert(state.history.some((x)=>x.transactionId===outflow.id&&x.action==='transaction.match.added'));});
 
-const browserSource=fs.readFileSync(path.join(__dirname,'crm_financial_transactions_browser.js'),'utf8');
+const browserSource=fs.readFileSync(path.join(__dirname,'..','web','src','modules','finance','transactions','browser.js'),'utf8');
 const domainSource=fs.readFileSync(path.join(__dirname,'crm_financial_transactions_domain.js'),'utf8');
 test('71 browser usa state.crmFinancialTransactions como fonte canônica',()=>{assert(browserSource.includes('state.crmFinancialTransactions'));assert(browserSource.includes('ValtrenFinanceCore.createService'));});
 test('72 contraparte usa crmCanonicalPartyService',()=>{assert(browserSource.includes('crmCanonicalPartyService()'));assert(!browserSource.includes('financialSuppliers'));assert(!browserSource.includes('financialCustomers'));});

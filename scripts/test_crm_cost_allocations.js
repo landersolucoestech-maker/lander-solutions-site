@@ -2,9 +2,9 @@
 const assert=require('assert');
 const fs=require('fs');
 const path=require('path');
-const FinanceCore=require('./crm_financial_transactions_core.js');
-const AccountingCore=require('./crm_accounting_core.js');
-const AllocationCore=require('./crm_cost_allocations_core.js');
+const FinanceCore=require('../web/src/modules/finance/transactions/core.js');
+const AccountingCore=require('../web/src/modules/finance/accounting/core.js');
+const AllocationCore=require('../web/src/modules/finance/allocations/core.js');
 
 let seq=0,clock=0,passed=0;
 const now=()=>`2026-08-25T18:${String(Math.floor(clock/60)).padStart(2,'0')}:${String(clock++%60).padStart(2,'0')}.000Z`;

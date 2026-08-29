@@ -1,9 +1,9 @@
 const assert=require('assert');
 const fs=require('fs');
 const path=require('path');
-const Party=require('./crm_canonical_parties_core.js');
-const Finance=require('./crm_financial_transactions_core.js');
-const Fiscal=require('./crm_fiscal_documents_core.js');
+const Party=require('../web/src/modules/crm/parties/core.js');
+const Finance=require('../web/src/modules/finance/transactions/core.js');
+const Fiscal=require('../web/src/modules/finance/fiscal/core.js');
 
 let passed=0;
 function test(name,fn){try{fn();passed++;console.log(`PASS ${passed} ${name}`);}catch(error){console.error(`FAIL ${name}: ${error.message}`);throw error;}}
@@ -110,7 +110,7 @@ test('62 documento manual inconsistente é rejeitado',()=>{assert.throws(()=>out
 test('63 total líquido informado divergente é rejeitado em manual',()=>{assert.throws(()=>outDoc({items:[item('A',100)],netAmount:80}),/Totais não reconciliam/);});
 test('64 taxAmount importado divergente é sinalizado sem corrigir silenciosamente',()=>{const d=fiscal.createDocument({direction:'outgoing',source:'import',status:'draft',counterpartyType:'organization',counterpartyId:customerOrg.id,items:[item('A',100)],taxes:[{taxType:'X',amount:10}],taxAmount:12,number:'IMP-TAX'});assert.equal(d.taxAmount,12);assert(d.reconciliationIssues.includes('tax_total_mismatch'));});
 test('65 retentionAmount importado divergente é sinalizado',()=>{const d=fiscal.createDocument({direction:'outgoing',source:'import',status:'draft',counterpartyType:'organization',counterpartyId:customerOrg.id,items:[item('A',100)],retentions:[{type:'X',baseAmount:100,amount:10}],retentionAmount:12,number:'IMP-RET'});assert.equal(d.retentionAmount,12);assert(d.reconciliationIssues.includes('retention_total_mismatch'));});
-test('66 nenhuma fonte paralela incomingInvoices/outgoingInvoices/nfes/nfses',()=>{const src=fs.readFileSync(path.join(__dirname,'crm_fiscal_documents_core.js'),'utf8');for(const key of ['incomingInvoices','outgoingInvoices','nfes','nfses','customerInvoices','supplierInvoices'])assert(!src.includes(key));});
+test('66 nenhuma fonte paralela incomingInvoices/outgoingInvoices/nfes/nfses',()=>{const src=fs.readFileSync(path.join(__dirname,'..','web','src','modules','finance','fiscal','core.js'),'utf8');for(const key of ['incomingInvoices','outgoingInvoices','nfes','nfses','customerInvoices','supplierInvoices'])assert(!src.includes(key));});
 test('67 state fiscal canônico possui coleções únicas',()=>{for(const key of ['documents','items','taxes','retentions','links','attachments','history','imports'])assert(Array.isArray(fiscal.data[key]));});
 test('68 paidAmount não é segunda fonte persistida',()=>{const d=outDoc();assert(!('paidAmount'in d));assert(!('paidAmount'in fiscal.data));});
 test('69 status financeiro deriva links e não status fiscal',()=>{const d=outDoc();assert.equal(fiscal.settlement(d.id).status,'unlinked');const tx=postTx({amount:d.netAmount});fiscal.linkTransaction(d.id,tx.id);assert.equal(d.status,'issued');assert.equal(fiscal.settlement(d.id).status,'settled');});
