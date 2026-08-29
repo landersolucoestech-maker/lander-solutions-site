@@ -30,6 +30,41 @@ const specs={
   },
 };
 
+const sourceRewrites={
+  'test_crm_complete.js':[
+    ["require('./crm_canonical_parties_core.js')","require('../web/src/modules/crm/parties/core.js')"],
+    ["require('./crm_complete_domain.js')","require('../web/src/modules/crm/workspace/domain.js')"],
+    ["path.join(__dirname,'crm_complete_browser.js')","path.join(__dirname,'..','web','src','modules','crm','workspace','browser.js')"],
+  ],
+  'test_crm_complete_hardening.js':[
+    ["path.join(__dirname,'crm_complete_hardening.js')","path.join(__dirname,'..','web','src','modules','crm','workspace','hardening.js')"],
+    ["path.join(__dirname,'crm_complete_browser.js')","path.join(__dirname,'..','web','src','modules','crm','workspace','browser.js')"],
+  ],
+  'test_crm_financial_transactions.js':[
+    ["require('./crm_canonical_parties_core.js')","require('../web/src/modules/crm/parties/core.js')"],
+    ["require('./crm_financial_transactions_domain.js')","require('../web/src/modules/finance/transactions/core.js')"],
+    ["path.join(__dirname,'crm_financial_transactions_browser.js')","path.join(__dirname,'..','web','src','modules','finance','transactions','browser.js')"],
+    ["path.join(__dirname,'crm_financial_transactions_domain.js')","path.join(__dirname,'..','web','src','modules','finance','transactions','core.js')"],
+  ],
+  'test_crm_fiscal_documents_ui.js':[
+    ["path.join(__dirname,'crm_fiscal_documents_browser.js')","path.join(__dirname,'..','web','src','modules','finance','fiscal','browser.js')"],
+    ["path.join(__dirname,'crm_fiscal_documents.css')","path.join(__dirname,'..','web','src','modules','finance','fiscal','styles.css')"],
+  ],
+  'test_crm_legal_matters_ui.js':[
+    ["path.resolve(__dirname,'crm_legal_matters_browser.js')","path.resolve(__dirname,'..','web','src','modules','legal','matters','browser.js')"],
+    ["path.resolve(__dirname,'crm_legal_matters.css')","path.resolve(__dirname,'..','web','src','modules','legal','matters','styles.css')"],
+  ],
+};
+
+function rewriteSources(source,targetName){
+  for(const [legacy,canonical] of sourceRewrites[targetName]||[]){
+    const occurrences=source.split(legacy).length-1;
+    if(occurrences<1)throw new Error(`Source histórico esperado em ${targetName}: ${legacy}`);
+    source=source.split(legacy).join(canonical);
+  }
+  return source;
+}
+
 function transform(source,targetName){
   const spec=specs[targetName];
   if(!spec)throw new Error(`Teste-base sem boundary materializado mapeado: ${targetName}`);
@@ -43,7 +78,7 @@ function execute(source,targetPath){
 }
 
 function runBase(basePath,targetName){
-  let source=fs.readFileSync(basePath,'utf8');
+  let source=rewriteSources(fs.readFileSync(basePath,'utf8'),targetName);
   if(process.argv.includes('--materialized'))source=transform(source,targetName);
   execute(source,basePath);
 }
@@ -55,5 +90,6 @@ if(require.main===module){
   const targetArg=process.argv[2];
   if(!targetArg)throw new Error('Informe o teste-base a executar.');
   const targetPath=path.resolve(process.cwd(),targetArg);
-  execute(transform(fs.readFileSync(targetPath,'utf8'),path.basename(targetPath)),targetPath);
+  const targetName=path.basename(targetPath).replace('.base.js','.js');
+  execute(transform(rewriteSources(fs.readFileSync(targetPath,'utf8'),targetName),targetName),targetPath);
 }

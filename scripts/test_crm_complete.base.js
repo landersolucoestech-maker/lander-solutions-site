@@ -2,8 +2,8 @@
 const assert=require('assert');
 const fs=require('fs');
 const path=require('path');
-const partyCore=require('../web/src/modules/crm/parties/core.js');
-const crmCore=require('../web/src/modules/crm/workspace/domain.js');
+const partyCore=require('./crm_canonical_parties_core.js');
+const crmCore=require('./crm_complete_domain.js');
 
 let seq=0,clock=0;
 const partyState=partyCore.createState();
@@ -71,7 +71,7 @@ test('33 Interações usam tipos centralizados',()=>{assert.deepEqual(crmCore.IN
 test('34 Migração legada preserva IDs/referências canônicas',()=>{const localParty=partyCore.createState(),ps=partyCore.createService(localParty,{idFactory:(p)=>`${p}_${++seq}`}),person=ps.createPerson({fullName:'Legado'}),localCrm=crmCore.createState(),cs=crmCore.createService(ps,localCrm,{idFactory:(p)=>`${p}_${++seq}`});cs.migrateLegacy({contacts:[{id:'c99',canonicalEntityType:'person',canonicalEntityId:person.id,name:'Legado',status:'Ativo'}],leads:[],isDemo:()=>false});const ctx=cs.getContext('person',person.id);assert.equal(ctx.legacyId,'c99');assert.equal(person.id,ctx.entityId);});
 test('35 Migração de lead preserva legacyId',()=>{const localParty=partyCore.createState(),ps=partyCore.createService(localParty,{idFactory:(p)=>`${p}_${++seq}`}),person=ps.createPerson({fullName:'Lead Legado'}),localCrm=crmCore.createState(),cs=crmCore.createService(ps,localCrm,{idFactory:(p)=>`${p}_${++seq}`});cs.migrateLegacy({contacts:[],leads:[{id:'l99',canonicalEntityType:'person',canonicalEntityId:person.id,name:'Lead Legado',stage:'Novo'}],isDemo:()=>false});assert.equal(cs.data.leads[0].legacyId,'l99');assert.equal(cs.data.leads[0].personId,person.id);});
 
-const browserSource=fs.readFileSync(path.join(__dirname,'..','web','src','modules','crm','workspace','browser.js'),'utf8');
+const browserSource=fs.readFileSync(path.join(__dirname,'crm_complete_browser.js'),'utf8');
 test('36 CRM novo não escreve diretamente em crmRelContacts',()=>{assert(!/state\.crmRelContacts\s*=|state\.crmRelContacts\.(?:push|unshift|splice)/.test(browserSource));});
 test('37 CRM novo não escreve diretamente em crmRelLeads',()=>{assert(!/state\.crmRelLeads\s*=|state\.crmRelLeads\.(?:push|unshift|splice)/.test(browserSource));});
 test('38 CRM usa adapters canônicos para projeções legadas',()=>{assert(browserSource.includes("crmCanonicalUpsertLegacyRecord('contacts'"));assert(browserSource.includes("crmCanonicalUpsertLegacyRecord('leads'"));assert(browserSource.includes('crmCanonicalSyncLegacyViews()'));});
