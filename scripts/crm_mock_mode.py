@@ -79,7 +79,8 @@ def apply_crm_mock_mode() -> int:
 
     source = APP.read_text(encoding="utf-8")
     required = [
-        "new URLSearchParams(location.search).get('mock')==='1'",
+        "CRM_MOCK_DEFAULT_PREVIEW_HOST",
+        "get('mock')",
         "valtren:mock:",
         "crmMockBootstrap()",
         "crmMockAssertReconciliation()",
@@ -88,7 +89,7 @@ def apply_crm_mock_mode() -> int:
     missing = [token for token in required if token not in source]
     if missing:
         raise RuntimeError(f"Contrato do Mock Mode ausente no materializado: {missing}")
-    print("Mock Mode materializado por hook único, dados isolados em /mockups/data e namespace valtren:mock:*.")
+    print("Mock Mode materializado por hook único, dados isolados em /mockups/data e preview dev ativado por host.")
     return 1
 
 
