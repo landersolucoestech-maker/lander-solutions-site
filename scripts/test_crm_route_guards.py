@@ -160,7 +160,7 @@ def scan_fragile_sidebar_boundaries() -> None:
         "test_crm_cost_allocations.js": 2,
         "test_crm_cost_allocations_ui.base.js": 2,
         "test_crm_legal_contracts_ui.base.js": 3,
-        "test_crm_economic_participations_ui.js.part03": 2,
+        "parts/tests/economic_participations/test_crm_economic_participations_ui.js.part03": 2,
         "test_crm_payouts.js": 1,
         "test_crm_payouts_ui.base.js": 1,
         "test_crm_legal_matters_ui.base.js": 1,
