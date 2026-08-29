@@ -37,12 +37,17 @@ def apply_crm_financial_transactions() -> int:
     browser = BROWSER.read_text(encoding="utf-8").strip()
     presentation = PRESENTATION.read_text(encoding="utf-8").strip()
 
-    # presentation.js is the final owner of these three render functions. Remove the
-    # superseded templates before concatenation so the production bundle has one
-    # implementation, one pagination contract and one set of dynamic controls.
     browser = _remove_overridden_function(browser, "function crmFinanceRow(tx)", "function crmFinanceBulkBar")
     browser = _remove_overridden_function(browser, "function crmFinanceTable()", "function crmTransactionsPage()")
     browser = _remove_overridden_function(browser, "function crmTransactionsPage()", "function crmFinanceMountOverlay")
+
+    for token in ('data-action="crm-fin-counterparty"','data-action="crm-fin-category"','data-action="crm-fin-page" data-page="${filters.page-1}"','data-action="crm-fin-page" data-page="${filters.page+1}"'):
+        browser_count = browser.count(token)
+        presentation_count = presentation.count(token)
+        if browser_count + presentation_count != 1:
+            raise RuntimeError(
+                f"Origem duplicada em Transações para {token}: browser_residual={browser_count} presentation={presentation_count}"
+            )
 
     block = JS_START + domain + "\n\n" + browser + "\n\n" + presentation + "\n" + JS_END
 
