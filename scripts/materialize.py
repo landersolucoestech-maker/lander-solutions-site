@@ -10,11 +10,36 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PAYLOAD_DIR = ROOT / ".bootstrap"
+WEB_ROOT = ROOT / "web"
+WEB_SRC = WEB_ROOT / "src"
+WEB_PUBLIC_ASSETS = WEB_ROOT / "public" / "assets"
+LEGACY_SRC = ROOT / "src"
+MATERIALIZED_ASSETS = ROOT / "assets"
 BASE64_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 APP_COMPRESSED_START = 36124
 APP_COMPRESSED_SIZE = 22964
 APP_UNCOMPRESSED_SIZE = 93252
 APP_TARGET_CRC = 0xC2991650
+
+
+def _stage_legacy_source_compatibility() -> None:
+    if not WEB_SRC.is_dir():
+        raise FileNotFoundError("web/src ausente")
+    if LEGACY_SRC.exists():
+        shutil.rmtree(LEGACY_SRC)
+    shutil.copytree(WEB_SRC, LEGACY_SRC)
+
+    MATERIALIZED_ASSETS.mkdir(parents=True, exist_ok=True)
+    if not WEB_PUBLIC_ASSETS.is_dir():
+        raise FileNotFoundError("web/public/assets ausente")
+    for source in WEB_PUBLIC_ASSETS.iterdir():
+        if source.is_file():
+            shutil.copy2(source, MATERIALIZED_ASSETS / source.name)
+
+
+def _cleanup_legacy_source_compatibility() -> None:
+    if LEGACY_SRC.exists():
+        shutil.rmtree(LEGACY_SRC)
 
 
 def _apply_valtren_brand() -> bool:
@@ -81,8 +106,6 @@ def _apply_valtren_brand() -> bool:
         refactor_site_architecture()
         center_header_menu()
         apply_services_and_logo_refactor()
-        # Base site persistence is owned after all legacy site refactors have consumed
-        # their historical anchors, so no later site owner can reintroduce direct parsing.
         apply_site_storage_runtime()
         apply_crm_dashboard()
         apply_crm_relationships()
@@ -99,8 +122,6 @@ def _apply_valtren_brand() -> bool:
         apply_crm_reference_modules()
         apply_crm_reference_fidelity_fix()
         apply_crm_agenda_calendar_layout_fix()
-        # Agenda owns its responsive overflow: wide week/month grids remain readable
-        # inside an internal horizontal scroller instead of expanding the document root.
         apply_crm_agenda_overflow_fix()
         apply_crm_global_light_surface_fix()
         apply_crm_header_text_visibility_fix()
@@ -108,48 +129,25 @@ def _apply_valtren_brand() -> bool:
         apply_crm_finance_transactions_label_fix()
         apply_crm_tableview_header_light_fix()
         apply_crm_invoice_modal_refactor()
-        # Resolve the canonical navigation first. CRM remains the canonical relationship layer.
         apply_crm_definitive_architecture()
         apply_crm_sidebar_architecture()
         apply_crm_complete_module()
-        # Transactions must be materialized before Accounting because Accounting derives all
-        # financial movements from crmFinanceService/state.crmFinancialTransactions.
         apply_crm_financial_transactions()
-        # Accounting consumes Transactions and remains independent from fiscal competence.
         apply_crm_accounting()
-        # Notas Fiscais consumes canonical parties and Transactions, but remains independent
-        # from Accounting recognition rules and from bank movement ownership.
         apply_crm_fiscal_documents()
-        # Rateios formalizes allocations of existing expenses only, keeping
-        # transaction.allocations as a posted projection for dimensional Accounting.
         apply_crm_cost_allocations()
-        # Legal Contracts owns only Contratos/Templates/Variáveis and exposes read-only rules.
         apply_crm_legal_contracts()
-        # Participações consumes Contracts and canonical financial sources without becoming Societário.
         apply_crm_economic_participations()
-        # Repasses settles approved Participações using existing canonical Transactions.
         apply_crm_payouts()
-        # Negócios owns Product/Service/Business Unit and patches final lookup adapters.
         apply_crm_business()
-        # Marketing owns planning records locally while external channel metrics remain honest.
         apply_crm_marketing_module()
-        # Remaining legal owners run after Contracts and Business so references resolve canonically.
-        # They replace only their four reserved legal placeholders and never rewrite Contracts,
-        # Finance, Business or the canonical sidebar architecture.
         apply_crm_legal_matters()
         apply_crm_compliance()
         apply_crm_intellectual_property()
         apply_crm_corporate_governance()
-        # Mock Mode is a single late hook. Fixtures live exclusively under /mockups and are
-        # loaded only when location.search explicitly contains mock=1.
         apply_crm_mock_mode()
-        # Accessibility policy remains cross-cutting, but reconstructive owners emit their
-        # own final accessible markup. This pass completes only non-reconstructive/global controls.
         apply_crm_accessibility_semantics()
-        # Global product review always runs last. It may consolidate UI and legacy projections,
-        # but it must not transfer ownership between domain cores.
         apply_crm_product_system_review()
-        # Read-only post-materialization gate: no ownership or bytes are changed here.
         assert_browser_readiness()
         return True
     except Exception as error:
@@ -198,20 +196,25 @@ def _read_packaged_archive(chunks: list[Path]) -> bytes:
 
 def main() -> int:
     chunks = sorted(PAYLOAD_DIR.glob("chunk-*"))
-    if chunks:
-        try:
-            archive = _read_packaged_archive(chunks)
-            with zipfile.ZipFile(io.BytesIO(archive)) as package:
-                package.extractall(ROOT)
-        except (ValueError, zipfile.BadZipFile, base64.binascii.Error, zlib.error) as error:
-            print(f"Falha ao reconstruir o projeto: {error}", file=sys.stderr)
+    try:
+        if chunks:
+            try:
+                archive = _read_packaged_archive(chunks)
+                with zipfile.ZipFile(io.BytesIO(archive)) as package:
+                    package.extractall(ROOT)
+            except (ValueError, zipfile.BadZipFile, base64.binascii.Error, zlib.error) as error:
+                print(f"Falha ao reconstruir o projeto: {error}", file=sys.stderr)
+                return 1
+
+        _stage_legacy_source_compatibility()
+        if not _apply_valtren_brand():
             return 1
-    if not _apply_valtren_brand():
-        return 1
-    if chunks and PAYLOAD_DIR.exists():
-        shutil.rmtree(PAYLOAD_DIR)
-    print("Projeto da Valtren Solutions materializado e atualizado com sucesso.")
-    return 0
+        if chunks and PAYLOAD_DIR.exists():
+            shutil.rmtree(PAYLOAD_DIR)
+        print("Projeto da Valtren Solutions materializado e atualizado com sucesso.")
+        return 0
+    finally:
+        _cleanup_legacy_source_compatibility()
 
 
 if __name__ == "__main__":

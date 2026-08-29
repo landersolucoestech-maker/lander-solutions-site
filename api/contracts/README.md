@@ -1,5 +1,5 @@
-# API Contracts
+# API contracts
 
-Namespace reservado para contratos públicos entre `web/` e a futura `api/`.
+Stable contracts shared across the `web/` and future `api/` boundaries belong here: request/response schemas, event payload contracts, error envelopes and versioned integration contracts.
 
-Enquanto não existir backend real, apenas contratos estáticos e documentação de fronteira podem viver aqui. Nenhum arquivo desta pasta deve fingir resposta de servidor, sessão autenticada, usuário, notificação, integração ou persistência real.
+Contracts describe shape and semantics only. They must not imply that a backend endpoint, provider, database or integration is already implemented.

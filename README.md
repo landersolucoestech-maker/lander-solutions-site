@@ -1,70 +1,81 @@
 # Valtren Solutions — Site institucional e Sistema Interno
 
-Projeto da **Valtren Solutions** composto pelo site institucional e pelo Sistema Interno materializado pelos scripts deste repositório.
+Projeto da **Valtren Solutions** organizado como monorepo com aplicação frontend em `web/` e boundary de backend futuro em `api/`.
 
 ## Regras de desenvolvimento
 
 - Desenvolvimento exclusivamente na branch `dev`;
-- Branch `main` preservada e sem escrita até liberação explícita;
-- Autenticação desativada nesta etapa;
-- Nenhum usuário, sessão, papel, permissão ou notificação deve ser simulado como se viesse de backend;
-- Sem Supabase ou outro backend externo nesta etapa;
-- Credenciais de integrações não devem ser armazenadas no frontend;
-- Dados operacionais devem iniciar vazios quando não houver fonte real; demonstrações não podem ser tratadas como registros reais.
+- `main` preservada e sem escrita até liberação explícita;
+- autenticação desativada nesta etapa;
+- nenhum usuário, sessão, papel, permissão, notificação, integração ou dado operacional deve ser simulado como se viesse de backend;
+- sem Supabase ou outro backend externo nesta etapa;
+- credenciais nunca são armazenadas no frontend;
+- dados operacionais iniciam vazios quando não houver fonte real; mock/demo não é registro real.
+
+## Estrutura
+
+```text
+/
+├─ web/                  # aplicação frontend canônica
+│  ├─ src/
+│  │  ├─ app/
+│  │  ├─ modules/
+│  │  └─ shared/
+│  ├─ public/assets/
+│  └─ tests/
+├─ api/                  # backend futuro; sem runtime fictício
+│  ├─ src/{modules,shared,config}/
+│  ├─ contracts/
+│  └─ tests/
+├─ scripts/              # tooling/materialização/certificação
+├─ docs/
+├─ mockups/
+├─ .bootstrap/           # payload legado de reconstrução
+└─ .github/
+```
+
+`web/src` é o único source frontend versionado. `src/` na raiz é proibido. Assets públicos canônicos ficam em `web/public/assets`; `assets/` na raiz só existe como saída runtime da materialização.
 
 ## Materialização
 
-A aplicação final é reconstruída a partir do payload em `.bootstrap` e dos materializadores em `scripts/`.
+Enquanto o bundle legado ainda existir, a aplicação final é reconstruída a partir de `.bootstrap` e dos materializadores em `scripts/`:
 
 ```bash
 python scripts/materialize.py
 python -m http.server 4173
 ```
 
-O materializador global `scripts/crm_product_system_review.py` roda por último e permanece estritamente transversal: consolida estados vazios, transparência de capacidades ainda inexistentes e tokens compartilhados, sem assumir ownership de Dashboard, Header, Sidebar ou módulos de domínio.
+`scripts/materialize.py` cria temporariamente uma cópia de compatibilidade `src/` a partir de `web/src` para materializadores históricos e a remove ao terminar. Essa ponte não é owner arquitetural.
 
-Artefatos locais de execução Python (`__pycache__`, `*.pyc`) não fazem parte da fonte nem da saída certificada e são ignorados para preservar uma árvore determinística.
+## Ownership funcional
 
-## Ownership canônico
+- Dashboard: módulo global em `web/src/modules/dashboard`;
+- Agenda: módulo global em `web/src/modules/agenda`;
+- CRM: `web/src/modules/crm`, com Pessoas/Organizações e workspace comercial;
+- Financeiro: `web/src/modules/finance` — Transações, Contabilidade, Fiscal, Rateios, Participações e Repasses;
+- Jurídico: `web/src/modules/legal` — Contratos, Assuntos, Compliance, Propriedade Intelectual e Societário;
+- Negócios: `web/src/modules/business` — Produtos, Serviços e Unidades de Negócio;
+- Marketing: `web/src/modules/marketing`;
+- Communications, Integrations, Settings e Notifications possuem boundaries explícitas em `web/src/modules` sem backend simulado.
 
-- Dashboard: `scripts/crm_dashboard_module.py`;
-- Sidebar / navegação: `scripts/crm_sidebar_architecture.py`, único owner de `crmRelSidebar`;
-- Header / Account Menu: `scripts/crm_global_header.py`;
-- Agenda: `scripts/crm_agenda_module.py`, consumidora do Header e da Sidebar;
-- Pessoas / Organizações: `ValtrenPartyCore`;
-- CRM: `ValtrenCrmCore` sobre referências canônicas de Pessoas / Organizações;
-- Transações: `ValtrenFinanceCore`;
-- Contabilidade: owner próprio derivado de Transações;
-- Notas Fiscais: owner próprio com referências a Pessoas / Organizações e Transações;
-- Rateios: owner próprio de alocação de despesas existentes;
-- Participações: owner econômico próprio;
-- Repasses: owner de liquidação de participações aprovadas;
-- Negócios: Produtos, Serviços e Unidades de Negócio;
-- Contratos: owner jurídico próprio;
-- Assuntos Jurídicos: `ValtrenLegalMatterCore`;
-- Compliance e Políticas: `ValtrenComplianceCore`;
-- Propriedade Intelectual: `ValtrenIntellectualPropertyCore`;
-- Societário: `ValtrenCorporateGovernanceCore`;
-- Configurações e compatibilidade de rotas: `scripts/crm_definitive_architecture.py`.
+Os scripts Python continuam como orquestradores temporários de materialização; eles não são o owner final do código de produto.
 
-Materializadores de domínio que verificam a navegação validam exclusivamente o bloco delimitado por `VALTREN SIDEBAR ARCHITECTURE START/END`; nenhum domínio usa conteúdo posterior do bundle como boundary nem reescreve `crmRelSidebar`.
+## API futura
 
-## Certificação de publicação
+`api/` existe para evitar uma futura reorganização destrutiva quando o backend for implementado. Nesta fase não existem endpoints, persistência, autenticação, filas, jobs ou provedores reais. `api/contracts/` é a única área preparada para contratos estáveis entre frontend e backend.
 
-Um pipeline verde, isoladamente, não certifica a apresentação final. A saída da `dev` só pode ser tratada como candidata certificada quando o mesmo bundle materializado passar pelos testes de source e materialized, mantiver idempotência e ownership canônico, tiver os hashes de `app.js` e `assets/valtren-brand.css` preservados em `_site` e no artifact publicado, e esse artifact for inspecionado visualmente antes do deploy.
+## Certificação
 
-Após o deploy do GitHub Pages, a URL pública é um gate separado: a versão servida deve ser aberta e verificada em desktop, tablet e mobile, com Sidebar, Header/Account Menu, drawer, overflow, console e assets públicos conferidos contra o artifact. O deploy não é considerado concluído apenas porque a action terminou com `success`.
+Pipeline verde isolado não certifica interface. A saída da `dev` precisa passar por testes de source e materialized, idempotência, ownership, hashes do artifact, certificação visual e verificação da URL pública.
 
-## Autenticação
+## Integrações e autenticação
 
-A autenticação permanece **desativada**. Não existe senha inicial local, usuário conectado, sessão real ou fallback que finja autenticação. A interface deve comunicar esse estado de forma explícita.
-
-Qualquer futura autenticação deverá ser ligada a um provedor real de identidade e persistência segura antes de habilitar Perfil, usuários, papéis, permissões, MFA ou sessões.
-
-## Integrações
-
-Integrações sem credenciais e backend seguro devem aparecer apenas como **Não configurado**. Não é permitido simular conexão, sincronização, métricas, envio ou recebimento.
+Integrações sem credenciais e backend seguro aparecem apenas como **Não configurado**. Autenticação permanece **desativada** até existir provedor real de identidade e persistência segura.
 
 ## Identidade visual
 
-A interface usa a identidade visual da Valtren Solutions, com tokens consolidados na camada materializada. Os arquivos `assets/valtren-logo.svg`, `assets/valtren-logo-light.svg` e `assets/valtren-mark.svg` permanecem como ativos oficiais do projeto.
+Os assets oficiais versionados são:
+
+- `web/public/assets/valtren-logo.svg`
+- `web/public/assets/valtren-logo-light.svg`
+- `web/public/assets/valtren-mark.svg`

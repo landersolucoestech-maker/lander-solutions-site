@@ -1,11 +1,13 @@
 # API
 
-Fronteira reservada para a futura API/backend da Valtren Solutions.
+`api/` is the canonical backend application boundary for the project.
 
-No estado atual do projeto esta camada NÃO implementa servidor, persistência, autenticação, integrações externas ou endpoints fictícios. Sua existência define desde já a fronteira arquitetural entre frontend e backend e evita acoplamento direto da interface a provedores futuros.
+The backend is intentionally **not implemented yet**. This tree exists now so the repository does not require another structural migration when backend work starts.
 
-Regras:
-- não criar mocks apresentados como API real;
-- não armazenar credenciais no frontend;
-- contratos futuros devem ser versionados e independentes da UI;
-- autenticação, banco de dados, filas, webhooks e integrações só entram aqui quando houver implementação real.
+- `src/modules/` — future backend domain modules.
+- `src/shared/` — future shared backend primitives.
+- `src/config/` — future validated runtime configuration.
+- `contracts/` — frontend/backend request, response and event contracts.
+- `tests/` — future backend tests.
+
+Do not add fake endpoints, persistence, authentication, jobs, queues, secrets, provider connections or integration-success states before a real runtime exists.

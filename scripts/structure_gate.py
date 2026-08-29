@@ -5,7 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-ALLOWED_ROOT_DIRS = {".bootstrap", ".github", "api", "assets", "docs", "mockups", "scripts", "src", "web"}
+ALLOWED_ROOT_DIRS = {".bootstrap", ".github", "api", "docs", "mockups", "scripts", "web"}
 ALLOWED_ROOT_FILES = {".gitignore", "CONFIGURAR-PROJETO.bat", "README.md"}
 
 CANONICAL_MODULES = {
@@ -59,26 +59,58 @@ def main() -> int:
         fail("entradas inesperadas na raiz: " + ", ".join(unexpected_root))
 
     web_dir = ROOT / "web"
+    web_src = web_dir / "src"
+    web_public = web_dir / "public"
+    web_assets = web_public / "assets"
+    web_tests = web_dir / "tests"
+
     api_dir = ROOT / "api"
-    api_contracts_dir = api_dir / "contracts"
-    for required in (web_dir, api_dir, api_contracts_dir):
+    api_src = api_dir / "src"
+    api_modules = api_src / "modules"
+    api_shared = api_src / "shared"
+    api_config = api_src / "config"
+    api_tests = api_dir / "tests"
+    api_contracts = api_dir / "contracts"
+
+    required_dirs = (
+        web_dir, web_src, web_public, web_assets, web_tests,
+        api_dir, api_src, api_modules, api_shared, api_config, api_tests, api_contracts,
+    )
+    for required in required_dirs:
         if not required.is_dir():
             fail(f"boundary arquitetural ausente: {required.relative_to(ROOT)}")
-    for required_file in (web_dir / "README.md", api_dir / "README.md", api_contracts_dir / "README.md"):
+
+    for required_file in (
+        web_dir / "README.md",
+        web_dir / "ARCHITECTURE.md",
+        web_public / "README.md",
+        web_tests / "README.md",
+        api_dir / "README.md",
+        api_src / "README.md",
+        api_modules / "README.md",
+        api_shared / "README.md",
+        api_config / "README.md",
+        api_tests / "README.md",
+        api_contracts / "README.md",
+    ):
         if not required_file.is_file():
             fail(f"contrato de boundary ausente: {required_file.relative_to(ROOT)}")
 
-    src_dir = ROOT / "src"
-    modules_dir = src_dir / "modules"
-    shared_dir = src_dir / "shared"
-    app_dir = src_dir / "app"
-    for required in (src_dir, modules_dir, shared_dir, app_dir):
+    if (ROOT / "src").exists():
+        fail("src/ na raiz é proibido; o único source frontend canônico é web/src")
+    if (ROOT / "assets").exists():
+        fail("assets/ na raiz é proibido no checkout limpo; assets públicos canônicos pertencem a web/public/assets")
+
+    modules_dir = web_src / "modules"
+    shared_dir = web_src / "shared"
+    app_dir = web_src / "app"
+    for required in (modules_dir, shared_dir, app_dir):
         if not required.is_dir():
-            fail(f"estrutura fonte ausente: {required.relative_to(ROOT)}")
+            fail(f"estrutura frontend ausente: {required.relative_to(ROOT)}")
 
     missing_modules = sorted(name for name in CANONICAL_MODULES if not (modules_dir / name).is_dir())
     if missing_modules:
-        fail("módulos canônicos ausentes em src/modules: " + ", ".join(missing_modules))
+        fail("módulos canônicos ausentes em web/src/modules: " + ", ".join(missing_modules))
 
     for forbidden in (modules_dir / "crm" / "agenda", modules_dir / "crm" / "dashboard"):
         if forbidden.exists():
@@ -86,7 +118,7 @@ def main() -> int:
 
     agenda_source = modules_dir / "agenda" / "source"
     if not agenda_source.is_dir() or not list(agenda_source.glob("crm_agenda_module.js.part*")) or not list(agenda_source.glob("crm_agenda_module.css.part*")):
-        fail("Agenda não possui source canônico completo em src/modules/agenda/source")
+        fail("Agenda não possui source canônico completo em web/src/modules/agenda/source")
 
     for relative, filenames in SOURCE_OWNERS.items():
         owner_dir = modules_dir / relative
@@ -101,13 +133,13 @@ def main() -> int:
         if not contract.is_file():
             fail(f"contrato de boundary ausente: {contract.relative_to(ROOT)}")
 
+    for asset in ("valtren-logo.svg", "valtren-logo-light.svg", "valtren-mark.svg"):
+        if not (web_assets / asset).is_file():
+            fail(f"asset público canônico ausente: web/public/assets/{asset}")
+
     committed_generated = sorted(name for name in FORBIDDEN_GENERATED_ROOT_FILES if (ROOT / name).exists())
     if committed_generated:
         fail("saída materializada presente no checkout limpo: " + ", ".join(committed_generated))
-
-    generated_css = ROOT / "assets" / "valtren-brand.css"
-    if generated_css.exists():
-        fail("assets/valtren-brand.css é saída materializada e não deve existir no checkout limpo")
 
     forbidden_paths: list[str] = []
     for path in ROOT.rglob("*"):
@@ -130,7 +162,7 @@ def main() -> int:
     if not sorted((ROOT / ".bootstrap").glob("chunk-*")):
         fail("payload .bootstrap/chunk-* ausente")
 
-    print("STRUCTURE GATE: web/api boundaries, arquitetura funcional, owners canônicos e boundaries sem backend validados.")
+    print("STRUCTURE GATE: monorepo web/api, frontend owner único, assets públicos canônicos e boundaries sem backend validados.")
     return 0
 
 
