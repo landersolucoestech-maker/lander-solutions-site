@@ -67,7 +67,7 @@ STATIC_LABELS = {
     "crm-legal-unit": "Unidade de negócio",
     "crm-legal-template-search": "Pesquisar templates",
     "crm-legal-template-category": "Categoria do template",
-    "crm-legal-template-type": "Tipo de template",
+    "crm-legal-template-type": "Tipo do template",
     "crm-legal-template-status": "Status do template",
     "crm-legal-variable-search": "Pesquisar variáveis",
     "crm-legal-variable-scope": "Escopo da variável",
@@ -134,8 +134,6 @@ STATIC_LABELS = {
 }
 
 ACTION_LABELS = {
-    "crm-fin-counterparty": "Origem ou destino da transação",
-    "crm-fin-category": "Categoria financeira da transação",
     "crm-acct-recognition": "Data de reconhecimento contábil",
     "crm-acct-classification-override": "Classificação contábil",
     "crm-acct-service-meta": "Serviço contábil",
