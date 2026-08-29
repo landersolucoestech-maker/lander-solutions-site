@@ -1,0 +1,85 @@
+    const id=form.elements.venueContactId?.value || '';
+    const contact=crmAgendaPJContacts().find((item)=>String(item.id)===String(id));
+    if(!contact) return;
+    if(form.elements.contact) form.elements.contact.value=contact.phone || '';
+    if(form.elements.address) form.elements.address.value=contact.address || contact.city || '';
+  }
+
+  function crmAgendaSave(form){
+    crmAgendaEnsureState();
+    const data=new FormData(form);
+    const mode=form.dataset.mode;
+    const id=form.dataset.id || `evt${Date.now()}`;
+    const type=String(data.get('type')||'');
+    const crmVenueId=String(data.get('venueContactId')||'');
+    const crmVenue=crmAgendaPJContacts().find((item)=>String(item.id)===crmVenueId);
+    const item={
+      id,
+      title:String(data.get('title')||'').trim(),
+      type,
+      participants:String(data.get('participants')||''),
+      status:String(data.get('status')||'agendado'),
+      startDate:String(data.get('startDate')||''),
+      startTime:String(data.get('startTime')||''),
+      endDate:String(data.get('endDate')||''),
+      endTime:String(data.get('endTime')||''),
+      venueContactId:crmVenueId,
+      venue:crmVenue ? (crmVenue.company||crmVenue.name) : String(data.get('venue')||''),
+      contact:String(data.get('contact')||''),
+      address:String(data.get('address')||''),
+      capacity:String(data.get('capacity')||''),
+      cache:String(data.get('cache')||''),
+      expected:String(data.get('expected')||''),
+      description:String(data.get('description')||''),
+      notes:String(data.get('notes')||''),
+    };
+    if(!item.title || !item.type || !item.startDate) return;
+    const index=state.crmAgendaEvents.findIndex((row)=>row.id===id);
+    if(mode==='edit' && index>=0) state.crmAgendaEvents[index]={...state.crmAgendaEvents[index],...item};
+    else state.crmAgendaEvents.unshift(item);
+    state.crmAgendaCurrentDate=crmAgendaParseDate(item.startDate) || state.crmAgendaCurrentDate;
+    crmAgendaCloseModal();
+    crmAgendaRerender();
+  }
+
+  function crmAgendaShift(direction){
+    crmAgendaEnsureState();
+    const d=new Date(state.crmAgendaCurrentDate);
+    if(state.crmAgendaViewMode==='dia') d.setDate(d.getDate()+direction);
+    else if(state.crmAgendaViewMode==='semana') d.setDate(d.getDate()+7*direction);
+    else if(state.crmAgendaViewMode==='mes') d.setMonth(d.getMonth()+direction);
+    else d.setFullYear(d.getFullYear()+direction);
+    state.crmAgendaCurrentDate=d;
+    crmAgendaRerender();
+  }
+
+  if (!window.__valtrenCrmAgendaBound) {
+    window.__valtrenCrmAgendaBound=true;
+    document.addEventListener('click',(event)=>{
+      const target=event.target.closest('[data-action]'); if(!target) return;
+      const action=target.dataset.action;
+      if(action==='crm-agenda-create'){ crmAgendaOpenForm('create'); return; }
+      if(action==='crm-agenda-view'){ crmAgendaOpenView(target.dataset.id||''); return; }
+      if(action==='crm-agenda-edit'){ const id=target.dataset.id||''; crmAgendaCloseModal(); crmAgendaOpenForm('edit',id); return; }
+      if(action==='crm-agenda-close'){ crmAgendaCloseModal(); return; }
+      if(action==='crm-agenda-today'){ state.crmAgendaCurrentDate=new Date(); crmAgendaRerender(); return; }
+      if(action==='crm-agenda-prev'){ crmAgendaShift(-1); return; }
+      if(action==='crm-agenda-next'){ crmAgendaShift(1); return; }
+      if(action==='crm-agenda-clear'){ state.crmAgendaSearch=''; state.crmAgendaTypeFilter='all-type'; state.crmAgendaStatusFilter='all-status'; crmAgendaRerender(); return; }
+    });
+    document.addEventListener('input',(event)=>{
+      if(event.target?.id==='crm-agenda-search'){ state.crmAgendaSearch=event.target.value; crmAgendaRerender(); }
+    });
+    document.addEventListener('change',(event)=>{
+      if(event.target?.id==='crm-agenda-view'){ state.crmAgendaViewMode=event.target.value; crmAgendaRerender(); }
+      if(event.target?.id==='crm-agenda-type'){ state.crmAgendaTypeFilter=event.target.value; crmAgendaRerender(); }
+      if(event.target?.id==='crm-agenda-status'){ state.crmAgendaStatusFilter=event.target.value; crmAgendaRerender(); }
+      if(event.target?.matches?.('#crm-agenda-form [name="type"]')) crmAgendaToggleConditionalFields();
+      if(event.target?.matches?.('#crm-agenda-form [name="venueContactId"]')) crmAgendaFillCRMVenue();
+    });
+    document.addEventListener('submit',(event)=>{
+      if(event.target?.id==='crm-agenda-form'){ event.preventDefault(); crmAgendaSave(event.target); }
+    });
+    document.addEventListener('keydown',(event)=>{ if(event.key==='Escape' && document.getElementById('crm-agenda-modal-root')) crmAgendaCloseModal(); });
+  }
+  // VALTREN CRM AGENDA EVENTS END

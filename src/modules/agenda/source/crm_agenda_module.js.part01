@@ -1,0 +1,88 @@
+  // VALTREN CRM AGENDA EVENTS START
+  const CRM_AGENDA_TYPES = [
+    ['sessoes_estudio','Sessões de Estúdio'],
+    ['ensaios','Ensaios'],
+    ['sessoes_fotos','Sessões de Fotos'],
+    ['shows','Shows'],
+    ['entrevistas','Entrevistas'],
+    ['podcasts','Podcasts'],
+    ['programas_tv','Programas de TV'],
+    ['radio','Rádio'],
+    ['producao_conteudo','Produção de Conteúdo'],
+    ['reunioes','Reuniões']
+  ];
+  const CRM_AGENDA_STATUSES = [
+    ['agendado','Agendado'],
+    ['confirmado','Confirmado'],
+    ['pendente','Pendente'],
+    ['concluido','Concluído'],
+    ['cancelado','Cancelado']
+  ];
+  const CRM_AGENDA_FILTER_STATUSES = [
+    ['all-status','Todos Status'],
+    ['confirmado','Confirmado'],
+    ['pendente','Pendente'],
+    ['agendado','Agendado'],
+    ['realizado','Realizado'],
+    ['cancelado','Cancelado'],
+    ['negociacao','Negociação']
+  ];
+  const CRM_AGENDA_ARTIST_RELATED = ['sessoes_estudio','ensaios','sessoes_fotos','shows','entrevistas','podcasts','programas_tv','radio','producao_conteudo'];
+  const CRM_AGENDA_LOCAL_CRM = ['shows','programas_tv','radio','podcasts'];
+
+  function crmAgendaEnsureState(){
+    if (!Array.isArray(state.crmAgendaEvents)) state.crmAgendaEvents = [];
+    if (!state.crmAgendaViewMode) state.crmAgendaViewMode = 'semana';
+    if (!(state.crmAgendaCurrentDate instanceof Date) || Number.isNaN(state.crmAgendaCurrentDate.getTime())) state.crmAgendaCurrentDate = new Date();
+    if (typeof state.crmAgendaSearch !== 'string') state.crmAgendaSearch = '';
+    if (!state.crmAgendaTypeFilter) state.crmAgendaTypeFilter = 'all-type';
+    if (!state.crmAgendaStatusFilter) state.crmAgendaStatusFilter = 'all-status';
+  }
+
+  function crmAgendaRerender(){
+    if (typeof renderCurrentWithoutReset === 'function') renderCurrentWithoutReset();
+    else if (typeof render === 'function') render();
+  }
+
+  function crmAgendaPad(value){ return String(value).padStart(2,'0'); }
+  function crmAgendaISO(date){ return `${date.getFullYear()}-${crmAgendaPad(date.getMonth()+1)}-${crmAgendaPad(date.getDate())}`; }
+  function crmAgendaParseDate(value){
+    const parts = String(value || '').split('-').map(Number);
+    return parts.length === 3 && parts.every(Number.isFinite) ? new Date(parts[0],parts[1]-1,parts[2]) : null;
+  }
+  function crmAgendaAddDays(date,days){ const d=new Date(date); d.setDate(d.getDate()+days); return d; }
+  function crmAgendaStartOfWeek(date){ const d=new Date(date); const day=d.getDay(); const diff=day===0?-6:1-day; d.setDate(d.getDate()+diff); d.setHours(0,0,0,0); return d; }
+  function crmAgendaEndOfWeek(date){ const d=crmAgendaStartOfWeek(date); d.setDate(d.getDate()+6); d.setHours(23,59,59,999); return d; }
+  function crmAgendaStartOfMonth(date){ return new Date(date.getFullYear(),date.getMonth(),1); }
+  function crmAgendaEndOfMonth(date){ return new Date(date.getFullYear(),date.getMonth()+1,0,23,59,59,999); }
+  function crmAgendaStartOfYear(date){ return new Date(date.getFullYear(),0,1); }
+  function crmAgendaEndOfYear(date){ return new Date(date.getFullYear(),11,31,23,59,59,999); }
+  function crmAgendaDateInRange(value,start,end){ const d=crmAgendaParseDate(value); return !!d && d>=start && d<=end; }
+  function crmAgendaTypeLabel(value){ return CRM_AGENDA_TYPES.find(([v])=>v===value)?.[1] || String(value || 'Evento'); }
+  function crmAgendaStatusLabel(value){ return [...CRM_AGENDA_STATUSES,...CRM_AGENDA_FILTER_STATUSES].find(([v])=>v===value)?.[1] || String(value || 'Pendente'); }
+  function crmAgendaStatusClass(value){
+    if (value==='confirmado') return 'confirmed';
+    if (value==='realizado' || value==='concluido') return 'done';
+    if (value==='cancelado') return 'cancelled';
+    return 'pending';
+  }
+  function crmAgendaMoney(value){
+    if (value === '' || value == null || Number.isNaN(Number(value))) return '—';
+    return Number(value).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  }
+  function crmAgendaFormatDate(value){
+    const d=crmAgendaParseDate(value); return d ? new Intl.DateTimeFormat('pt-BR').format(d) : '—';
+  }
+  function crmAgendaPeriodBounds(){
+    crmAgendaEnsureState();
+    const date=state.crmAgendaCurrentDate;
+    if (state.crmAgendaViewMode==='dia') { const d=new Date(date.getFullYear(),date.getMonth(),date.getDate()); return [d,new Date(d.getFullYear(),d.getMonth(),d.getDate(),23,59,59,999)]; }
+    if (state.crmAgendaViewMode==='mes') return [crmAgendaStartOfMonth(date),crmAgendaEndOfMonth(date)];
+    if (state.crmAgendaViewMode==='ano') return [crmAgendaStartOfYear(date),crmAgendaEndOfYear(date)];
+    return [crmAgendaStartOfWeek(date),crmAgendaEndOfWeek(date)];
+  }
+  function crmAgendaPeriodLabel(){
+    crmAgendaEnsureState();
+    const d=state.crmAgendaCurrentDate;
+    const monthYear=new Intl.DateTimeFormat('pt-BR',{month:'long',year:'numeric'});
+    if (state.crmAgendaViewMode==='dia') return new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'long',year:'numeric'}).format(d);
