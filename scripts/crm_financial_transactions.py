@@ -45,8 +45,11 @@ def apply_crm_financial_transactions() -> int:
     browser = BROWSER.read_text(encoding="utf-8").strip()
     presentation = PRESENTATION.read_text(encoding="utf-8").strip()
 
-    # presentation.js owns the final row, table and page renderers. The base
-    # implementations must not remain in the production bundle as dead templates.
+    # presentation.js owns the final account cards, toolbar, row, table and page
+    # renderers. Base implementations must not survive in the production bundle as
+    # dead templates, otherwise IDs and accessible-name contracts become duplicated.
+    browser = _remove_overridden_function(browser, "function crmFinanceAccountCards()", "function crmFinanceStatusTabs()")
+    browser = _remove_overridden_function(browser, "function crmFinanceToolbar()", "function crmFinanceRow(tx)")
     browser = _remove_overridden_function(browser, "function crmFinanceRow(tx)", "function crmFinanceBulkBar")
     browser = _remove_overridden_function(browser, "function crmFinanceTable()", "function crmTransactionsPage()")
     browser = _remove_overridden_function(browser, "function crmTransactionsPage()", "function crmFinanceMountOverlay")
@@ -59,6 +62,9 @@ def apply_crm_financial_transactions() -> int:
         raise RuntimeError("Colunas Saída/Entrada ainda existem separadamente na apresentação final de Transações")
     if presentation.count('<th class="right">Valor</th>') != 1:
         raise RuntimeError("Apresentação final de Transações precisa possuir exatamente uma coluna Valor")
+    for renderer in ("crmFinanceAccountCards", "crmFinanceToolbar", "crmFinanceRow", "crmFinanceTable", "crmTransactionsPage"):
+        if presentation.count(f"function {renderer}(") != 1:
+            raise RuntimeError(f"Owner final de Transações divergente para {renderer}")
 
     block = JS_START + domain + "\n\n" + browser + "\n\n" + presentation + "\n" + JS_END
 
@@ -118,6 +124,7 @@ def apply_crm_financial_transactions() -> int:
             )
 
     uniqueness = {
+        'id="crm-fin-search"': 1,
         'data-action="crm-fin-page" data-page="${filters.page-1}"': 1,
         'data-action="crm-fin-page" data-page="${filters.page+1}"': 1,
         '<th class="right">Valor</th>': 1,
@@ -161,7 +168,7 @@ def apply_crm_financial_transactions() -> int:
         text = re.sub(r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?", f"valtren-brand.css?v={CACHE_VERSION}", text)
         path.write_text(text, encoding="utf-8")
 
-    print("Financeiro → Transações materializado com implementação única, coluna Valor e sem cards de status.")
+    print("Financeiro → Transações materializado com renderers únicos, coluna Valor e menu Ver/Editar/Excluir.")
     return 1
 
 
