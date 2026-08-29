@@ -11,16 +11,16 @@ ASSET_CSS = ROOT / "assets" / "valtren-brand.css"
 APP = ROOT / "app.js"
 
 OWNERS = {
-    "crm_financial_transactions.py": "crm_financial_transactions_consistency.css",
-    "crm_accounting.py": "crm_accounting_consistency.css",
-    "crm_fiscal_documents.py": "crm_fiscal_documents_consistency.css",
-    "crm_economic_participations.py": "crm_economic_participations_consistency.css",
-    "crm_payouts.py": "crm_payouts_consistency.css",
-    "crm_reference_modules.py": "crm_reference_modules_consistency.css",
-    "crm_legal_matters.py": "crm_legal_matters_consistency.css",
-    "crm_compliance.py": "crm_compliance_consistency.css",
-    "crm_intellectual_property.py": "crm_intellectual_property_consistency.css",
-    "crm_corporate_governance.py": "crm_corporate_governance_consistency.css",
+    "crm_financial_transactions.py": "src/modules/finance/transactions/consistency.css",
+    "crm_accounting.py": "src/modules/finance/accounting/consistency.css",
+    "crm_fiscal_documents.py": "src/modules/finance/fiscal/consistency.css",
+    "crm_economic_participations.py": "src/modules/finance/participations/consistency.css",
+    "crm_payouts.py": "src/modules/finance/payouts/consistency.css",
+    "crm_reference_modules.py": "scripts/crm_reference_modules_consistency.css",
+    "crm_legal_matters.py": "src/modules/legal/matters/consistency.css",
+    "crm_compliance.py": "src/modules/legal/compliance/consistency.css",
+    "crm_intellectual_property.py": "src/modules/legal/intellectual-property/consistency.css",
+    "crm_corporate_governance.py": "src/modules/legal/corporate/consistency.css",
 }
 
 FORBIDDEN_SIDEBAR = (
@@ -47,24 +47,28 @@ def fail(message: str) -> None:
 
 
 def source_checks() -> None:
-    for owner_name, css_name in OWNERS.items():
+    for owner_name, css_relative in OWNERS.items():
         owner = SCRIPTS / owner_name
-        patch = SCRIPTS / css_name
+        patch = ROOT / css_relative
         if not owner.exists() or not patch.exists():
-            fail(f"visual owner pair missing: {owner_name} -> {css_name}")
+            fail(f"visual owner pair missing: {owner_name} -> {css_relative}")
         owner_text = owner.read_text(encoding="utf-8")
         patch_text = patch.read_text(encoding="utf-8")
-        if css_name not in owner_text:
+        css_name = Path(css_relative).name
+        if css_relative.startswith("src/"):
+            if "MODULE_DIR = ROOT / \"src\"" not in owner_text or "consistency.css" not in owner_text:
+                fail(f"{owner_name} does not consume canonical consistency source {css_relative}")
+        elif css_name not in owner_text:
             fail(f"{owner_name} does not materialize {css_name}")
         leaked = [selector for selector in FORBIDDEN_SIDEBAR if selector in patch_text]
         if leaked:
-            fail(f"{css_name} illegally styles Sidebar: {', '.join(leaked)}")
+            fail(f"{css_relative} illegally styles Sidebar: {', '.join(leaked)}")
         tiny = sorted({int(x) for x in re.findall(r"font-size\s*:\s*(\d+)px", patch_text) if int(x) < 10})
         if tiny:
-            fail(f"{css_name} introduces sub-10px font sizes: {tiny}")
+            fail(f"{css_relative} introduces sub-10px font sizes: {tiny}")
         tiny_shorthand = sorted({int(x) for x in re.findall(r"font\s*:[^;}]*?\b(\d+)px(?:/|\s)", patch_text) if int(x) < 10})
         if tiny_shorthand:
-            fail(f"{css_name} introduces sub-10px font shorthand: {tiny_shorthand}")
+            fail(f"{css_relative} introduces sub-10px font shorthand: {tiny_shorthand}")
 
     reference = (SCRIPTS / "crm_reference_modules.py").read_text(encoding="utf-8")
     if "_assert_no_sidebar_css" not in reference:
