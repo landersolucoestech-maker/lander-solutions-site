@@ -82,7 +82,7 @@ def apply_crm_financial_transactions() -> int:
     required = [
         "ValtrenFinanceCore",
         "state.crmFinancialTransactions",
-        "crmTransactionsPage=function()",
+        "function crmTransactionsPage()",
         "Origem/Destino",
         "Produto/Sistema",
         "crmCanonicalPartyService()",
