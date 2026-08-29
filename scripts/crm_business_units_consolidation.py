@@ -56,7 +56,9 @@ def apply_business_units_consolidation() -> int:
                 f"Owner canônico de Negócios inválido para consolidação de Unidade de Negócio: {app.count(BUSINESS_START)}"
             )
         at = app.index(BUSINESS_START)
-        updated = app[:at] + desired + app[at:]
+        # crm_business.py canonicalizes a re-applied Business block with one blank
+        # separator line. Emit the same byte layout on the first materialization.
+        updated = app[:at] + desired + "\n" + app[at:]
     else:
         raise RuntimeError(f"Markers de consolidação divergentes: {start_count}/{end_count}")
 
