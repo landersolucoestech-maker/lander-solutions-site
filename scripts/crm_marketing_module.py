@@ -6,8 +6,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-JS = ROOT / "scripts" / "crm_marketing_module.js"
-MODULE_CSS = ROOT / "scripts" / "crm_marketing_module.css"
+MODULE_DIR = ROOT / "src" / "modules" / "marketing"
+JS = MODULE_DIR / "module.js"
+MODULE_CSS = MODULE_DIR / "styles.css"
 START = "  // VALTREN MARKETING MODULE START\n"
 END = "  // VALTREN MARKETING MODULE END\n"
 
@@ -18,8 +19,6 @@ def apply_crm_marketing_module() -> int:
             raise FileNotFoundError(path)
     app = APP.read_text(encoding="utf-8")
     app = re.sub(r"\n?  // VALTREN MARKETING MODULE START\n.*?  // VALTREN MARKETING MODULE END\n", "\n", app, flags=re.S)
-    # The legacy honest-state function is a stable architecture boundary. It remains
-    # unused for compatibility, while no domain materializer removes or reorders it.
     anchor = "  function crmMarketingUnavailablePage(){"
     if app.count(anchor) != 1:
         raise RuntimeError(f"Âncora inválida para Marketing: {app.count(anchor)}")
@@ -35,7 +34,7 @@ def apply_crm_marketing_module() -> int:
     css = CSS.read_text(encoding="utf-8")
     css = re.sub(r"\n?/\* VALTREN MARKETING MODULE \*/.*?(?=\n/\*|\Z)", "", css, flags=re.S)
     CSS.write_text(css.rstrip() + "\n\n" + MODULE_CSS.read_text(encoding="utf-8").strip() + "\n", encoding="utf-8")
-    print("Marketing materializado com Visão Geral, Campanhas, Calendário, Métricas, Briefings e Tarefas, sem métricas ou integrações simuladas.")
+    print("Marketing materializado a partir de src/modules/marketing, sem métricas ou integrações simuladas.")
     return 1
 
 
