@@ -5,71 +5,38 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-ALLOWED_ROOT_DIRS = {
-    ".bootstrap",
-    ".github",
-    "assets",
-    "docs",
-    "mockups",
-    "scripts",
-    "src",
-}
-
-ALLOWED_ROOT_FILES = {
-    ".gitignore",
-    "CONFIGURAR-PROJETO.bat",
-    "README.md",
-}
+ALLOWED_ROOT_DIRS = {".bootstrap", ".github", "assets", "docs", "mockups", "scripts", "src"}
+ALLOWED_ROOT_FILES = {".gitignore", "CONFIGURAR-PROJETO.bat", "README.md"}
 
 CANONICAL_MODULES = {
-    "dashboard",
-    "agenda",
-    "crm",
-    "finance",
-    "legal",
-    "business",
-    "marketing",
-    "communications",
-    "integrations",
-    "settings",
-    "notifications",
+    "dashboard", "agenda", "crm", "finance", "legal", "business", "marketing",
+    "communications", "integrations", "settings", "notifications",
 }
 
-FINANCE_SOURCE_FILES = {
-    "transactions": ("core.js", "browser.js", "styles.css", "consistency.css"),
-    "accounting": ("core.js", "browser.js", "styles.css", "consistency.css"),
-    "fiscal": ("core.js", "browser.js", "styles.css", "consistency.css"),
-    "allocations": ("core.js", "browser.js", "styles.css"),
-    "participations": ("core.js", "browser.js", "styles.css", "consistency.css"),
-    "payouts": ("core.js", "browser.js", "styles.css", "consistency.css"),
+SOURCE_OWNERS = {
+    "crm/parties": ("core.js", "adapter.js"),
+    "crm/workspace": ("domain.js", "browser.js", "hardening.js", "styles.css"),
+    "finance/transactions": ("core.js", "browser.js", "styles.css", "consistency.css"),
+    "finance/accounting": ("core.js", "browser.js", "styles.css", "consistency.css"),
+    "finance/fiscal": ("core.js", "browser.js", "styles.css", "consistency.css"),
+    "finance/allocations": ("core.js", "browser.js", "styles.css"),
+    "finance/participations": ("core.js", "browser.js", "styles.css", "consistency.css"),
+    "finance/payouts": ("core.js", "browser.js", "styles.css", "consistency.css"),
+    "legal/contracts": ("core.js", "browser.js", "styles.css"),
+    "legal/matters": ("core.js", "browser.js", "styles.css", "consistency.css"),
+    "legal/compliance": ("core.js", "browser.js", "styles.css", "consistency.css"),
+    "legal/intellectual-property": ("core.js", "browser.js", "styles.css", "consistency.css"),
+    "legal/corporate": ("core.js", "browser.js", "styles.css", "consistency.css"),
+    "business": ("core.js", "browser.js", "styles.css"),
+    "marketing": ("module.js", "styles.css"),
 }
 
-FORBIDDEN_GENERATED_ROOT_FILES = {
-    "app.js",
-    "index.html",
-}
-
+FORBIDDEN_GENERATED_ROOT_FILES = {"app.js", "index.html"}
 FORBIDDEN_DIR_NAMES = {
-    "__pycache__",
-    ".pytest_cache",
-    ".mypy_cache",
-    ".ruff_cache",
-    ".nyc_output",
-    "node_modules",
-    "dist",
-    "coverage",
-    "playwright-report",
-    "test-results",
-    "_site",
+    "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache", ".nyc_output",
+    "node_modules", "dist", "coverage", "playwright-report", "test-results", "_site",
 }
-
-FORBIDDEN_SUFFIXES = {
-    ".pyc",
-    ".pyo",
-    ".log",
-    ".tmp",
-    ".bak",
-}
+FORBIDDEN_SUFFIXES = {".pyc", ".pyo", ".log", ".tmp", ".bak"}
 
 
 def fail(message: str) -> None:
@@ -79,10 +46,8 @@ def fail(message: str) -> None:
 
 def main() -> int:
     unexpected_root = sorted(
-        entry.name
-        for entry in ROOT.iterdir()
-        if entry.name != ".git"
-        and (
+        entry.name for entry in ROOT.iterdir()
+        if entry.name != ".git" and (
             (entry.is_dir() and entry.name not in ALLOWED_ROOT_DIRS)
             or (entry.is_file() and entry.name not in ALLOWED_ROOT_FILES)
         )
@@ -106,23 +71,17 @@ def main() -> int:
         if forbidden.exists():
             fail(f"ownership inválido: {forbidden.relative_to(ROOT)}")
 
-    finance_dir = modules_dir / "finance"
-    for subdomain, filenames in FINANCE_SOURCE_FILES.items():
-        owner_dir = finance_dir / subdomain
+    for relative, filenames in SOURCE_OWNERS.items():
+        owner_dir = modules_dir / relative
         if not owner_dir.is_dir():
-            fail(f"owner financeiro ausente: {owner_dir.relative_to(ROOT)}")
+            fail(f"owner canônico ausente: {owner_dir.relative_to(ROOT)}")
         missing = [name for name in filenames if not (owner_dir / name).is_file()]
         if missing:
-            fail(f"fontes financeiras ausentes em {owner_dir.relative_to(ROOT)}: {', '.join(missing)}")
+            fail(f"fontes canônicas ausentes em {owner_dir.relative_to(ROOT)}: {', '.join(missing)}")
 
-    committed_generated = sorted(
-        name for name in FORBIDDEN_GENERATED_ROOT_FILES if (ROOT / name).exists()
-    )
+    committed_generated = sorted(name for name in FORBIDDEN_GENERATED_ROOT_FILES if (ROOT / name).exists())
     if committed_generated:
-        fail(
-            "saída materializada presente no checkout limpo: "
-            + ", ".join(committed_generated)
-        )
+        fail("saída materializada presente no checkout limpo: " + ", ".join(committed_generated))
 
     generated_css = ROOT / "assets" / "valtren-brand.css"
     if generated_css.exists():
@@ -137,32 +96,19 @@ def main() -> int:
             continue
         if path.is_file() and path.suffix in FORBIDDEN_SUFFIXES:
             forbidden_paths.append(str(path.relative_to(ROOT)))
-
     if forbidden_paths:
-        sample = ", ".join(sorted(forbidden_paths)[:20])
-        fail("artefatos locais/gerados versionados ou presentes no checkout: " + sample)
+        fail("artefatos locais/gerados versionados ou presentes no checkout: " + ", ".join(sorted(forbidden_paths)[:20]))
 
     scripts_dir = ROOT / "scripts"
-    stray_parts = sorted(
-        path.name
-        for path in scripts_dir.iterdir()
-        if path.is_file() and ".part" in path.name
-    )
+    stray_parts = sorted(path.name for path in scripts_dir.iterdir() if path.is_file() and ".part" in path.name)
     if stray_parts:
-        fail(
-            "fragmentos .part* não podem ficar diretamente em scripts/: "
-            + ", ".join(stray_parts[:20])
-        )
-
-    materializer = scripts_dir / "materialize.py"
-    if not materializer.is_file():
+        fail("fragmentos .part* não podem ficar diretamente em scripts/: " + ", ".join(stray_parts[:20]))
+    if not (scripts_dir / "materialize.py").is_file():
         fail("scripts/materialize.py ausente")
-
-    bootstrap_chunks = sorted((ROOT / ".bootstrap").glob("chunk-*"))
-    if not bootstrap_chunks:
+    if not sorted((ROOT / ".bootstrap").glob("chunk-*")):
         fail("payload .bootstrap/chunk-* ausente")
 
-    print("STRUCTURE GATE: src/app + src/modules + src/shared, ownership funcional e fontes financeiras validados.")
+    print("STRUCTURE GATE: arquitetura funcional e owners canônicos de CRM, Financeiro, Jurídico, Negócios e Marketing validados.")
     return 0
 
 
