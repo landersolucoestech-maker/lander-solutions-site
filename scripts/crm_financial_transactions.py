@@ -27,6 +27,13 @@ def _remove_overridden_function(source: str, start_token: str, next_token: str) 
     return source[:start] + source[end:]
 
 
+def _context(source: str, token: str) -> str:
+    pos = source.find(token)
+    if pos < 0:
+        return "<ausente>"
+    return source[max(0, pos - 220): min(len(source), pos + len(token) + 220)].replace("\n", " ")
+
+
 def apply_crm_financial_transactions() -> int:
     for path in (APP, CSS, DOMAIN, BROWSER, PRESENTATION, MODULE_CSS, CONSISTENCY_CSS):
         if not path.exists():
@@ -46,7 +53,8 @@ def apply_crm_financial_transactions() -> int:
         presentation_count = presentation.count(token)
         if browser_count + presentation_count != 1:
             raise RuntimeError(
-                f"Origem duplicada em Transações para {token}: browser_residual={browser_count} presentation={presentation_count}"
+                f"Origem duplicada em Transações para {token}: browser_residual={browser_count} presentation={presentation_count}; "
+                f"browser_context={_context(browser, token)!r}; presentation_context={_context(presentation, token)!r}"
             )
 
     block = JS_START + domain + "\n\n" + browser + "\n\n" + presentation + "\n" + JS_END
