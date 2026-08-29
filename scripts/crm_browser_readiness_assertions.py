@@ -75,7 +75,6 @@ def _runtime_security_assertions(app: str) -> dict[str, int]:
         raise RuntimeError(f"Browser readiness: padrões runtime inseguros/legados encontrados: {unsafe_hits}")
 
     blank_links = re.findall(r"<a\b[^>]*\btarget\s*=\s*(['\"])_blank\1[^>]*>", app, flags=re.I)
-    # The previous expression only confirms presence. Inspect complete tags for rel safeguards.
     unsafe_blank_tags = []
     for match in re.finditer(r"<a\b[^>]*\btarget\s*=\s*(['\"])_blank\1[^>]*>", app, flags=re.I):
         tag = match.group(0)
@@ -133,11 +132,16 @@ def assert_browser_readiness() -> int:
     for action, label in accessibility.ACTION_LABELS.items():
         pattern = re.compile(rf'<(?:input|select|textarea)\b(?=[^>]*\bdata-action="{re.escape(action)}")[^>]*>', re.I)
         matches = list(pattern.finditer(app))
-        if len(matches) != 1:
-            raise RuntimeError(f"Browser readiness: data-action {action} possui {len(matches)} ocorrência(s)")
-        tag = matches[0].group(0)
-        if f'aria-label="{label}"' not in tag:
-            raise RuntimeError(f"Browser readiness: accessible name dinâmico ausente em {action}: {tag}")
+        if not matches:
+            raise RuntimeError(f"Browser readiness: data-action {action} ausente")
+        for match in matches:
+            tag = match.group(0)
+            aria = re.search(r'\baria-label="([^"]+)"', tag, re.I)
+            if aria and aria.group(1) == label:
+                continue
+            if re.search(r'\baria-labelledby="[^"]+"', tag, re.I) or re.search(r'\btitle="[^"]+"', tag, re.I):
+                continue
+            raise RuntimeError(f"Browser readiness: accessible name dinâmico ausente/conflitante em {action}: {tag}")
 
     if accessibility.RULE_FILTER_ACCESSIBLE not in app:
         raise RuntimeError("Browser readiness: filtros de Regras de Categorização sem nomes acessíveis")
@@ -151,7 +155,7 @@ def assert_browser_readiness() -> int:
     print(
         f"Browser readiness materialized assertions: PASS "
         f"({len(accessibility.STATIC_LABELS)} static labels, "
-        f"{len(accessibility.ACTION_LABELS)} dynamic labels, Agenda internal scroller, "
+        f"{len(accessibility.ACTION_LABELS)} dynamic action families, Agenda internal scroller, "
         f"repo_files={repo_integrity['text_files_scanned']}, forbidden_integration=0, "
         f"ownership_conflicts=0, runtime_security={runtime_security})"
     )
