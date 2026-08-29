@@ -15,6 +15,8 @@ CACHE_VERSION = "20260829-business-module-v1"
 JS_START = "  // VALTREN BUSINESS CATALOG START\n"
 JS_END = "  // VALTREN BUSINESS CATALOG END\n"
 
+# Business is intentionally materialized late to patch the final runtime helpers rather than being overwritten.
+
 
 def _replace_one_line_function(app: str, name: str, replacement: str) -> str:
     pattern = rf"function {re.escape(name)}\([^\n]*\)\{{[^\n]*\}}"
