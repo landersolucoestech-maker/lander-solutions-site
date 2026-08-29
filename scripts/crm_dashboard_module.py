@@ -132,19 +132,24 @@ def _materialize_dashboard(app: str) -> str:
 
 
 def _materialize_route(app: str) -> str:
-    # Dashboard is a global top-level module. Historical CRM URLs remain aliases
-    # until callers and bookmarks are fully migrated.
+    canonical_route = "    else if (path === '/dashboard') app.innerHTML = crmDashboardPage(query);"
+    compatibility_route = "    else if (path === '/crm/dashboard' || path === '/crm') app.innerHTML = crmDashboardPage(query); // legacy compatibility"
+
+    # Once both canonical entries exist exactly once, the owner must be byte-stable.
+    # Later materializers are allowed to add unrelated routes around them; Dashboard
+    # must not relocate its routes or rewrite cache-busters on a no-op rerun.
+    if app.count(canonical_route) == 1 and app.count(compatibility_route) == 1:
+        return app
+
     legacy_patterns = (
         "    else if (path === '/crm/dashboard' || path === '/crm') app.innerHTML = crmDashboardPage();",
         "    else if (path === '/crm/dashboard' || path === '/crm') app.innerHTML = crmDashboardPage(query);",
-        "    else if (path === '/crm/dashboard' || path === '/crm') app.innerHTML = crmDashboardPage(query); // legacy compatibility",
-        "    else if (path === '/dashboard') app.innerHTML = crmDashboardPage(query);",
+        compatibility_route,
+        canonical_route,
     )
     for route in legacy_patterns:
         app = app.replace(route + "\n", "").replace(route, "")
 
-    canonical_route = "    else if (path === '/dashboard') app.innerHTML = crmDashboardPage(query);"
-    compatibility_route = "    else if (path === '/crm/dashboard' || path === '/crm') app.innerHTML = crmDashboardPage(query); // legacy compatibility"
     anchor = "    else if (path === '/contato') app.innerHTML = contactPage(query);"
     if app.count(anchor) < 1:
         raise RuntimeError("Âncora de compatibilidade não encontrada para registrar Dashboard global")
