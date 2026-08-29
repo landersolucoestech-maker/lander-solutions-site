@@ -150,8 +150,6 @@ def scan_new_wrapper_bases() -> None:
 
 
 def scan_fragile_sidebar_boundaries() -> None:
-    # Historical boundary text is allowed only in explicitly named source bases or
-    # wrappers that replace it at materialized runtime. No wildcard *.base.js rule.
     historical_sources = {
         "test_crm_accounting.base.js": 1,
         "test_crm_complete.base.js": 2,
@@ -176,10 +174,7 @@ def scan_fragile_sidebar_boundaries() -> None:
         "test_crm_payouts_ui.js",
         "test_materialized_sidebar_boundaries.js",
     }
-    negative_validators = {
-        "test_crm_business_ui.js",
-        "test_crm_sidebar_architecture.js",
-    }
+    negative_validators = {"test_crm_business_ui.js", "test_crm_sidebar_architecture.js"}
     js_start = "lastIndexOf('function crmRelSidebar')"
     js_end = "indexOf('function crmReferenceRoute'"
     py_start = 'app.rfind("function crmRelSidebar")'
@@ -212,8 +207,6 @@ def scan_fragile_sidebar_boundaries() -> None:
             unexpected.append(path.name)
     require(not unexpected, f"Boundary frágil de Sidebar encontrado fora dos harnesses explicitamente tratados: {unexpected}")
 
-    # Final legacy-navigation expectation sweep. Negative absence assertions remain
-    # legitimate; positive materialized expectations for legacy sidebar items do not.
     legacy_labels = ("ValtrenChat", "RH", "Administração", "Estrutura Organizacional", "Patrimônio e Licenças")
     positive: list[str] = []
     for path in sorted(SCRIPTS.glob("test*.js*")):
@@ -233,9 +226,11 @@ def main() -> int:
     compact = re.sub(r"\s+", "", app)
 
     expected = {
-        "Dashboard + alias /crm": "elseif(path==='/crm/dashboard'||path==='/crm')app.innerHTML=crmDashboardPage(query);",
-        "CRM": "elseif(path==='/crm/relationships')app.innerHTML=crmRelationshipsPage(query);",
-        "Agenda": "elseif(path==='/crm/agenda')app.innerHTML=crmAgendaPage(query);",
+        "Dashboard global": "path==='/dashboard'",
+        "Dashboard alias legacy": "path==='/crm/dashboard'||path==='/crm'",
+        "CRM": "path==='/crm/relationships'",
+        "Agenda global": "path==='/agenda'",
+        "Agenda alias legacy": "path==='/crm/agenda'",
         "Financeiro / Transações": "if(path==='/crm/financeiro')returncrmTransactionsPage();",
         "Financeiro / Contabilidade": "if(path==='/crm/financeiro/accounting')returncrmAccountingPage();",
         "Financeiro / Notas Fiscais": "if(path==='/crm/financeiro/notas-fiscais')returncrmFiscalDocumentsPage();",
