@@ -12,9 +12,19 @@ BROWSER = MODULE_DIR / "browser.js"
 PRESENTATION = MODULE_DIR / "presentation.js"
 MODULE_CSS = MODULE_DIR / "styles.css"
 CONSISTENCY_CSS = MODULE_DIR / "consistency.css"
-CACHE_VERSION = "20260829-finance-transactions-single-value-v1"
+CACHE_VERSION = "20260829-finance-transactions-single-value-v2"
 JS_START = "  // VALTREN FINANCIAL TRANSACTIONS START\n"
 JS_END = "  // VALTREN FINANCIAL TRANSACTIONS END\n"
+
+
+def _remove_overridden_function(source: str, start_token: str, next_token: str) -> str:
+    start = source.find(start_token)
+    end = source.find(next_token, start)
+    if start < 0 or end <= start:
+        raise RuntimeError(f"Implementação base de Transações não localizada: {start_token}")
+    if source.find(start_token, start + len(start_token)) >= 0:
+        raise RuntimeError(f"Implementação base duplicada antes da apresentação final: {start_token}")
+    return source[:start] + source[end:]
 
 
 def apply_crm_financial_transactions() -> int:
@@ -26,12 +36,14 @@ def apply_crm_financial_transactions() -> int:
     domain = DOMAIN.read_text(encoding="utf-8").strip()
     browser = BROWSER.read_text(encoding="utf-8").strip()
     presentation = PRESENTATION.read_text(encoding="utf-8").strip()
-    status_cards_call = "${crmFinanceStatusTabs()}"
-    if browser.count(status_cards_call) != 1:
-        raise RuntimeError(
-            f"Render dos cards Pendentes/Lançadas/Excluídas divergente: {browser.count(status_cards_call)} ocorrência(s)"
-        )
-    browser = browser.replace(status_cards_call, "", 1)
+
+    # presentation.js is the final owner of these three render functions. Remove the
+    # superseded templates before concatenation so the production bundle has one
+    # implementation, one pagination contract and one set of dynamic controls.
+    browser = _remove_overridden_function(browser, "function crmFinanceRow(tx)", "function crmFinanceBulkBar")
+    browser = _remove_overridden_function(browser, "function crmFinanceTable()", "function crmTransactionsPage()")
+    browser = _remove_overridden_function(browser, "function crmTransactionsPage()", "function crmFinanceMountOverlay")
+
     block = JS_START + domain + "\n\n" + browser + "\n\n" + presentation + "\n" + JS_END
 
     app = re.sub(
@@ -54,7 +66,7 @@ def apply_crm_financial_transactions() -> int:
     required = [
         "ValtrenFinanceCore",
         "state.crmFinancialTransactions",
-        "function crmTransactionsPage()",
+        "crmTransactionsPage=function()",
         "Origem/Destino",
         "Produto/Sistema",
         "crmCanonicalPartyService()",
@@ -68,17 +80,28 @@ def apply_crm_financial_transactions() -> int:
     if missing:
         raise RuntimeError(f"Transações incompleto no bundle: {missing}")
 
-    presentation_start = app.find("// VALTREN FINANCIAL TRANSACTIONS PRESENTATION")
-    presentation_end = app.find(JS_END.strip(), presentation_start)
-    if presentation_start < 0 or presentation_end <= presentation_start:
-        raise RuntimeError("Camada final de apresentação de Transações não localizada")
-    transaction_presentation = app[presentation_start:presentation_end]
-    if "crmFinanceStatusTabs()" in transaction_presentation:
+    transaction_block_start = app.find(JS_START.strip())
+    transaction_block_end = app.find(JS_END.strip(), transaction_block_start)
+    if transaction_block_start < 0 or transaction_block_end <= transaction_block_start:
+        raise RuntimeError("Bloco canônico de Transações não localizado")
+    transaction_block = app[transaction_block_start:transaction_block_end]
+
+    uniqueness = {
+        'data-action="crm-fin-counterparty"': 1,
+        'data-action="crm-fin-category"': 1,
+        'data-action="crm-fin-page" data-page="${filters.page-1}"': 1,
+        'data-action="crm-fin-page" data-page="${filters.page+1}"': 1,
+        '<th class="right">Valor</th>': 1,
+    }
+    for token, expected in uniqueness.items():
+        count = transaction_block.count(token)
+        if count != expected:
+            raise RuntimeError(f"Transações materializadas duplicadas para {token}: esperado={expected} atual={count}")
+
+    if "crmFinanceStatusTabs()" in transaction_block:
         raise RuntimeError("Cards Pendentes/Lançadas/Excluídas ainda renderizados na apresentação final de Transações")
-    if '<th class="right">Saída</th>' in transaction_presentation or '<th class="right">Entrada</th>' in transaction_presentation:
+    if '<th class="right">Saída</th>' in transaction_block or '<th class="right">Entrada</th>' in transaction_block:
         raise RuntimeError("Colunas Saída/Entrada ainda existem separadamente na apresentação final de Transações")
-    if transaction_presentation.count('<th class="right">Valor</th>') != 1:
-        raise RuntimeError("Transações deve possuir exatamente uma coluna monetária Valor")
 
     if "if(path==='/crm/financeiro')return crmTransactionsPage();" not in app:
         raise RuntimeError("Rota Financeiro não aponta para Transações canônicas")
@@ -114,7 +137,7 @@ def apply_crm_financial_transactions() -> int:
         text = re.sub(r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?", f"valtren-brand.css?v={CACHE_VERSION}", text)
         path.write_text(text, encoding="utf-8")
 
-    print("Financeiro → Transações materializado com coluna única Valor e sem os cards de status, preservando a lógica financeira interna.")
+    print("Financeiro → Transações materializado com implementação única, coluna Valor e sem cards de status.")
     return 1
 
 
