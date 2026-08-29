@@ -2,9 +2,13 @@
 from __future__ import annotations
 
 # Canonical visual-certification facade.
-# The historical implementation remains byte-stable in
-# certify_visual_base_legacy.py; only the Business naming contract changes here.
-import certify_visual_base_legacy as _legacy
+# Execute the byte-stable historical implementation in THIS module namespace so
+# certify_visual.py can continue monkeypatching wait_ready and the other shared
+# hooks exactly as before. Only the Business naming contract changes below.
+from pathlib import Path as _Path
+
+_legacy_path = _Path(__file__).with_name("certify_visual_base_legacy.py")
+exec(compile(_legacy_path.read_text(encoding="utf-8"), str(_legacy_path), "exec"), globals(), globals())
 
 
 def _rename(mapping: dict[str, str], old: str, new: str) -> None:
@@ -16,11 +20,7 @@ def _rename(mapping: dict[str, str], old: str, new: str) -> None:
         mapping[new if key == old else key] = value
 
 
-_rename(_legacy.TEMPLATE_MATRIX, "business-products", "business-units-primary")
-_rename(_legacy.CANONICAL_ROUTES, "business-products", "business-units-primary")
-_rename(_legacy.CANONICAL_ROUTES, "business-units", "business-units-compat")
-_legacy.EXPECTED_ACTIVE["#/crm/negocios"] = "Unidades de Negócio"
-
-# Re-export the complete historical harness, including private helpers used by
-# sibling certification scripts, after applying the canonical Business contract.
-globals().update({name: value for name, value in vars(_legacy).items() if name not in {"__name__", "__package__", "__loader__", "__spec__"}})
+_rename(TEMPLATE_MATRIX, "business-products", "business-units-primary")
+_rename(CANONICAL_ROUTES, "business-products", "business-units-primary")
+_rename(CANONICAL_ROUTES, "business-units", "business-units-compat")
+EXPECTED_ACTIVE["#/crm/negocios"] = "Unidades de Negócio"
