@@ -7,6 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 START = "  // VALTREN BUSINESS UNIT CONSOLIDATION START\n"
 END = "  // VALTREN BUSINESS UNIT CONSOLIDATION END\n"
+BUSINESS_START = "  // VALTREN BUSINESS CATALOG START\n"
 
 BLOCK = r'''  // VALTREN BUSINESS UNIT CONSOLIDATION START
   // Product is no longer a standalone business module. During the legacy-schema
@@ -50,11 +51,12 @@ def apply_business_units_consolidation() -> int:
         current = app[start:end]
         updated = app if current == desired else app[:start] + desired + app[end:]
     elif start_count == 0 and end_count == 0:
-        anchor = "  function contactPage(query)"
-        if app.count(anchor) != 1:
-            raise RuntimeError(f"Âncora contactPage inválida para consolidação de Unidade de Negócio: {app.count(anchor)}")
-        at = app.index(anchor)
-        updated = app[:at] + desired + "\n" + app[at:]
+        if app.count(BUSINESS_START) != 1:
+            raise RuntimeError(
+                f"Owner canônico de Negócios inválido para consolidação de Unidade de Negócio: {app.count(BUSINESS_START)}"
+            )
+        at = app.index(BUSINESS_START)
+        updated = app[:at] + desired + app[at:]
     else:
         raise RuntimeError(f"Markers de consolidação divergentes: {start_count}/{end_count}")
 
@@ -72,6 +74,8 @@ def apply_business_units_consolidation() -> int:
 
     if len(re.findall(r"VALTREN BUSINESS UNIT CONSOLIDATION START", updated)) != 1:
         raise RuntimeError("Bloco de consolidação deve existir exatamente uma vez")
+    if updated.index(START) > updated.index(BUSINESS_START):
+        raise RuntimeError("Consolidação de Unidade de Negócio deve preceder o owner Business para garantir idempotência")
 
     APP.write_text(updated, encoding="utf-8")
     print("Business Unit consolidation: PASS")
