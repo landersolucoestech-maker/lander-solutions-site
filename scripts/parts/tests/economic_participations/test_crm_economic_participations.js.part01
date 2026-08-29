@@ -2,7 +2,7 @@
 const assert=require('assert');
 const fs=require('fs');
 const path=require('path');
-const Core=require('../web/src/modules/finance/participations/core.js');
+const Core=require('./crm_economic_participations_core.js');
 let passed=0;
 function test(name,fn){try{fn();passed++;console.log(`PASS ${passed} ${name}`);}catch(error){console.error(`FAIL ${name}`);throw error;}}
 function eq(a,b,msg=''){assert.deepStrictEqual(a,b,msg);}
@@ -23,3 +23,31 @@ function makeEnv({rules:inputRules,rows:inputRows,fiscalDocs=[],allocations={},c
   ];
   const people={p1:{id:'p1',fullName:'João Silva'},p2:{id:'p2',fullName:'Maria Souza'}};
   const orgs={o1:{id:'o1',legalName:'Parceira Ltda'}};
+  const partyService={getEntity(type,id){return type==='person'?people[id]||null:orgs[id]||null;},documentFor(type,id){return {value:type==='person'?'111.111.111-11':'11.111.111/0001-11'};}};
+  function filtered(filters={}){
+    return rows.filter(r=>r.status==='posted'&&!r.isDemo&&r.nature!=='transfer'&&(!filters.from||r.date>=filters.from)&&(!filters.to||r.date<=filters.to)&&(!filters.productId||r.productId===filters.productId)&&(!filters.serviceId||r.serviceId===filters.serviceId)&&(!filters.businessUnitId||r.businessUnitId===filters.businessUnitId));
+  }
+  function mapped(r){return {transaction:{id:r.id,currency:r.currency,financialNature:r.nature,originalDescription:r.name},classification:{id:`class_${r.section}`,section:r.section,name:r.name},date:r.date,contribution:r.contribution,issues:r.issues||[]};}
+  const accountingService={
+    buildDre(filters={}){const rs=filtered(filters).map(mapped),sum=(section)=>rs.filter(x=>x.classification.section===section).reduce((s,x)=>s+x.contribution,0),gross=sum('gross_revenue'),ded=-sum('deductions'),costs=-sum('costs'),opex=-sum('operating_expenses'),financial=sum('financial_result'),other=sum('other_results'),taxes=-sum('result_taxes'),net=gross-ded,final=net-costs-opex+financial+other-taxes;return {rows:rs,rowCount:rs.length,summary:{grossRevenue:gross,deductions:ded,netRevenue:net,costs,grossResult:net-costs,operatingExpenses:opex,operatingResult:net-costs-opex,financialResult:financial,otherResults:other,preTaxResult:net-costs-opex+financial+other,resultTaxes:taxes,finalResult:final},sectionTotals:{}};},
+    analyze(filters={}){return filtered(filters).map(mapped);},
+    listEntries(filters={}){return filtered(filters).map(mapped);}
+  };
+  const fiscalService={accountingFeed(filters={}){return fiscalDocs.filter(d=>(!filters.from||d.issueDate>=filters.from)&&(!filters.to||d.issueDate<=filters.to)&&(!filters.productId||d.productId===filters.productId)&&(!filters.serviceId||d.serviceId===filters.serviceId)&&(!filters.businessUnitId||d.businessUnitId===filters.businessUnitId));}};
+  const allocationService={accountingProjection(txId){const row=allocations[txId];if(!row)return {handled:false,allocation:null,lines:[]};return {handled:true,allocation:row.allocation,lines:row.lines||[]};}};
+  function feed(filters={}){return rules.filter(r=>(!filters.contractId||r.contractId===filters.contractId)&&(!filters.participantPartyType||r.participantPartyType===filters.participantPartyType)&&(!filters.participantPartyId||r.participantPartyId===filters.participantPartyId)&&(!filters.from||!r.effectiveUntil||r.effectiveUntil>=filters.from)&&(!filters.to||!r.effectiveFrom||r.effectiveFrom<=filters.to)).map(x=>JSON.parse(JSON.stringify(x)));}
+  function resolver(input={}){const rs=feed(input).filter(r=>!input.basisType||r.basisType===input.basisType).filter(r=>(!r.effectiveFrom||r.effectiveFrom<=input.from)&&(!r.effectiveUntil||r.effectiveUntil>=input.to));return rs.length===0?{status:'none',rules:[]}:rs.length===1?{status:'resolved',rule:rs[0],rules:rs}:{status:'conflict',rules:rs};}
+  const state=Core.createState({now:()=>`2026-08-25T12:00:${String(seq).padStart(2,'0')}Z`});
+  const service=Core.createService(state,{now:()=>`2026-08-25T12:00:${String(seq).padStart(2,'0')}Z`,idFactory:(p)=>`${p}_${++seq}`,actorProvider:()=> 'user1',partyService,contractRulesFeed:feed,contractRuleResolver:resolver,accountingService,fiscalService,costAllocationService:allocationService,customBaseResolver,customRuleResolver});
+  return {service,state,rules,rows,partyService,accountingService,fiscalService,allocationService};
+}
+function percentageRule(overrides={}){return {contractId:'ctr1',contractNumber:'CTR-2026-001',versionId:'v1',versionNumber:1,ruleId:'r1',ruleName:'Participação Produto X',participantPartyType:'person',participantPartyId:'p1',basisType:'gross_revenue',type:'percentage',percentage:20,fixedValue:null,deductions:[],effectiveFrom:'2026-01-01',effectiveUntil:'2026-12-31',productId:'prod1',serviceId:'',businessUnitId:'',currency:'BRL',metadata:{accountingBasis:'accrual'},...overrides};}
+
+// Model and dependencies.
+test('estado canônico contém coleções de Participações',()=>{const s=Core.createState();for(const k of ['calculations','calculationSegments','baseComponents','deductions','approvals','history','sourceSnapshots'])assert(Array.isArray(s[k]));});
+test('workflow statuses são separados do calculation status',()=>{eq(Core.WORKFLOW_STATUSES,['draft','review','approved','rejected','superseded']);eq(Core.CALCULATION_STATUSES,['pending','calculated','blocked']);});
+test('consistency statuses são explícitos',()=>{eq(Core.CONSISTENCY_STATUSES,['consistent','source_changed','rule_changed','conflict','needs_review']);});
+test('bases contratuais suportadas são canônicas',()=>{eq(Core.BASIS_TYPES,['gross_revenue','net_revenue','distributable_base','product_result','service_result','custom_reference']);});
+test('tipos de regra suportados são canônicos',()=>{eq(Core.RULE_TYPES,['percentage','fixed','tiered','custom']);});
+test('participante precisa ser Person ou Organization canônica',()=>{const e=makeEnv({rules:[percentageRule({participantPartyId:'missing'})]});assert.throws(()=>e.service.preview({from:'2026-08-01',to:'2026-08-31',economicRuleId:'r1'}),/canônico não encontrado/);});
+t
