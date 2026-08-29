@@ -27,3 +27,4 @@ _rename(TEMPLATE_MATRIX, "business-products", "business-units-primary")
 _rename(CANONICAL_ROUTES, "business-products", "business-units-primary")
 _rename(CANONICAL_ROUTES, "business-units", "business-units-compat")
 EXPECTED_ACTIVE["#/crm/negocios"] = "Unidades de Negócio"
+EXPECTED_ACTIVE["#/crm/marketing"] = "Visão Geral"
