@@ -14,6 +14,7 @@ CANONICAL_MODULES = {
 }
 
 SOURCE_OWNERS = {
+    "dashboard": ("core.js", "participation-core.js", "browser.js", "styles.css"),
     "crm/parties": ("core.js", "adapter.js"),
     "crm/workspace": ("domain.js", "browser.js", "hardening.js", "styles.css"),
     "finance/transactions": ("core.js", "browser.js", "styles.css", "consistency.css"),
@@ -30,6 +31,8 @@ SOURCE_OWNERS = {
     "business": ("core.js", "browser.js", "styles.css"),
     "marketing": ("module.js", "styles.css"),
 }
+
+MODULE_CONTRACTS = ("settings", "integrations", "notifications", "communications")
 
 FORBIDDEN_GENERATED_ROOT_FILES = {"app.js", "index.html"}
 FORBIDDEN_DIR_NAMES = {
@@ -71,6 +74,10 @@ def main() -> int:
         if forbidden.exists():
             fail(f"ownership inválido: {forbidden.relative_to(ROOT)}")
 
+    agenda_source = modules_dir / "agenda" / "source"
+    if not agenda_source.is_dir() or not list(agenda_source.glob("crm_agenda_module.js.part*")) or not list(agenda_source.glob("crm_agenda_module.css.part*")):
+        fail("Agenda não possui source canônico completo em src/modules/agenda/source")
+
     for relative, filenames in SOURCE_OWNERS.items():
         owner_dir = modules_dir / relative
         if not owner_dir.is_dir():
@@ -78,6 +85,11 @@ def main() -> int:
         missing = [name for name in filenames if not (owner_dir / name).is_file()]
         if missing:
             fail(f"fontes canônicas ausentes em {owner_dir.relative_to(ROOT)}: {', '.join(missing)}")
+
+    for module in MODULE_CONTRACTS:
+        contract = modules_dir / module / "module.json"
+        if not contract.is_file():
+            fail(f"contrato de boundary ausente: {contract.relative_to(ROOT)}")
 
     committed_generated = sorted(name for name in FORBIDDEN_GENERATED_ROOT_FILES if (ROOT / name).exists())
     if committed_generated:
@@ -108,7 +120,7 @@ def main() -> int:
     if not sorted((ROOT / ".bootstrap").glob("chunk-*")):
         fail("payload .bootstrap/chunk-* ausente")
 
-    print("STRUCTURE GATE: arquitetura funcional e owners canônicos de CRM, Financeiro, Jurídico, Negócios e Marketing validados.")
+    print("STRUCTURE GATE: arquitetura funcional, owners canônicos e boundaries sem backend validados.")
     return 0
 
 
