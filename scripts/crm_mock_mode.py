@@ -12,6 +12,7 @@ MOCK = ROOT / "mockups"
 MOCK_DATA = MOCK / "data"
 START = "  // VALTREN MOCK MODE START\n"
 END = "  // VALTREN MOCK MODE END\n"
+CACHE_VERSION = "20260829-mock-v2"
 
 INFRA_PARTS = ["manifest.js", "factories/ids.js", "factories/dates.js"]
 DATA_PARTS = [
@@ -62,6 +63,18 @@ def _check_js(source: str) -> None:
         path.unlink(missing_ok=True)
 
 
+def _update_cache_busters() -> None:
+    for path in ROOT.rglob("*.html"):
+        rel = path.relative_to(ROOT)
+        if any(part in {".git", ".bootstrap", "node_modules", "scripts", "api", "web"} for part in rel.parts):
+            continue
+        original = path.read_text(encoding="utf-8")
+        updated = re.sub(r"app\.js(?:\?v=[A-Za-z0-9._-]+)?", f"app.js?v={CACHE_VERSION}", original)
+        updated = re.sub(r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?", f"valtren-brand.css?v={CACHE_VERSION}", updated)
+        if updated != original:
+            path.write_text(updated, encoding="utf-8")
+
+
 def apply_crm_mock_mode() -> int:
     app = APP.read_text(encoding="utf-8")
     app = re.sub(re.escape(START) + r".*?" + re.escape(END), "", app, flags=re.S)
@@ -76,6 +89,7 @@ def apply_crm_mock_mode() -> int:
     css = CSS.read_text(encoding="utf-8")
     css = re.sub(r"\n?/\* VALTREN MOCK MODE \*/.*\Z", "", css, flags=re.S)
     CSS.write_text(css.rstrip() + "\n\n" + MOCK_CSS.strip() + "\n", encoding="utf-8")
+    _update_cache_busters()
 
     source = APP.read_text(encoding="utf-8")
     required = [
@@ -89,7 +103,7 @@ def apply_crm_mock_mode() -> int:
     missing = [token for token in required if token not in source]
     if missing:
         raise RuntimeError(f"Contrato do Mock Mode ausente no materializado: {missing}")
-    print("Mock Mode materializado por hook único, dados isolados em /mockups/data e preview dev ativado por host.")
+    print(f"Mock Mode materializado com cache-buster {CACHE_VERSION} e preview dev ativado por host.")
     return 1
 
 
