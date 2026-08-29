@@ -35,6 +35,15 @@ CANONICAL_MODULES = {
     "notifications",
 }
 
+FINANCE_SOURCE_FILES = {
+    "transactions": ("core.js", "browser.js", "styles.css", "consistency.css"),
+    "accounting": ("core.js", "browser.js", "styles.css", "consistency.css"),
+    "fiscal": ("core.js", "browser.js", "styles.css", "consistency.css"),
+    "allocations": ("core.js", "browser.js", "styles.css"),
+    "participations": ("core.js", "browser.js", "styles.css", "consistency.css"),
+    "payouts": ("core.js", "browser.js", "styles.css", "consistency.css"),
+}
+
 FORBIDDEN_GENERATED_ROOT_FILES = {
     "app.js",
     "index.html",
@@ -93,10 +102,18 @@ def main() -> int:
     if missing_modules:
         fail("módulos canônicos ausentes em src/modules: " + ", ".join(missing_modules))
 
-    # Agenda and Dashboard are global first-level modules and must never be nested in CRM.
     for forbidden in (modules_dir / "crm" / "agenda", modules_dir / "crm" / "dashboard"):
         if forbidden.exists():
             fail(f"ownership inválido: {forbidden.relative_to(ROOT)}")
+
+    finance_dir = modules_dir / "finance"
+    for subdomain, filenames in FINANCE_SOURCE_FILES.items():
+        owner_dir = finance_dir / subdomain
+        if not owner_dir.is_dir():
+            fail(f"owner financeiro ausente: {owner_dir.relative_to(ROOT)}")
+        missing = [name for name in filenames if not (owner_dir / name).is_file()]
+        if missing:
+            fail(f"fontes financeiras ausentes em {owner_dir.relative_to(ROOT)}: {', '.join(missing)}")
 
     committed_generated = sorted(
         name for name in FORBIDDEN_GENERATED_ROOT_FILES if (ROOT / name).exists()
@@ -145,7 +162,7 @@ def main() -> int:
     if not bootstrap_chunks:
         fail("payload .bootstrap/chunk-* ausente")
 
-    print("STRUCTURE GATE: src/app + src/modules + src/shared e ownership funcional validados.")
+    print("STRUCTURE GATE: src/app + src/modules + src/shared, ownership funcional e fontes financeiras validados.")
     return 0
 
 
