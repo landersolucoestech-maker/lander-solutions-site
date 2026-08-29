@@ -11,7 +11,7 @@ DOMAIN = MODULE_DIR / "core.js"
 BROWSER = MODULE_DIR / "browser.js"
 MODULE_CSS = MODULE_DIR / "styles.css"
 CONSISTENCY_CSS = MODULE_DIR / "consistency.css"
-CACHE_VERSION = "20260829-finance-transactions-module-v1"
+CACHE_VERSION = "20260829-finance-transactions-no-status-cards-v1"
 JS_START = "  // VALTREN FINANCIAL TRANSACTIONS START\n"
 JS_END = "  // VALTREN FINANCIAL TRANSACTIONS END\n"
 
@@ -24,6 +24,12 @@ def apply_crm_financial_transactions() -> int:
     app = APP.read_text(encoding="utf-8")
     domain = DOMAIN.read_text(encoding="utf-8").strip()
     browser = BROWSER.read_text(encoding="utf-8").strip()
+    status_cards_call = "${crmFinanceStatusTabs()}"
+    if browser.count(status_cards_call) != 1:
+        raise RuntimeError(
+            f"Render dos cards Pendentes/Lançadas/Excluídas divergente: {browser.count(status_cards_call)} ocorrência(s)"
+        )
+    browser = browser.replace(status_cards_call, "", 1)
     block = JS_START + domain + "\n\n" + browser + "\n" + JS_END
 
     app = re.sub(
@@ -47,9 +53,6 @@ def apply_crm_financial_transactions() -> int:
         "ValtrenFinanceCore",
         "state.crmFinancialTransactions",
         "function crmTransactionsPage()",
-        "Pendentes",
-        "Lançadas",
-        "Excluídas",
         "Origem/Destino",
         "Produto/Sistema",
         "crmCanonicalPartyService()",
@@ -60,6 +63,14 @@ def apply_crm_financial_transactions() -> int:
     missing = [item for item in required if item not in app]
     if missing:
         raise RuntimeError(f"Transações incompleto no bundle: {missing}")
+
+    page_start = app.find("function crmTransactionsPage()")
+    page_end = app.find("function crmFinanceMountOverlay", page_start)
+    if page_start < 0 or page_end <= page_start:
+        raise RuntimeError("Render de Transações não localizado para validar os cards removidos")
+    transaction_page = app[page_start:page_end]
+    if "crmFinanceStatusTabs()" in transaction_page:
+        raise RuntimeError("Cards Pendentes/Lançadas/Excluídas ainda renderizados em Transações")
 
     if "if(path==='/crm/financeiro')return crmTransactionsPage();" not in app:
         raise RuntimeError("Rota Financeiro não aponta para Transações canônicas")
@@ -95,7 +106,7 @@ def apply_crm_financial_transactions() -> int:
         text = re.sub(r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?", f"valtren-brand.css?v={CACHE_VERSION}", text)
         path.write_text(text, encoding="utf-8")
 
-    print("Financeiro → Transações materializado a partir de web/src/modules/finance/transactions, preservando a rota e a arquitetura existentes.")
+    print("Financeiro → Transações materializado sem os cards Pendentes, Lançadas e Excluídas, preservando a lógica financeira interna.")
     return 1
 
 
