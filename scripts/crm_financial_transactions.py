@@ -27,11 +27,12 @@ def _remove_overridden_function(source: str, start_token: str, next_token: str) 
     return source[:start] + source[end:]
 
 
-def _context(source: str, token: str) -> str:
-    pos = source.find(token)
-    if pos < 0:
-        return "<ausente>"
-    return source[max(0, pos - 220): min(len(source), pos + len(token) + 220)].replace("\n", " ")
+def _html_action_count(source: str, action: str) -> int:
+    pattern = re.compile(
+        rf'<(?:input|select|textarea)\b(?=[^>]*\bdata-action="{re.escape(action)}")[^>]*>',
+        re.I,
+    )
+    return len(pattern.findall(source))
 
 
 def apply_crm_financial_transactions() -> int:
@@ -44,18 +45,11 @@ def apply_crm_financial_transactions() -> int:
     browser = BROWSER.read_text(encoding="utf-8").strip()
     presentation = PRESENTATION.read_text(encoding="utf-8").strip()
 
+    # presentation.js owns the final row, table and page renderers. The base
+    # implementations must not remain in the production bundle as dead templates.
     browser = _remove_overridden_function(browser, "function crmFinanceRow(tx)", "function crmFinanceBulkBar")
     browser = _remove_overridden_function(browser, "function crmFinanceTable()", "function crmTransactionsPage()")
     browser = _remove_overridden_function(browser, "function crmTransactionsPage()", "function crmFinanceMountOverlay")
-
-    for token in ('data-action="crm-fin-counterparty"','data-action="crm-fin-category"','data-action="crm-fin-page" data-page="${filters.page-1}"','data-action="crm-fin-page" data-page="${filters.page+1}"'):
-        browser_count = browser.count(token)
-        presentation_count = presentation.count(token)
-        if browser_count + presentation_count != 1:
-            raise RuntimeError(
-                f"Origem duplicada em Transações para {token}: browser_residual={browser_count} presentation={presentation_count}; "
-                f"browser_context={_context(browser, token)!r}; presentation_context={_context(presentation, token)!r}"
-            )
 
     block = JS_START + domain + "\n\n" + browser + "\n\n" + presentation + "\n" + JS_END
 
@@ -99,9 +93,20 @@ def apply_crm_financial_transactions() -> int:
         raise RuntimeError("Bloco canônico de Transações não localizado")
     transaction_block = app[transaction_block_start:transaction_block_end]
 
+    for action in ("crm-fin-counterparty", "crm-fin-category"):
+        count = _html_action_count(transaction_block, action)
+        if count != 1:
+            raise RuntimeError(
+                f"Controle HTML de Transações {action} divergente: esperado=1 atual={count}"
+            )
+        handler = f"target.matches('[data-action=\"{action}\"]')"
+        handler_count = transaction_block.count(handler)
+        if handler_count != 1:
+            raise RuntimeError(
+                f"Handler de Transações {action} divergente: esperado=1 atual={handler_count}"
+            )
+
     uniqueness = {
-        'data-action="crm-fin-counterparty"': 1,
-        'data-action="crm-fin-category"': 1,
         'data-action="crm-fin-page" data-page="${filters.page-1}"': 1,
         'data-action="crm-fin-page" data-page="${filters.page+1}"': 1,
         '<th class="right">Valor</th>': 1,
