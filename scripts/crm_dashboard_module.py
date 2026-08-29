@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-MODULE_DIR = ROOT / "src" / "modules" / "dashboard"
+MODULE_DIR = ROOT / "web" / "src" / "modules" / "dashboard"
 CORE = MODULE_DIR / "core.js"
 PARTICIPATION_CORE = MODULE_DIR / "participation-core.js"
 BROWSER = MODULE_DIR / "browser.js"
@@ -135,9 +135,6 @@ def _materialize_route(app: str) -> str:
     canonical_route = "    else if (path === '/dashboard') app.innerHTML = crmDashboardPage(query);"
     compatibility_route = "    else if (path === '/crm/dashboard' || path === '/crm') app.innerHTML = crmDashboardPage(query); // legacy compatibility"
 
-    # Once both canonical entries exist exactly once, the owner must be byte-stable.
-    # Later materializers are allowed to add unrelated routes around them; Dashboard
-    # must not relocate its routes or rewrite cache-busters on a no-op rerun.
     if app.count(canonical_route) == 1 and app.count(compatibility_route) == 1:
         return app
 
@@ -181,9 +178,9 @@ def _validate_sources() -> None:
     participation_core = PARTICIPATION_CORE.read_text(encoding="utf-8")
     browser = BROWSER.read_text(encoding="utf-8")
     rendered_browser = _dashboard_browser_source()
-    _assert_js_syntax(core, "src/modules/dashboard/core.js")
-    _assert_js_syntax(participation_core, "src/modules/dashboard/participation-core.js")
-    _assert_js_syntax(rendered_browser, "src/modules/dashboard/browser.js normalizado")
+    _assert_js_syntax(core, "web/src/modules/dashboard/core.js")
+    _assert_js_syntax(participation_core, "web/src/modules/dashboard/participation-core.js")
+    _assert_js_syntax(rendered_browser, "web/src/modules/dashboard/browser.js normalizado")
     missing_core = [name for name in REQUIRED_CORE_FUNCTIONS if name not in core]
     missing_participation = [name for name in REQUIRED_PARTICIPATION_CORE_FUNCTIONS if name not in participation_core]
     missing_browser = [name for name in REQUIRED_BROWSER_COMPONENTS if name not in rendered_browser]
@@ -210,7 +207,7 @@ def _validate_sources() -> None:
 def _update_cache_busters() -> None:
     for path in ROOT.rglob("*.html"):
         rel = path.relative_to(ROOT)
-        if any(part in {".git", ".bootstrap", "node_modules", "scripts"} for part in rel.parts):
+        if any(part in {".git", ".bootstrap", "node_modules", "scripts", "api", "web"} for part in rel.parts):
             continue
         original = path.read_text(encoding="utf-8")
         updated = re.sub(r"app\.js(?:\?v=[A-Za-z0-9._-]+)?", f"app.js?v={CACHE_VERSION}", original)
