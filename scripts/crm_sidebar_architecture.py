@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CACHE_VERSION = "20260827-sidebar-architecture-v3"
+CACHE_VERSION = "20260829-sidebar-architecture-v4"
 JS_START = "  // VALTREN SIDEBAR ARCHITECTURE START\n"
 JS_END = "  // VALTREN SIDEBAR ARCHITECTURE END\n"
 CSS_MARKER = "/* VALTREN SIDEBAR ARCHITECTURE */"
@@ -24,6 +24,14 @@ JS_BLOCK = r'''  // VALTREN SIDEBAR ARCHITECTURE START
       ['rateios','Rateios','#/crm/financeiro/rateios'],
       ['participacoes','Participações','#/crm/financeiro/participacoes'],
       ['repasses','Repasses','#/crm/financeiro/repasses']
+    ];
+    const marketing=[
+      ['overview','Visão Geral','#/crm/marketing'],
+      ['campaigns','Campanhas','#/crm/marketing/campaigns'],
+      ['calendar','Calendário','#/crm/marketing/calendar'],
+      ['metrics','Métricas','#/crm/marketing/metrics'],
+      ['briefings','Briefing','#/crm/marketing/briefings'],
+      ['tasks','Tarefas','#/crm/marketing/tasks']
     ];
     const business=[
       ['products','Produtos','#/crm/negocios'],
@@ -46,7 +54,7 @@ JS_BLOCK = r'''  // VALTREN SIDEBAR ARCHITECTURE START
         ${nav('#/crm/agenda','Agenda','calendar','agenda')}
         ${subgroup('accounting','Financeiro','database',finance)}
         ${legal}
-        ${nav('#/crm/marketing','Marketing','globe','marketing')}
+        ${subgroup('marketing','Marketing','globe',marketing)}
         ${subgroup('business','Negócios','layers',business)}
         ${nav('#/crm/relatorios','Relatórios','file','reports')}
         ${nav('#/crm/configuracoes','Configurações','settings','settings')}
@@ -255,7 +263,7 @@ def _materialize_js(app: str) -> str:
     block=updated[updated.index(JS_START):updated.index(JS_END)]
     if any(token in block for token in ['ValtrenChat','MusicChat','>RH<','Administração','#/crm/juridico/contratos/templates','#/crm/juridico/contratos/variaveis']):
         raise RuntimeError('Sidebar canônica contém módulo ou subrota residual removida')
-    for required in ['Marketing','Relatórios','Configurações','Negócios','Jurídico','Financeiro','Assuntos Jurídicos','Contratos','Compliance e Políticas','Propriedade Intelectual','Societário']:
+    for required in ['Marketing','Visão Geral','Campanhas','Calendário','Métricas','Briefing','Tarefas','Relatórios','Configurações','Negócios','Jurídico','Financeiro','Assuntos Jurídicos','Contratos','Compliance e Políticas','Propriedade Intelectual','Societário']:
         if required not in block:
             raise RuntimeError(f'Sidebar canônica sem módulo obrigatório: {required}')
     _assert_js_syntax(updated)
@@ -300,7 +308,7 @@ def apply_crm_sidebar_architecture() -> int:
             updated=re.sub(r'valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?',f'valtren-brand.css?v={CACHE_VERSION}',updated)
             if updated!=text:
                 path.write_text(updated,encoding='utf-8')
-    print('Sidebar Architecture materializada com Jurídico canônico, Contratos direto, drawer mobile e saída byte-stable.')
+    print('Sidebar Architecture materializada com Marketing em submenu, Jurídico canônico, drawer mobile e saída byte-stable.')
     return 1
 
 
