@@ -6,10 +6,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CORE = ROOT / "scripts" / "crm_cost_allocations_core.js"
-BROWSER = ROOT / "scripts" / "crm_cost_allocations_browser.js"
-MODULE_CSS = ROOT / "scripts" / "crm_cost_allocations.css"
-CACHE_VERSION = "20260825-cost-allocations-v2"
+MODULE_DIR = ROOT / "src" / "modules" / "finance" / "allocations"
+CORE = MODULE_DIR / "core.js"
+BROWSER = MODULE_DIR / "browser.js"
+MODULE_CSS = MODULE_DIR / "styles.css"
+CACHE_VERSION = "20260829-finance-allocations-module-v1"
 JS_START = "  // VALTREN COST ALLOCATIONS START\n"
 JS_END = "  // VALTREN COST ALLOCATIONS END\n"
 
@@ -30,8 +31,6 @@ def apply_crm_cost_allocations() -> int:
         flags=re.S,
     )
 
-    # Rateios becomes the formal owner. The old simple allocation editor in
-    # Transações remains only as an entry point to the canonical Rateios flow.
     app, replaced_finance_editor = re.subn(
         r"function crmFinanceOpenAllocation\(id\)\{[^\n]*\}\n",
         "function crmFinanceOpenAllocation(id){const tx=crmFinanceService().getTransaction(id);if(!tx)return;location.hash=`#/crm/financeiro/rateios?source=${encodeURIComponent(id)}&new=1`; }\n",
@@ -41,22 +40,18 @@ def apply_crm_cost_allocations() -> int:
     if replaced_finance_editor != 1:
         raise RuntimeError(f"Editor simples de rateio em Transações não pôde ser convertido em compatibilidade: {replaced_finance_editor}")
 
-    # Any financial edit must immediately re-check active posted allocations.
     refresh_old = "function crmFinanceRefresh(){crmFinanceSyncLegacy();if(typeof renderCurrentWithoutReset==='function')renderCurrentWithoutReset();}"
     refresh_new = "function crmFinanceRefresh(){crmFinanceSyncLegacy();if(typeof crmCostAllocationService==='function')crmCostAllocationService().refreshAllConsistency();if(typeof renderCurrentWithoutReset==='function')renderCurrentWithoutReset();}"
     if refresh_old not in app:
         raise RuntimeError("Ponto de integração de consistência em Transações não encontrado")
     app = app.replace(refresh_old, refresh_new, 1)
 
-    # Accounting always evaluates allocation consistency before dimensional reads.
     accounting_return = "  return state.__crmAccountingService;\n}"
     accounting_return_new = "  if(typeof crmCostAllocationService==='function')crmCostAllocationService().refreshAllConsistency();\n  return state.__crmAccountingService;\n}"
     if accounting_return not in app:
         raise RuntimeError("Adapter de leitura da Contabilidade não encontrado")
     app = app.replace(accounting_return, accounting_return_new, 1)
 
-    # Minimal Accounting adapter: general DRE keeps the original amount exactly once;
-    # dimension filters consume only the effective transaction.allocations projection.
     dimension_pattern = re.compile(
         r"    function dimensionAmount\(tx,filters=\{\}\)\{.*?\n    \}\n\n    function accountingIssues",
         re.S,
@@ -184,7 +179,7 @@ def apply_crm_cost_allocations() -> int:
         text_value = re.sub(r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?", f"valtren-brand.css?v={CACHE_VERSION}", text_value)
         path.write_text(text_value, encoding="utf-8")
 
-    print("Financeiro → Rateios materializado como governança canônica de distribuição analítica; transaction.allocations preservado somente como projeção efetiva; Transações, Contabilidade, Notas Fiscais e sidebar preservados.")
+    print("Financeiro → Rateios materializado a partir de src/modules/finance/allocations, preservando projeção contábil, Transações, Notas Fiscais e sidebar.")
     return 1
 
 
