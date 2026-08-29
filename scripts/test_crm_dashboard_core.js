@@ -1,7 +1,7 @@
 'use strict';
 const assert=require('assert');
-const Core=require('../src/modules/dashboard/core.js');
-const ParticipationCore=require('../src/modules/dashboard/participation-core.js');
+const Core=require('../web/src/modules/dashboard/core.js');
+const ParticipationCore=require('../web/src/modules/dashboard/participation-core.js');
 let seq=0;
 const catalog={products:[{id:'p1',name:'Produto SaaS',type:'SaaS',businessUnitId:'u1'}],services:[{id:'s1',name:'Consultoria'}],businessUnits:[{id:'u1',name:'Unidade Digital'}]};
 const row=(section,contribution,tx={},accounting={})=>({classification:{section,name:section},contribution,amount:Math.abs(contribution),date:'2026-08-10',transaction:{id:`tx-${++seq}`,amount:Math.abs(contribution),status:'posted',isDemo:false,...tx},accounting});
