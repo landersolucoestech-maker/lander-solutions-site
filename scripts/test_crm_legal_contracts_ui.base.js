@@ -2,8 +2,8 @@
 const assert=require('assert');
 const fs=require('fs');
 const path=require('path');
-const browser=fs.readFileSync(path.resolve(__dirname,'crm_legal_contracts_browser.js'),'utf8');
-const css=fs.readFileSync(path.resolve(__dirname,'crm_legal_contracts.css'),'utf8');
+const browser=fs.readFileSync(path.resolve(__dirname,'..','web','src','modules','legal','contracts','browser.js'),'utf8');
+const css=fs.readFileSync(path.resolve(__dirname,'..','web','src','modules','legal','contracts','styles.css'),'utf8');
 const materializer=fs.readFileSync(path.resolve(__dirname,'crm_legal_contracts.py'),'utf8');
 const materialize=fs.readFileSync(path.resolve(__dirname,'materialize.py'),'utf8');
 let passed=0;

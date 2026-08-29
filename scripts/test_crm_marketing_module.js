@@ -2,7 +2,7 @@
 const assert=require('assert');
 const fs=require('fs');
 const path=require('path');
-const browser=fs.readFileSync(path.resolve(__dirname,'crm_marketing_module.js'),'utf8');
+const browser=fs.readFileSync(path.resolve(__dirname,'..','web','src','modules','marketing','module.js'),'utf8');
 const materializer=fs.readFileSync(path.resolve(__dirname,'crm_marketing_module.py'),'utf8');
 const forbiddenIntegration='Sound'+'charts';
 for(const token of ['Visão Geral','Campanhas','Calendário','Métricas','Briefings','Tarefas','Nenhuma métrica é simulada','crmMarketingSave','crmMarketingPage'])assert(browser.includes(token),`ausente: ${token}`);

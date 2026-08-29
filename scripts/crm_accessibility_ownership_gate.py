@@ -9,11 +9,11 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
 
 OWNER_SPECS = {
-    "business": ("crm_business.py", "crm_business_browser.js", "VALTREN BUSINESS CATALOG"),
-    "legal_matters": ("crm_legal_matters.py", "crm_legal_matters_browser.js", "VALTREN LEGAL MATTERS"),
-    "compliance": ("crm_compliance.py", "crm_compliance_browser.js", "VALTREN COMPLIANCE"),
-    "intellectual_property": ("crm_intellectual_property.py", "crm_intellectual_property_browser.js", "VALTREN INTELLECTUAL PROPERTY"),
-    "corporate_governance": ("crm_corporate_governance.py", "crm_corporate_governance_browser.js", "VALTREN CORPORATE GOVERNANCE"),
+    "business": ("scripts/crm_business.py", "web/src/modules/business/browser.js", "VALTREN BUSINESS CATALOG"),
+    "legal_matters": ("scripts/crm_legal_matters.py", "web/src/modules/legal/matters/browser.js", "VALTREN LEGAL MATTERS"),
+    "compliance": ("scripts/crm_compliance.py", "web/src/modules/legal/compliance/browser.js", "VALTREN COMPLIANCE"),
+    "intellectual_property": ("scripts/crm_intellectual_property.py", "web/src/modules/legal/intellectual-property/browser.js", "VALTREN INTELLECTUAL PROPERTY"),
+    "corporate_governance": ("scripts/crm_corporate_governance.py", "web/src/modules/legal/corporate/browser.js", "VALTREN CORPORATE GOVERNANCE"),
 }
 
 
@@ -58,8 +58,8 @@ def assert_accessibility_ownership() -> int:
         all_owned.update(owner_ids)
         counts[owner] = len(owner_ids)
 
-        materializer_path = SCRIPTS / materializer_name
-        browser_path = SCRIPTS / browser_name
+        materializer_path = ROOT / materializer_name
+        browser_path = ROOT / browser_name
         _require(materializer_path.exists(), f"Accessibility ownership: materializer ausente: {materializer_name}")
         _require(browser_path.exists(), f"Accessibility ownership: browser source ausente: {browser_name}")
 

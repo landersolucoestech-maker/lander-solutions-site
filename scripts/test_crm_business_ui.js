@@ -2,8 +2,8 @@
 const assert=require('assert');
 const fs=require('fs');
 const path=require('path');
-const browser=fs.readFileSync(path.resolve(__dirname,'crm_business_browser.js'),'utf8');
-const css=fs.readFileSync(path.resolve(__dirname,'crm_business.css'),'utf8');
+const browser=fs.readFileSync(path.resolve(__dirname,'..','web','src','modules','business','browser.js'),'utf8');
+const css=fs.readFileSync(path.resolve(__dirname,'..','web','src','modules','business','styles.css'),'utf8');
 const materializer=fs.readFileSync(path.resolve(__dirname,'crm_business.py'),'utf8');
 const materialize=fs.readFileSync(path.resolve(__dirname,'materialize.py'),'utf8');
 let passed=0;function test(name,fn){try{fn();passed++;console.log(`PASS ${passed} ${name}`);}catch(error){console.error(`FAIL ${name}`);throw error;}}
