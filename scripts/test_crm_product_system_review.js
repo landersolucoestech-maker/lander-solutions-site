@@ -8,7 +8,7 @@ const must = (condition, message) => { if (!condition) fail(message); };
 const review = fs.readFileSync(path.join(__dirname, 'crm_product_system_review.py'), 'utf8');
 const runner = fs.readFileSync(path.join(__dirname, 'crm_product_system_review_runner.py'), 'utf8');
 const dashboard = fs.readFileSync(path.join(__dirname, 'crm_dashboard_module.py'), 'utf8');
-const dashboardDir = path.join(root, 'src', 'modules', 'dashboard');
+const dashboardDir = path.join(root, 'web', 'src', 'modules', 'dashboard');
 const dashboardCore = fs.readFileSync(path.join(dashboardDir, 'core.js'), 'utf8');
 const dashboardParticipationCore = fs.readFileSync(path.join(dashboardDir, 'participation-core.js'), 'utf8');
 const dashboardBrowser = fs.readFileSync(path.join(dashboardDir, 'browser.js'), 'utf8');
@@ -28,7 +28,7 @@ must(review.includes('_replace_between'), 'global review must use explicit named
 
 must(dashboard.includes('DASHBOARD_START'), 'Dashboard owner must mark its own materialized block');
 must(dashboard.includes('DASHBOARD_END'), 'Dashboard owner must close its own materialized block');
-must(dashboard.includes('MODULE_DIR = ROOT / "src" / "modules" / "dashboard"'), 'Dashboard owner must use canonical module directory');
+must(dashboard.includes('MODULE_DIR = ROOT / "web" / "src" / "modules" / "dashboard"'), 'Dashboard owner must use canonical web module directory');
 must(dashboard.includes('CORE = MODULE_DIR / "core.js"'), 'Dashboard owner must load calculation core');
 must(dashboard.includes('PARTICIPATION_CORE = MODULE_DIR / "participation-core.js"'), 'Dashboard owner must load participation integrity core');
 must(dashboard.includes('BROWSER = MODULE_DIR / "browser.js"'), 'Dashboard owner must load browser components');
