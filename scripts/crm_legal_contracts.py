@@ -6,10 +6,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CORE = ROOT / "scripts" / "crm_legal_contracts_core.js"
-BROWSER = ROOT / "scripts" / "crm_legal_contracts_browser.js"
-MODULE_CSS = ROOT / "scripts" / "crm_legal_contracts.css"
-CACHE_VERSION = "20260827-legal-contracts-v3"
+MODULE_DIR = ROOT / "src" / "modules" / "legal" / "contracts"
+CORE = MODULE_DIR / "core.js"
+BROWSER = MODULE_DIR / "browser.js"
+MODULE_CSS = MODULE_DIR / "styles.css"
+CACHE_VERSION = "20260829-legal-contracts-module-v1"
 JS_START = "  // VALTREN LEGAL CONTRACTS START\n"
 JS_END = "  // VALTREN LEGAL CONTRACTS END\n"
 
@@ -171,7 +172,7 @@ def apply_crm_legal_contracts() -> int:
         text_value = re.sub(r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?", f"valtren-brand.css?v={CACHE_VERSION}", text_value)
         path.write_text(text_value, encoding="utf-8")
 
-    print("Jurídico → Contratos materializado com Contratos direto na Sidebar; Templates e Variáveis acessíveis pelo Page Header; domínios adjacentes preservados.")
+    print("Jurídico → Contratos materializado a partir de src/modules/legal/contracts; Templates e Variáveis permanecem subordinados ao módulo de Contratos.")
     return 1
 
 
