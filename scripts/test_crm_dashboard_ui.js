@@ -2,8 +2,9 @@
 const assert=require('assert');
 const fs=require('fs');
 const path=require('path');
-const browser=fs.readFileSync(path.resolve(__dirname,'crm_dashboard_browser.js'),'utf8');
-const css=fs.readFileSync(path.resolve(__dirname,'crm_dashboard.css'),'utf8');
+const dashboardDir=path.resolve(__dirname,'..','src','modules','dashboard');
+const browser=fs.readFileSync(path.join(dashboardDir,'browser.js'),'utf8');
+const css=fs.readFileSync(path.join(dashboardDir,'styles.css'),'utf8');
 const materializer=fs.readFileSync(path.resolve(__dirname,'crm_dashboard_module.py'),'utf8');
 const required=['Faturamento Bruto','Deduções e Impostos','Receita Líquida','Custos Diretos','Despesas Operacionais','Resultado Operacional','Participações / Repasses','Resultado Valtren','Formação do Resultado','Performance por Unidade de Negócio','Produtos x Serviços','Faturamento por Unidade','Resultado por Unidade','Margem Operacional por Unidade','Evolução Financeira','Participações e Repasses','Faturado x Recebido','Contas a Receber e a Pagar','Tributos e Deduções','Estrutura de Custos e Despesas','Destaques das Unidades'];
 for(const token of required)assert(browser.includes(token),`dashboard UI missing: ${token}`);
@@ -19,13 +20,18 @@ assert(css.includes('@media(max-width:1200px)'),'tablet KPI adaptation missing')
 assert(css.includes('@media(max-width:460px)'),'mobile adaptation missing');
 assert(!css.includes('zoom:'),'dashboard CSS must not use zoom');
 assert(!css.includes('transform:scale('),'dashboard CSS must not use scale hacks');
-assert(materializer.includes('crm_dashboard_core.js'));assert(materializer.includes('crm_dashboard_browser.js'));assert(materializer.includes('crm_dashboard.css'));
+assert(materializer.includes('src" / "modules" / "dashboard'));
+assert(materializer.includes('CORE = MODULE_DIR / "core.js"'));
+assert(materializer.includes('BROWSER = MODULE_DIR / "browser.js"'));
+assert(materializer.includes('MODULE_CSS = MODULE_DIR / "styles.css"'));
+assert(materializer.includes("path === '/dashboard'"),'dashboard canonical route missing');
 if(process.argv.includes('--materialized')){
   const app=fs.readFileSync(path.resolve(__dirname,'..','app.js'),'utf8');
   const siteCss=fs.readFileSync(path.resolve(__dirname,'..','assets','valtren-brand.css'),'utf8');
   assert.equal((app.match(/function crmDashboardPage\(/g)||[]).length,1,'crmDashboardPage must have one owner');
   assert.equal((app.match(/VALTREN CRM DASHBOARD START/g)||[]).length,1,'dashboard start marker mismatch');
   assert(app.includes('ValtrenDashboardCore'));
+  assert.equal((app.match(/path === '\/dashboard'/g)||[]).length,1,'canonical /dashboard route must exist once');
   for(const token of required)assert(app.includes(token),`materialized dashboard missing: ${token}`);
   for(const legacy of ["kpi('Contatos'","kpi('Leads'","kpi('Clientes'",'Indicadores essenciais de CRM e Financeiro','O que precisa de atenção'])assert(!app.slice(app.indexOf('VALTREN CRM DASHBOARD START'),app.indexOf('VALTREN CRM DASHBOARD END')).includes(legacy),`materialized legacy dashboard survived: ${legacy}`);
   assert.equal((siteCss.match(/\/\* VALTREN EXECUTIVE DASHBOARD \*\//g)||[]).length,1,'dashboard CSS owner marker mismatch');
