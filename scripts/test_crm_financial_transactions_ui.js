@@ -19,7 +19,7 @@ test('8 responsividade mantém Categoria e Produto/Sistema em mobile',()=>{const
 test('9 modais e drawer respeitam viewport',()=>{assert(css.includes('max-height:90vh'));assert(css.includes('max-height:94vh'));assert(css.includes('width:min(560px,100%)'));});
 test('10 atualização não simula sincronização bancária',()=>{assert(browser.includes('Nenhuma sincronização foi simulada'));assert(!browser.includes('Sincronização concluída'));});
 test('11 apresentação final unifica Saída e Entrada em Valor',()=>{assert(presentation.includes('<th class="right">Valor</th>'));assert(!presentation.includes('<th class="right">Saída</th>'));assert(!presentation.includes('<th class="right">Entrada</th>'));assert(presentation.includes('function crmFinanceSignedMoney'));assert(presentation.includes("tx?.direction==='outflow'?-amount:amount"));});
-test('12 apresentação final não renderiza cards de status',()=>{const start=presentation.indexOf('crmTransactionsPage=function()'),block=presentation.slice(start);assert(start>=0);assert(!block.includes('crmFinanceStatusTabs()'));});
+test('12 apresentação final não renderiza cards de status',()=>{const start=presentation.indexOf('function crmTransactionsPage()'),block=presentation.slice(start);assert(start>=0);assert(!block.includes('crmFinanceStatusTabs()'));});
 
 if(process.argv.includes('--materialized')){
   const app=fs.readFileSync(path.resolve(__dirname,'..','app.js'),'utf8');
