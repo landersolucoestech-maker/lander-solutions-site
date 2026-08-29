@@ -22,6 +22,9 @@ jobs:
         with:
           ref: ${{ github.sha }}
 
+      - name: Gate canonical repository structure
+        run: python scripts/structure_gate.py
+
       - name: Materialize exact candidate
         run: python scripts/materialize.py
 
