@@ -11,3 +11,21 @@ coverage/
 *.log
 __pycache__/
 *.py[cod]
+
+# Generated/materialized output
+_site/
+app.js
+index.html
+assets/valtren-brand.css
+
+# Test/browser execution artifacts
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.nyc_output/
+playwright-report/
+test-results/
+selenium-screenshots/
+*.png.tmp
+*.tmp
+*.bak
