@@ -11,9 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PAYLOAD_DIR = ROOT / ".bootstrap"
 WEB_ROOT = ROOT / "web"
-WEB_SRC = WEB_ROOT / "src"
 WEB_PUBLIC_ASSETS = WEB_ROOT / "public" / "assets"
-LEGACY_SRC = ROOT / "src"
 MATERIALIZED_ASSETS = ROOT / "assets"
 BASE64_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 APP_COMPRESSED_START = 36124
@@ -22,24 +20,13 @@ APP_UNCOMPRESSED_SIZE = 93252
 APP_TARGET_CRC = 0xC2991650
 
 
-def _stage_legacy_source_compatibility() -> None:
-    if not WEB_SRC.is_dir():
-        raise FileNotFoundError("web/src ausente")
-    if LEGACY_SRC.exists():
-        shutil.rmtree(LEGACY_SRC)
-    shutil.copytree(WEB_SRC, LEGACY_SRC)
-
+def _stage_public_assets() -> None:
     MATERIALIZED_ASSETS.mkdir(parents=True, exist_ok=True)
     if not WEB_PUBLIC_ASSETS.is_dir():
         raise FileNotFoundError("web/public/assets ausente")
     for source in WEB_PUBLIC_ASSETS.iterdir():
         if source.is_file():
             shutil.copy2(source, MATERIALIZED_ASSETS / source.name)
-
-
-def _cleanup_legacy_source_compatibility() -> None:
-    if LEGACY_SRC.exists():
-        shutil.rmtree(LEGACY_SRC)
 
 
 def _apply_valtren_brand() -> bool:
@@ -196,25 +183,22 @@ def _read_packaged_archive(chunks: list[Path]) -> bytes:
 
 def main() -> int:
     chunks = sorted(PAYLOAD_DIR.glob("chunk-*"))
-    try:
-        if chunks:
-            try:
-                archive = _read_packaged_archive(chunks)
-                with zipfile.ZipFile(io.BytesIO(archive)) as package:
-                    package.extractall(ROOT)
-            except (ValueError, zipfile.BadZipFile, base64.binascii.Error, zlib.error) as error:
-                print(f"Falha ao reconstruir o projeto: {error}", file=sys.stderr)
-                return 1
-
-        _stage_legacy_source_compatibility()
-        if not _apply_valtren_brand():
+    if chunks:
+        try:
+            archive = _read_packaged_archive(chunks)
+            with zipfile.ZipFile(io.BytesIO(archive)) as package:
+                package.extractall(ROOT)
+        except (ValueError, zipfile.BadZipFile, base64.binascii.Error, zlib.error) as error:
+            print(f"Falha ao reconstruir o projeto: {error}", file=sys.stderr)
             return 1
-        if chunks and PAYLOAD_DIR.exists():
-            shutil.rmtree(PAYLOAD_DIR)
-        print("Projeto da Valtren Solutions materializado e atualizado com sucesso.")
-        return 0
-    finally:
-        _cleanup_legacy_source_compatibility()
+
+    _stage_public_assets()
+    if not _apply_valtren_brand():
+        return 1
+    if chunks and PAYLOAD_DIR.exists():
+        shutil.rmtree(PAYLOAD_DIR)
+    print("Projeto da Valtren Solutions materializado e atualizado com sucesso.")
+    return 0
 
 
 if __name__ == "__main__":
