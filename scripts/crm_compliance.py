@@ -4,10 +4,11 @@ from crm_legal_materializer_utils import APP, CSS, replace_marked_block, replace
 from crm_accessibility_semantics import OWNER_STATIC_LABELS, apply_accessible_names
 
 ROOT = Path(__file__).resolve().parents[1]
-CORE = ROOT / "scripts" / "crm_compliance_core.js"
-BROWSER = ROOT / "scripts" / "crm_compliance_browser.js"
-MODULE_CSS = ROOT / "scripts" / "crm_compliance.css"
-CONSISTENCY_CSS = ROOT / "scripts" / "crm_compliance_consistency.css"
+MODULE_DIR = ROOT / "src" / "modules" / "legal" / "compliance"
+CORE = MODULE_DIR / "core.js"
+BROWSER = MODULE_DIR / "browser.js"
+MODULE_CSS = MODULE_DIR / "styles.css"
+CONSISTENCY_CSS = MODULE_DIR / "consistency.css"
 JS_START = "  // VALTREN COMPLIANCE START\n"
 JS_END = "  // VALTREN COMPLIANCE END\n"
 OLD_ROUTE = "if(path==='/crm/juridico/compliance')return crmArchitecturePlaceholderPage('legal','compliance','Compliance e Políticas');"
@@ -28,7 +29,7 @@ def apply_crm_compliance() -> int:
     APP.write_text(app, encoding="utf-8")
     module_css = MODULE_CSS.read_text(encoding="utf-8").rstrip() + "\n" + CONSISTENCY_CSS.read_text(encoding="utf-8")
     CSS.write_text(replace_css(CSS.read_text(encoding="utf-8"), "VALTREN COMPLIANCE", module_css), encoding="utf-8"); update_cache_version()
-    print("Jurídico → Compliance e Políticas materializado com obrigações, controles, ocorrências, políticas versionadas, evidências e revisões; escala visual normalizada; sem obrigações fictícias.")
+    print("Jurídico → Compliance materializado a partir de src/modules/legal/compliance, sem obrigações fictícias.")
     return 1
 
 if __name__ == "__main__": apply_crm_compliance()
