@@ -7,10 +7,11 @@ from crm_accessibility_semantics import OWNER_STATIC_LABELS, apply_accessible_na
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CORE = ROOT / "scripts" / "crm_business_core.js"
-BROWSER = ROOT / "scripts" / "crm_business_browser.js"
-MODULE_CSS = ROOT / "scripts" / "crm_business.css"
-CACHE_VERSION = "20260826-business-catalog-v1"
+MODULE_DIR = ROOT / "src" / "modules" / "business"
+CORE = MODULE_DIR / "core.js"
+BROWSER = MODULE_DIR / "browser.js"
+MODULE_CSS = MODULE_DIR / "styles.css"
+CACHE_VERSION = "20260829-business-module-v1"
 JS_START = "  // VALTREN BUSINESS CATALOG START\n"
 JS_END = "  // VALTREN BUSINESS CATALOG END\n"
 
@@ -56,10 +57,8 @@ def apply_crm_business() -> int:
     app = APP.read_text(encoding="utf-8")
     core = CORE.read_text(encoding="utf-8").strip()
     browser = apply_accessible_names(BROWSER.read_text(encoding="utf-8").strip(), OWNER_STATIC_LABELS["business"])
-    _assert_business_code_generator(core, "crm_business_core.js")
+    _assert_business_code_generator(core, "src/modules/business/core.js")
 
-    # The Business owner runs after the already-materialized domains so these adapters
-    # patch the final runtime helpers rather than being overwritten by later stages.
     app = re.sub(r"\n*  // VALTREN BUSINESS CATALOG START\n.*?  // VALTREN BUSINESS CATALOG END\n+", "\n", app, flags=re.S)
     block = JS_START + core + "\n\n" + browser + "\n" + JS_END
     anchor = "  function contactPage(query)"
@@ -88,7 +87,6 @@ def apply_crm_business() -> int:
         else:
             raise RuntimeError(f"Rota de Negócios ambígua: placeholder={old_count}, handler={new_count}, rota={new}")
 
-    # Minimal adapters: no workflow/calculation/status code from completed owners is changed.
     adapters = {
         "crmFinanceProducts": "function crmFinanceProducts(){return typeof crmBusinessProductsFeed==='function'?crmBusinessProductsFeed({includeArchived:false}):[];}",
         "crmFinanceProductLabel": "function crmFinanceProductLabel(tx){if(tx.businessDimension==='corporate')return 'Corporativo';if(tx.businessDimension==='product')return typeof crmBusinessDimensionLabel==='function'?crmBusinessDimensionLabel('product',tx.productId):(tx.productId||'Referência não resolvida');if(Array.isArray(tx.allocations)&&tx.allocations.length>1)return `${tx.allocations.length} destinos · Rateado`;return 'Selecionar';}",
@@ -200,7 +198,7 @@ def apply_crm_business() -> int:
         value = re.sub(r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?", f"valtren-brand.css?v={CACHE_VERSION}", value)
         path.write_text(value, encoding="utf-8")
 
-    print("Negócios → Produtos, Serviços e Unidades de Negócio materializados como catálogo canônico único; módulos concluídos recebem apenas adapters de lookup/label/validação.")
+    print("Negócios → Produtos, Serviços e Unidades de Negócio materializados a partir de src/modules/business como catálogo canônico único.")
     return 1
 
 
