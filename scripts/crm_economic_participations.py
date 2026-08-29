@@ -6,11 +6,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.js"
 CSS = ROOT / "assets" / "valtren-brand.css"
-CORE = ROOT / "scripts" / "crm_economic_participations_core.js"
-BROWSER = ROOT / "scripts" / "crm_economic_participations_browser.js"
-MODULE_CSS = ROOT / "scripts" / "crm_economic_participations.css"
-CONSISTENCY_CSS = ROOT / "scripts" / "crm_economic_participations_consistency.css"
-CACHE_VERSION = "20260826-economic-participations-v2"
+MODULE_DIR = ROOT / "src" / "modules" / "finance" / "participations"
+CORE = MODULE_DIR / "core.js"
+BROWSER = MODULE_DIR / "browser.js"
+MODULE_CSS = MODULE_DIR / "styles.css"
+CONSISTENCY_CSS = MODULE_DIR / "consistency.css"
+CACHE_VERSION = "20260829-finance-participations-module-v1"
 JS_START = "  // VALTREN ECONOMIC PARTICIPATIONS START\n"
 JS_END = "  // VALTREN ECONOMIC PARTICIPATIONS END\n"
 
@@ -100,7 +101,7 @@ def apply_crm_economic_participations() -> int:
         value = re.sub(r"valtren-brand\.css(?:\?v=[A-Za-z0-9._-]+)?", f"valtren-brand.css?v={CACHE_VERSION}", value)
         path.write_text(value, encoding="utf-8")
 
-    print("Financeiro → Participações materializado como camada canônica de cálculo/aprovação de direitos econômicos contratuais; escala visual normalizada; Contratos permanece owner das regras.")
+    print("Financeiro → Participações materializado a partir de src/modules/finance/participations; Contratos permanece owner das regras econômicas.")
     return 1
 
 
