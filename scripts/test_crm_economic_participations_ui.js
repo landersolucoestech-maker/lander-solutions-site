@@ -1,8 +1,9 @@
 'use strict';
 const __partFs=require('fs');
 const __partPath=require('path');
-const __partPrefix=__filename+'.part';
-let __partSource=__partFs.readdirSync(__dirname).filter((name)=>name.startsWith(__partPath.basename(__partPrefix))).sort().map((name)=>__partFs.readFileSync(__partPath.join(__dirname,name),'utf8')).join('');
+const __partDir=__partPath.join(__dirname,'parts','tests','economic_participations');
+const __partPrefix=__partPath.basename(__filename)+'.part';
+let __partSource=__partFs.readdirSync(__partDir).filter((name)=>name.startsWith(__partPrefix)).sort().map((name)=>__partFs.readFileSync(__partPath.join(__partDir,name),'utf8')).join('');
 if(process.argv.includes('--materialized')){
   const replaceExactly=(oldText,newText,expected,label)=>{
     const occurrences=__partSource.split(oldText).length-1;
