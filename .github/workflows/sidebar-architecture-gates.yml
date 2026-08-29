@@ -25,8 +25,8 @@ jobs:
       - name: Verify sidebar, dashboard and visual-system source ownership
         run: |
           python -m py_compile scripts/crm_dashboard_module.py scripts/crm_sidebar_architecture.py scripts/crm_global_header.py scripts/crm_product_system_review.py scripts/crm_reference_modules.py scripts/test_sidebar_css_ownership.py scripts/test_frontend_visual_system.py scripts/test_crm_route_guards.py scripts/certify_visual.py
-          node --check src/modules/dashboard/core.js
-          node --check src/modules/dashboard/browser.js
+          node --check web/src/modules/dashboard/core.js
+          node --check web/src/modules/dashboard/browser.js
           node scripts/test_crm_dashboard_core.js
           node scripts/test_crm_dashboard_ui.js
           python scripts/test_sidebar_css_ownership.py
