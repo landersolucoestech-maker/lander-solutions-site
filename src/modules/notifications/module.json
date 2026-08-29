@@ -1,0 +1,12 @@
+{
+  "id": "notifications",
+  "canonicalSurface": "/crm/configuracoes?tab=notificacoes",
+  "owner": "notifications",
+  "status": "not-configured",
+  "runtimeOwner": "scripts/crm_definitive_architecture.py",
+  "constraints": [
+    "no-fake-notification-counts",
+    "no-channel-is-active-without-persistence",
+    "preferences-require-real-storage"
+  ]
+}
