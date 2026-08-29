@@ -1,0 +1,14 @@
+{
+  "id": "settings",
+  "route": "/crm/configuracoes",
+  "owner": "settings",
+  "status": "frontend-boundary",
+  "tabs": ["empresa", "notificacoes", "seguranca", "integracoes", "auditoria", "usuarios"],
+  "runtimeOwner": "scripts/crm_definitive_architecture.py",
+  "constraints": [
+    "no-fake-authentication",
+    "no-browser-credentials",
+    "no-fake-users-or-sessions",
+    "billing-is-not-a-canonical-module"
+  ]
+}
