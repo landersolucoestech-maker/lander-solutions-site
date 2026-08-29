@@ -4,10 +4,11 @@ from crm_legal_materializer_utils import APP, CSS, replace_marked_block, replace
 from crm_accessibility_semantics import OWNER_STATIC_LABELS, apply_accessible_names
 
 ROOT = Path(__file__).resolve().parents[1]
-CORE = ROOT / "scripts" / "crm_intellectual_property_core.js"
-BROWSER = ROOT / "scripts" / "crm_intellectual_property_browser.js"
-MODULE_CSS = ROOT / "scripts" / "crm_intellectual_property.css"
-CONSISTENCY_CSS = ROOT / "scripts" / "crm_intellectual_property_consistency.css"
+MODULE_DIR = ROOT / "src" / "modules" / "legal" / "intellectual-property"
+CORE = MODULE_DIR / "core.js"
+BROWSER = MODULE_DIR / "browser.js"
+MODULE_CSS = MODULE_DIR / "styles.css"
+CONSISTENCY_CSS = MODULE_DIR / "consistency.css"
 JS_START = "  // VALTREN INTELLECTUAL PROPERTY START\n"
 JS_END = "  // VALTREN INTELLECTUAL PROPERTY END\n"
 OLD_ROUTE = "if(path==='/crm/juridico/propriedade-intelectual')return crmArchitecturePlaceholderPage('legal','ip','Propriedade Intelectual');"
@@ -28,7 +29,7 @@ def apply_crm_intellectual_property() -> int:
     APP.write_text(app, encoding="utf-8")
     module_css = MODULE_CSS.read_text(encoding="utf-8").rstrip() + "\n" + CONSISTENCY_CSS.read_text(encoding="utf-8")
     CSS.write_text(replace_css(CSS.read_text(encoding="utf-8"), "VALTREN INTELLECTUAL PROPERTY", module_css), encoding="utf-8"); update_cache_version()
-    print("Jurídico → Propriedade Intelectual materializado com ativos, registros, titularidade, licenças jurídicas via Contratos e prazos; escala visual normalizada; licenças operacionais permanecem em Administração.")
+    print("Jurídico → Propriedade Intelectual materializado a partir de src/modules/legal/intellectual-property.")
     return 1
 
 if __name__ == "__main__": apply_crm_intellectual_property()
