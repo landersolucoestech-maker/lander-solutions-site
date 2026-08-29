@@ -67,7 +67,7 @@ STATIC_LABELS = {
     "crm-legal-unit": "Unidade de negócio",
     "crm-legal-template-search": "Pesquisar templates",
     "crm-legal-template-category": "Categoria do template",
-    "crm-legal-template-type": "Tipo de template",
+    "crm-legal-template-type": "Tipo do template",
     "crm-legal-template-status": "Status do template",
     "crm-legal-variable-search": "Pesquisar variáveis",
     "crm-legal-variable-scope": "Escopo da variável",
@@ -281,14 +281,23 @@ def apply_accessible_names(source: str, labels: dict[str, str]) -> str:
 def _inject_attr_by_action(source: str, action: str, label: str) -> str:
     pattern = re.compile(rf'<(?:input|select|textarea)\b(?=[^>]*\bdata-action="{re.escape(action)}")[^>]*>', re.I)
     matches = list(pattern.finditer(source))
-    if len(matches) != 1:
-        raise RuntimeError(f"Controle dinâmico {action} divergente: {len(matches)} ocorrência(s)")
-    match = matches[0]
-    tag = match.group(0)
-    if re.search(r'\b(?:aria-label|aria-labelledby|title)=', tag, re.I):
-        return source
-    replacement = tag[:-1] + f' aria-label="{html.escape(label, quote=True)}">'
-    return source[:match.start()] + replacement + source[match.end():]
+    if not matches:
+        raise RuntimeError(f"Controle dinâmico {action} ausente")
+    result = source
+    # Dynamic actions are templates and may legitimately occur more than once.
+    # Process from the end so source offsets remain stable while attributes are injected.
+    for match in reversed(matches):
+        tag = match.group(0)
+        aria = re.search(r'\baria-label="([^"]+)"', tag, re.I)
+        if aria:
+            if aria.group(1) != label:
+                raise RuntimeError(f"Controle dinâmico {action} possui aria-label conflitante: {aria.group(1)!r}")
+            continue
+        if re.search(r'\b(?:aria-labelledby|title)=', tag, re.I):
+            continue
+        replacement = tag[:-1] + f' aria-label="{html.escape(label, quote=True)}">'
+        result = result[:match.start()] + replacement + result[match.end():]
+    return result
 
 
 def _replace_once_or_confirm(source: str, old: str, new: str, label: str) -> str:
@@ -343,7 +352,7 @@ def apply_crm_accessibility_semantics() -> int:
 
     print(
         f"Acessibilidade semântica aplicada: {len(STATIC_LABELS)} controles estáticos, "
-        f"{len(ACTION_LABELS)} controles dinâmicos e targets móveis compartilhados."
+        f"{len(ACTION_LABELS)} famílias de controles dinâmicos e targets móveis compartilhados."
     )
     return 1
 
